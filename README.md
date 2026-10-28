@@ -12,9 +12,10 @@ Entstanden sind sie als Werkzeugkasten für einen persönlichen KI-Assistenten (
 | `werkzeuge/deckbau.py` | Commander-Steckbrief mit EDHREC-Themen, Kandidaten aus der Sammlung, Deckprüfung (Rollen, Kurve, Farbquellen, Bracket, Combos), Upgrade-Vorschläge, Passungs-Check Deck ↔ Commander |
 | `werkzeuge/archetypen.py` | Kern-Pakete gängiger Commander-Archetypen; welche Archetypen eine Sammlung trägt |
 | `werkzeuge/kartenbilder.py` | PDFs mit Kartenbildern: Deck-Übersicht, Tauschliste (Pickliste), Fazit-Bericht |
-| `werkzeuge/paket.py` | packt Werkzeuge oder Daten in eine prüfsummengesicherte Textdatei und wieder aus |
+| `werkzeuge/paket.py` | packt Werkzeuge, Daten oder ein Gast-Archiv in eine prüfsummengesicherte Textdatei und wieder aus |
+| `werkzeuge/zugang.py` | Rollen im Projekt (Admin, User, Gast): Passwort und Gast-PIN als PBKDF2-Hash prüfen, Freischaltung, Sitzungsrolle – speichert nie einen Klartext |
 | `werkzeuge/archetypen_daten.json` | Richtwerte je Archetyp aus EDHREC-Durchschnittsdecks (Bracket 3) |
-| `werkzeugkiste.txt` | alle sechs Dateien als ein Paket (tar.xz in Base64, mit Prüfsummen) – in dieser Form lädt Claude sie |
+| `werkzeugkiste.txt` | alle sieben Dateien als ein Paket (tar.xz in Base64, mit Prüfsummen) – in dieser Form lädt Claude sie |
 
 Texte und Ausgaben sind auf Deutsch, Preise in Euro (Scryfall, Quelle Cardmarket).
 
@@ -38,9 +39,13 @@ flowchart LR
   A -- "Ergebnisse und Buchungen" --> P
 ```
 
-- **Privat im Projekt:** die Sammlung (Moxfield-Export plus Buchungsjournal), Decklisten, Ideen und das Änderungsprotokoll. Davon liegt hier nichts.
+- **Privat im Projekt:** die Sammlung (Moxfield-Export plus Buchungsjournal), Decklisten, Ideen, das Änderungsprotokoll, die Zugangsdatei mit dem Passwort-Hash und die Archive von Gästen. Davon liegt hier nichts.
 - **Im Arbeitsbereich:** Werkzeuge und Daten auspacken, die Datenbank bauen (Scryfall-Kartendaten, rund 110 MB Download), Decks prüfen und verbessern, PDFs erzeugen. Die Ergebnisse schreibt Claude ins Projekt zurück.
 - **Nicht in diesem Repo:** alle Daten und das Skript, mit dem Kopien des Projekts für andere entstehen (es enthält persönliche Angaben).
+
+## Rollen im Projekt
+
+Seit Version 1.4 kennt das Projekt vier Zustände: Jeder Chat beginnt im Zustand **Start** (nur Fragen zum Projekt und zu Regeln). Der **Admin** meldet sich mit Passwort an und darf alles, ein **User** arbeitet mit der Sammlung des Projekts, ein **Gast** bringt seine eigene Sammlung als Datei mit und kann sie am Ende unter seinem Namen mit einer PIN archivieren. `zugang.py` prüft Passwort und PIN gegen gespeicherte Hashes, `paket.py` sperrt je Rolle, was sie nicht darf (zum Beispiel bekommt ein Gast nie die Sammlung des Projekts in seinen Arbeitsbereich). Das ist eine Absprache mit dem Assistenten, kein technischer Zugriffsschutz.
 
 ## Selbst nutzen – ohne Claude
 

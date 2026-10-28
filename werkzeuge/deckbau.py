@@ -371,6 +371,7 @@ def cmd_kandidaten(con, a):
     zeilen.sort(key=lambda z: (-(z["frei"] > 0) if a.weg == 1 else 0, -(z["synergy"] or -1),
                                -(z["inclusion"] or 0), z["rank"] or 999999))
     out = a.out or "kandidaten.csv"
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow([f"# Kandidaten für {cmd['name']} – Weg {a.weg} – EDHREC: {pfad or 'keine Daten'} – "
@@ -691,6 +692,7 @@ def cmd_erklaerung(con, a):
         pass
     ersetzt = auto_ersetzt(con, a)
     out = a.out or "erklaerung.csv"
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow([f"# Datenbasis für Kartenerklärungen – {cname} – EDHREC {pfad or '–'} – {time.strftime('%Y-%m-%d')}"])
@@ -908,6 +910,7 @@ def cmd_upgrade(con, a):
         print(f"  {i + 1}. raus {x['c']['name']}: {grund_raus(x['c'], x['v'], x['rollen'], zaehl, ckurz)}")
         print(f"     rein {k['c']['name']}: {grund_rein(k['c'], k['v'], k['rollen'], zaehl, ist, ckurz, k['tv'])}")
     pfad_paare = os.path.splitext(a.out or "upgrade.csv")[0] + "_paare.txt"
+    os.makedirs(os.path.dirname(pfad_paare) or ".", exist_ok=True)   # --out in einem neuen Ordner (z. B. out/)
     with open(pfad_paare, "w", encoding="utf-8") as fh:
         fh.write("# Tauschpaare „Raus -> Rein“ (eine Seite darf leer sein) – für deckbau.py fazit --paare\n")
         fh.writelines(f"{x['c']['name']} -> {k['c']['name']}\n" for x, k, _ in paare)
@@ -929,6 +932,7 @@ def cmd_upgrade(con, a):
     print("\n\n".join(oracle_block(con, x["c"]) for x, _, _ in paare))
     print(f"\nPaare -> {pfad_paare}")
     out = a.out or "upgrade.csv"
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow([f"# Upgrade {cname} – Stufe {a.stufe} – EDHREC {epfad or '–'} – {time.strftime('%Y-%m-%d')}"])
@@ -1434,6 +1438,7 @@ def cmd_fazit(con, a):
           "5. Anpassungen: ‹Änderungen aus den Anpassungsrunden›", "", "<seitenumbruch>", "", "## Anhang: Moxfield",
           "[moxfield]", "", "```", einfuegeblock(a.neu, [c["name"] for _, c in cmdr]), "```", ""]
     out = a.out or "fazit.md"
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     open(out, "w", encoding="utf-8").write("\n".join(L))
     offen = sum(z.count("‹") for z in L)
     print(f"Fazit-Entwurf: {out} | {len(paare)} Zeilen in „Die Änderungen“ | {len(erkl)} Kartenerklärungen | "
