@@ -34,6 +34,14 @@ Befehle
         Oracle-Text beschreiben, nie aus dem Gedächtnis.
   alternativen <Karte> [--farben RWB] [--limit 5]
         Günstigere Karten mit gleicher Rolle (freie Sammlungskarten zuerst).
+  verkauf [--min-preis 1] [--bracket 3] [--out out/verkauf.txt]
+        Verkaufsprüfung der freien Karten ab Mindestpreis (eigener Druck): Behalten (Upgrade-Kandidat eines
+        Commander-Decks), Kat. 2 mit Hinweis (Notlösung für eine Rolle unter Minimum, Game Changer, Playset-Ergänzung
+        eines 60-Karten-Decks, ⚑ mit einem Deck erfasst, schon zum Verkauf vorgesehen), Kat. 1 ohne Bedenken.
+        Schreibt die Verkaufsliste für kartenbilder.py verkauf.
+
+Geplante Verkäufe: Ideen „V-nnn“ in vormerkungen.csv sind weiche Vormerkungen – die Karte bleibt frei, upgrade,
+  kandidaten und verkauf zeigen „Verkauf geplant (V-nnn)“, damit sie nicht unbemerkt eingeplant wird.
 
 --ersetzt <deck>: Karten dieses Decks gelten für den Entwurf als vorhanden (Upgrade eines bestehenden Decks).
   Ohne Angabe erkennt pruefen/erklaerung ein geladenes Deck mit gleichem Dateinamen (z. B. decks/boros.txt).
@@ -53,7 +61,7 @@ import re
 import sqlite3
 import sys
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mtg_db as M  # noqa: E402
@@ -160,11 +168,25 @@ def besitz(con, oid, ohne_deck=None):
     d = con.execute("SELECT COALESCE(SUM(qty),0) FROM deck_cards WHERE oracle_id=? AND deck_id IS NOT ?"
                     " AND board IN ('main','commander','sideboard','companion')", (oid, ohne_deck)).fetchone()[0]
     try:
-        v = con.execute("SELECT COALESCE(SUM(qty),0) FROM vormerkungen WHERE oracle_id=? AND idee IS NOT ?",
-                        (oid, IDEE)).fetchone()[0]
-    except sqlite3.OperationalError:      # ältere Datenbank ohne Vormerkungen
-        v = 0
+        v = con.execute("SELECT COALESCE(SUM(qty),0) FROM vormerkungen WHERE oracle_id=? AND idee IS NOT ?"
+                        " AND COALESCE(weich,0)=0", (oid, IDEE)).fetchone()[0]
+    except sqlite3.OperationalError:      # ältere Datenbank ohne Vormerkungen bzw. ohne weiche Vormerkungen
+        try:
+            v = con.execute("SELECT COALESCE(SUM(qty),0) FROM vormerkungen WHERE oracle_id=? AND idee IS NOT ?",
+                            (oid, IDEE)).fetchone()[0]
+        except sqlite3.OperationalError:
+            v = 0
     return b, d, max(b - d - v, 0)
+
+
+def verkauf_geplant(con, oid):
+    """Geplanter Verkauf (weiche Vormerkung „V-nnn“) → z. B. 'V-001', sonst ''. Sperrt nicht, nur Hinweis."""
+    try:
+        r = con.execute("SELECT GROUP_CONCAT(DISTINCT idee) FROM vormerkungen WHERE oracle_id=? AND weich=1",
+                        (oid,)).fetchone()
+    except sqlite3.OperationalError:
+        return ""
+    return (r[0] or "") if r else ""
 
 
 def edh_slug(name):
@@ -367,7 +389,8 @@ def cmd_kandidaten(con, a):
         zeilen.append({"name": c["name"], "rollen": r, "instant": ist_instant(c), "mv": c["cmc"],
                        "typ": front_type(c), "synergy": v["synergy"], "inclusion": v["inclusion"],
                        "lift": v["lift"], "frei": f, "besitz": b, "in_decks": d, "eur": c["eur"],
-                       "gc": c["gc"], "rank": c["rank"], "quelle": v["quelle"], "liste": v["liste"]})
+                       "gc": c["gc"], "rank": c["rank"], "quelle": v["quelle"], "liste": v["liste"],
+                       "verkauf": verkauf_geplant(con, oid) if f else ""})
     zeilen.sort(key=lambda z: (-(z["frei"] > 0) if a.weg == 1 else 0, -(z["synergy"] or -1),
                                -(z["inclusion"] or 0), z["rank"] or 999999))
     out = a.out or "kandidaten.csv"
@@ -377,15 +400,18 @@ def cmd_kandidaten(con, a):
         w.writerow([f"# Kandidaten für {cmd['name']} – Weg {a.weg} – EDHREC: {pfad or 'keine Daten'} – "
                     f"Stand {time.strftime('%Y-%m-%d')}"])
         w.writerow(["Karte", "Rollen", "Instant", "MV", "Typ", "Synergie", "Inclusion", "Lift", "frei",
-                    "Besitz", "in Decks", "ab EUR", "Game Changer", "Quelle", "EDHREC-Liste"])
+                    "Besitz", "in Decks", "ab EUR", "Game Changer", "Quelle", "EDHREC-Liste", "Verkauf geplant"])
         for z in zeilen:
             w.writerow([z["name"], rollen_txt(z["rollen"]), int(z["instant"]), z["mv"],
                         z["typ"], "" if z["synergy"] is None else round(z["synergy"], 3),
                         "" if z["inclusion"] is None else round(z["inclusion"], 3),
                         "" if z["lift"] is None else round(z["lift"], 2), z["frei"], z["besitz"],
-                        z["in_decks"], z["eur"], z["gc"], z["quelle"], z["liste"] or ""])
+                        z["in_decks"], z["eur"], z["gc"], z["quelle"], z["liste"] or "", z["verkauf"]])
     print(f"Commander: {cmd['name']} ({M.farbname(cmd['ci'])}) | EDHREC-Daten: {pfad or 'keine'} | "
           f"{len(zeilen)} Kandidaten -> {out}")
+    vk = [f"{z['name']} ({z['verkauf']})" for z in zeilen if z["verkauf"]]
+    if vk:
+        print("Achtung – frei, aber zum Verkauf vorgesehen (vor dem Einplanen mit dem Nutzer klären): " + ", ".join(vk))
     # Rollenübersicht
     print("\nRollen: freie Kandidaten in der Sammlung vs. Kandidaten gesamt (EDHREC + Sammlung):")
     zus, ampel_fehler, ampel_gelb = [], [], []
@@ -854,8 +880,10 @@ def cmd_upgrade(con, a):
         v = edh.get(c["name"]) or edh.get(M.front(c["name"])) or {}
         tv = them.get(c["name"]) or them.get(M.front(c["name"])) or {}
         nl = ist_notloesung(v, c, f)
+        vk = verkauf_geplant(con, oid) if f else ""
         kand.append({"c": c, "rollen": rollen(con, c), "v": v, "tv": tv, "wert": wert(v, c), "frei": f, "not": nl,
-                     "status": ("frei · Notlösung" if nl else "frei") if f else f"{c['eur']:.2f} €"})
+                     "status": (("frei · Notlösung" if nl else "frei") + (f" · Verkauf geplant ({vk})" if vk else ""))
+                     if f else f"{c['eur']:.2f} €"})
     kand.sort(key=lambda k: -k["wert"])
     # Kauf-Alternativen je Rolle (nur zur Information neben einer Notlösung; EDHREC-Liste des Commanders)
     kauf_alt = {}
@@ -989,6 +1017,129 @@ def cmd_upgrade(con, a):
                         k["v"].get("synergy"), k["tv"].get("synergy"), k["status"], k["c"]["cmc"], front_type(k["c"]),
                         re.sub(r"\s+", " ", k["c"]["text"] or "")])
     print(f"\nAlle Deckkarten und {len(kand)} Kandidaten -> {out}")
+
+
+# ----------------------------------------------------------------- verkauf
+def cmd_verkauf(con, a):
+    """Verkaufsprüfung (V1.5, Befund Testlauf 29.10.2026): freie Exemplare ab --min-preis gegen alle Decks prüfen.
+    Behalten: Upgrade-Kandidat eines Commander-Decks (EDHREC-Wert ≥ Notlösungs-Schwelle; je Deck ein Exemplar).
+    Kat. 2 (Verkauf möglich, mit Hinweis): Notlösung für eine Rolle unter Minimum · Game Changer · Playset-Ergänzung
+    eines 60-Karten-Decks (Karte im Deck < 4×, im Format legal) · ⚑ zusammen mit einem Deck erfasst.
+    Kat. 1 (ohne Bedenken): alles andere. Preis = eigener Druck (Finish), Scryfall-EUR (Quelle Cardmarket);
+    deutsche Exemplare zum Preis der englischen Version. Schreibt die Verkaufsliste für `kartenbilder.py verkauf`."""
+    stand = dict(con.execute("SELECT key, value FROM meta").fetchall()).get("bulk_default_cards", "")[:10]
+    cdecks, kdecks = [], []
+    for did, kurz, fmt in con.execute("SELECT deck_id, kurz, format FROM decks ORDER BY kurz").fetchall():
+        zp, beim = M.deck_zeitstempel(con, did)
+        flag = zp if beim else None                          # nur, wenn der Zeitpunkt für das Deck typisch ist
+        if fmt == "commander":
+            pfad, _ = deck_aus_ref(con, kurz)
+            cmdr, main, _, _ = lies_deck(con, pfad)
+            if not cmdr:
+                continue
+            cname = " + ".join(c["name"] for _, c in cmdr)
+            data, _ = edhrec_commander(cname, a.bracket)
+            zaehl = Counter()
+            for q, c in main:
+                for x in rollen(con, c):
+                    zaehl[x] += q
+            unter = {r for r, (mn, _) in SOLL.items() if zaehl[r] < mn}
+            gc = sum(1 for _, c in cmdr + main if c["gc"])
+            cdecks.append(dict(did=did, kurz=kurz, ci=set("".join(c["ci"] for _, c in cmdr)),
+                               edh=edh_karten(data) if data else {}, unter=unter, gc=gc, flag=flag))
+        else:
+            q = Counter()
+            for oid, n in con.execute("SELECT oracle_id, qty FROM deck_cards WHERE deck_id=? AND board IN"
+                                      " ('main','sideboard') AND oracle_id IS NOT NULL", (did,)):
+                q[oid] += n
+            kdecks.append(dict(did=did, kurz=kurz, fmt=fmt, q=q, flag=flag))
+    flags = {d["flag"]: d["kurz"] for d in cdecks + kdecks if d["flag"]}
+    limit = GC_LIMIT.get(a.bracket, 3)
+    ex = con.execute("""SELECT e.oracle_id, e.name, UPPER(e.set_code), e.cn, e.finish, e.lang, e.modified,
+        COALESCE(e.verkauf, ''), CASE e.finish WHEN 'foil' THEN COALESCE(p.eur_foil, p.eur)
+        WHEN 'etched' THEN COALESCE(p.eur_etched, p.eur) ELSE COALESCE(p.eur, p.eur_foil) END
+        FROM exemplare e LEFT JOIN prints p ON p.set_code=e.set_code AND p.cn=e.cn AND p.oracle_id=e.oracle_id
+        AND p.lang='en' WHERE e.deck_id IS NULL AND e.idee IS NULL ORDER BY e.name, e.nr""").fetchall()
+    je = defaultdict(list)
+    for r in ex:
+        je[r[0]].append(r)
+    kat1, kat2, halten = [], [], []
+    for oid, kopien in je.items():
+        c = card(con, oid)
+        if not c or basic(c):
+            continue
+        preis = lambda r: r[8] if r[8] is not None else (c["eur"] or 0)
+        kopien = sorted(kopien, key=lambda r: -preis(r))
+        if preis(kopien[0]) < a.min_preis:
+            continue
+        r_c = rollen(con, c)
+        behalten, notl = [], defaultdict(list)
+        for d in cdecks:
+            if c["legal"] != "legal" or not set(c["ci"]) <= d["ci"]:
+                continue
+            v = d["edh"].get(c["name"]) or d["edh"].get(M.front(c["name"])) or {}
+            if v and wert(v, c) >= NOT_SCHWELLE:
+                behalten.append(f"Upgrade-Kandidat {d['kurz']} ({pct(v.get('inclusion'))}, "
+                                f"Synergie {(v.get('synergy') or 0) * 100:+.0f} %)")
+            elif d["unter"] & set(r_c):
+                for x in r_c:
+                    if x in d["unter"]:
+                        notl[ROLLE_NAME[x]].append(d["kurz"])
+        playset = []
+        for d in kdecks:
+            n = d["q"].get(oid, 0)
+            legal = con.execute(f"SELECT legal_{d['fmt']} FROM cards WHERE oracle_id=?", (oid,)).fetchone() \
+                if d["fmt"] in ("standard", "pioneer", "modern", "legacy", "vintage", "pauper") else None
+            if 0 < n < 4 and legal and legal[0] == "legal":
+                playset += [f"Playset-Ergänzung {d['kurz']} (im Deck {n}×)"] * (4 - n)
+        gc_txt = ""
+        if c["gc"]:
+            platz = [d["kurz"] for d in cdecks if set(c["ci"]) <= d["ci"] and d["gc"] < limit]
+            gc_txt = "Game Changer" + (f" – Platz in {', '.join(platz)}" if platz else "")
+        for i, r in enumerate(kopien):
+            sprache = {"de": "DE", "en": "EN"}.get(r[5], (r[5] or "").upper()) + (" Foil" if r[4] == "foil" else "")
+            z = dict(name=r[1], druck=f"{r[2]} {r[3]}", set=r[2], cn=r[3], sprache=sprache, preis=preis(r),
+                     verkauf=r[7], grund="")
+            if i < len(behalten):
+                z["grund"] = behalten[i] + (f" · trotzdem Verkauf geplant ({r[7]}) – mit dem Nutzer klären" if r[7] else "")
+                halten.append(z)
+                continue
+            j = i - len(behalten)
+            hin = []
+            if j < len(playset):
+                hin.append(playset[j])
+            if r[6] in flags:
+                hin.insert(0, f"⚑ mit {flags[r[6]]} erfasst")
+            if gc_txt:
+                hin.append(gc_txt)
+            hin += [f"Notlösung {rolle} ({', '.join(ds)})" for rolle, ds in notl.items()]
+            if r[7]:
+                hin.append(f"Verkauf geplant ({r[7]})")
+            z["grund"] = " · ".join(hin)
+            (kat2 if any(not h.startswith("Verkauf geplant") for h in hin) else kat1).append(z)
+    summe = lambda l: sum(z["preis"] for z in l)
+    eur = lambda x: f"{x:.2f}".replace(".", ",") + " €"
+    for titel, l in (("Kat. 1 – ohne Bedenken verkaufen", kat1), ("Kat. 2 – Verkauf möglich, mit Hinweis", kat2),
+                     ("Behalten – wird gebraucht", halten)):
+        print(f"\n{titel}: {len(l)} Karten · {eur(summe(l))}")
+        if l:
+            M.table([(z["name"], z["druck"], z["sprache"], eur(z["preis"]), z["grund"])
+                     for z in sorted(l, key=lambda z: -z["preis"])], ["Karte", "Druck", "Sprache", "Preis", "Hinweis"])
+    print(f"\nPreise: eigener Druck, Scryfall-EUR (Quelle Cardmarket), Stand {stand} · deutsche Exemplare zum Preis "
+          f"der englischen Version – auf Cardmarket meist etwas darunter; Gebühren und Versand gehen ab.")
+    print("Notlösung = Rolle im Deck unter Minimum, Karte füllt sie (Rückfall vor Kauf, 08 Grundsatz 14) · "
+          "⚑ = zur selben Zeit wie das Deck erfasst, liegt vielleicht beim Deck – vor dem Verkauf nachsehen.")
+    print("Kat. 2 und Behalten sind Datenbasis – jede Karte vor dem Vorschlag am Oracle-Text und Spielplan prüfen.")
+    out = a.out or "out/verkauf.txt"
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write(f"# titel: Verkaufsliste Cardmarket\n# deck: Sammlung (freie Karten) ab {eur(a.min_preis)}\n"
+                 f"# datum: {time.strftime('%d.%m.%Y')}\n# preise: Cardmarket über Scryfall, Stand {stand}\n")
+        for k, l in (("K1", kat1), ("K2", kat2)):
+            for z in sorted(l, key=lambda z: z["name"]):
+                fh.write(f"{k} 1 {z['name']} ({z['set']}) {z['cn']} | {eur(z['preis'])} | {z['sprache']} | "
+                         f"{z['grund']}\n")
+    print(f"\nVerkaufsliste -> {out}  (PDF: python3 kartenbilder.py verkauf {out} --out out/verkauf --mobil)")
 
 
 # ----------------------------------------------------------------- Begründungen aus Daten (upgrade, fazit)
@@ -1534,6 +1685,10 @@ def main():
     p.add_argument("--abstand", type=float, default=0.08, help="Mindestabstand im Wert für ein Tauschpaar")
     p.add_argument("--idee", help="Vormerkungen dieser Idee (I-nnn) als frei behandeln")
     p.add_argument("--out")
+    p = sp.add_parser("verkauf")
+    p.add_argument("--min-preis", type=float, default=1.0, help="nur Karten ab diesem Preis (eigener Druck), Standard 1 €")
+    p.add_argument("--bracket", type=int, default=3)
+    p.add_argument("--out", help="Verkaufsliste (Standard out/verkauf.txt)")
     p = sp.add_parser("passung")
     p.add_argument("deck", help="Deckname oder Soll-Stand-Datei")
     p.add_argument("--thema", help="Ziel-Thema: Archetyp (landfall, counters …) oder EDHREC-Slug; sonst aus der Strategie")
@@ -1570,7 +1725,8 @@ def main():
     con = db()
     {"commander": cmd_commander, "commander-suche": cmd_commander_suche, "kandidaten": cmd_kandidaten,
      "pruefen": cmd_pruefen, "erklaerung": cmd_erklaerung, "alternativen": cmd_alternativen,
-     "upgrade": cmd_upgrade, "oracle": cmd_oracle, "passung": cmd_passung, "fazit": cmd_fazit}[a.cmd](con, a)
+     "upgrade": cmd_upgrade, "oracle": cmd_oracle, "passung": cmd_passung, "fazit": cmd_fazit,
+     "verkauf": cmd_verkauf}[a.cmd](con, a)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,9 @@ Befehle
           des Nutzers: Farbe = erstes farbiges Manasymbol von links (Mehrfarbige also bei
           ihrer ersten Farbe), darin eine Box je Kartentyp; Länder und Standardländer haben
           eigene Boxen.
+  verkauf Verkaufs-PDF aus der Verkaufsliste von deckbau.py verkauf: Abschnitte Kat. 1 (ohne Bedenken) und
+          Kat. 2 (mit Hinweis) mit Anzahl und Summe, je Karte Box-Etikett, Druck, Sprache, Preis und voller
+          Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
   deck    Deck-PDF: Deckblatt mit Kurzdaten, Commander mit Oracle-Text, Manakurve, Farben,
           danach alle Karten nach Kategorien.
   vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie im Deckbau-Verfahren, Abschnitt 12).
@@ -113,6 +116,9 @@ def schriften_laden(ordner):
                 pass
         pdfmetrics.registerFont(TTFont(name, str(ziel)))
     pdfmetrics.registerFont(TTFont("Sans", str(DV / "DejaVuSans-Bold.ttf")))
+    # Ausweichschrift für Zeichen, die Cinzel/EB Garamond nicht haben (z. B. ①, ⚑, ✓) – siehe laeufe()
+    pdfmetrics.registerFont(TTFont("Ersatz", str(DV / "DejaVuSans.ttf")))
+    pdfmetrics.registerFont(TTFont("ErsatzB", str(DV / "DejaVuSans-Bold.ttf")))
     pdfmetrics.registerFontFamily("Text", normal="Text", bold="TextB", italic="TextI", boldItalic="TextB")
 
 
@@ -596,12 +602,67 @@ def pips(c, x, y, mana, r):
     return len(syms) * 2.3 * r
 
 
-def kuerzen(text, font, size, breite):
-    if stringWidth(text, font, size) <= breite:
+ERSATZ = {"Titel": "ErsatzB", "TextB": "ErsatzB", "Sans": "ErsatzB"}   # sonst "Ersatz"
+_GLYPHEN = {}
+
+
+def _hat(font, ch):
+    """Hat die Schrift ein Zeichen für ch? (TrueType-Tabelle; unbekannt → ja)"""
+    k = (font, ch)
+    if k not in _GLYPHEN:
+        try:
+            _GLYPHEN[k] = ord(ch) in pdfmetrics.getFont(font).face.charToGlyph
+        except Exception:
+            _GLYPHEN[k] = True
+    return _GLYPHEN[k]
+
+
+def laeufe(text, font):
+    """Text in Abschnitte je Schrift zerlegen: Zeichen, die die Schrift nicht hat, kommen aus DejaVu Sans
+    (sonst erscheinen sie im PDF als Kästchen – Befund Testlauf 29.10.2026)."""
+    ers = ERSATZ.get(font, "Ersatz")
+    out = []
+    for ch in text:
+        f = font if ch == " " or _hat(font, ch) or not _hat(ers, ch) else ers
+        if out and out[-1][0] == f:
+            out[-1][1] += ch
+        else:
+            out.append([f, ch])
+    return out
+
+
+def textbreite(text, font, size):
+    return sum(stringWidth(t, f, size) for f, t in laeufe(text, font))
+
+
+def schreibe(c, x, y, text, font, size, rechts=False):
+    """drawString mit Ausweichschrift; rechts=True = rechtsbündig an x."""
+    if rechts:
+        x -= textbreite(text, font, size)
+    for f, t in laeufe(text, font):
+        c.setFont(f, size); c.drawString(x, y, t)
+        x += stringWidth(t, f, size)
+
+
+def kuerzen(text, font, size, breite_max):
+    if textbreite(text, font, size) <= breite_max:
         return text
-    while text and stringWidth(text + "…", font, size) > breite:
+    while text and textbreite(text + "…", font, size) > breite_max:
         text = text[:-1]
     return text.rstrip() + "…"
+
+
+def umbrechen(text, font, size, breite_max, zeilen=2):
+    """Text auf höchstens `zeilen` Zeilen umbrechen; erst die letzte Zeile wird gekürzt."""
+    worte, out = text.split(), []
+    while worte and len(out) < zeilen:
+        z = worte.pop(0)
+        while worte and textbreite(z + " " + worte[0], font, size) <= breite_max:
+            z += " " + worte.pop(0)
+        out.append(z)
+    if worte:
+        out[-1] = kuerzen(out[-1] + " " + " ".join(worte), font, size, breite_max)
+    return [kuerzen(z, font, size, breite_max) for z in out]
 
 
 def passend(text, font, gross, klein, breite):
@@ -732,15 +793,15 @@ def tausch_pdf(kopf, karten, ziel, bilder):
                 plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
             sc = k.get("scry") or {}
             yc = y_oben - r.kh
-            c.setFillColor(TINTE); c.setFont("TextB", 9.2)
-            c.drawString(x, yc - 3.9 * mm, kuerzen(k["name"], "TextB", 9.2, r.kw))
+            c.setFillColor(TINTE)
+            schreibe(c, x, yc - 3.9 * mm, kuerzen(k["name"], "TextB", 9.2, r.kw), "TextB", 9.2)
             # Box-Etikett mit Farbsymbol
             etikett(c, x, yc - 7.9 * mm, r.kw, k, key)
             druck = f"{(sc.get('set') or k['set']).upper()} {sc.get('collector_number', k['nummer'])}".strip()
             selten = {"common": "C", "uncommon": "U", "rare": "R", "mythic": "M"}.get(sc.get("rarity", ""), "")
-            c.setFont("TextI", 7.8); c.setFillColor(GRAU)
+            c.setFillColor(GRAU)
             zeile = " · ".join(t for t in [druck, selten, k.get("hinweis", "")] if t)
-            c.drawString(x, yc - 11.7 * mm, kuerzen(zeile, "TextI", 7.8, r.kw))
+            schreibe(c, x, yc - 11.7 * mm, kuerzen(zeile, "TextI", 7.8, r.kw), "TextI", 7.8)
         r.zeile_karten(ks, zeichne)
         r.y -= 2 * mm
     fuss(r.seite); c.save()
@@ -764,8 +825,124 @@ def etikett(c, x, y, breite, k, key):
         pip(c, x + 2.6 * mm, y + 0.9 * mm, 1.55 * mm, sym); tx = x + 5.3 * mm
     else:
         raute(c, x + 2.3 * mm, y + 0.9 * mm, 1.1 * mm, GOLD); tx = x + 4.6 * mm
-    c.setFillColor(TINTE); c.setFont("Text", 8.4)
-    c.drawString(tx, y + 0.1 * mm, kuerzen(text, "Text", 8.4, breite - (tx - x) - 1 * mm))
+    c.setFillColor(TINTE)
+    schreibe(c, tx, y + 0.1 * mm, kuerzen(text, "Text", 8.4, breite - (tx - x) - 1 * mm), "Text", 8.4)
+
+
+# ---------------------------------------------------------------- Verkaufsliste
+VERKAUF_KAT = [  # Schlüssel, Überschrift, Farbe
+    ("1", "Kat. 1 – ohne Bedenken verkaufen", HexColor("#2E6B3F")),
+    ("2", "Kat. 2 – Verkauf möglich, mit Hinweis", HexColor("#9A6A12")),
+]
+VERKAUFSZEILE = re.compile(r"^\s*K([12])\s+(\d+)\s*x?\s+(.+?)\s*(?:\(([A-Za-z0-9]+)\)\s*([^\s|]+))?\s*(?:\|(.*))?$")
+
+
+def euro_wert(text):
+    m = re.search(r"(\d+(?:[.,]\d+)?)", text or "")
+    return float(m.group(1).replace(",", ".")) if m else 0.0
+
+
+def lies_verkaufsliste(pfad):
+    """Verkaufsliste (deckbau.py verkauf): Kopf `# titel:` … und je Exemplar
+    `K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis` – K1 = ohne Bedenken, K2 = mit Hinweis."""
+    kopf, karten = {}, []
+    for nr, roh in enumerate(Path(pfad).read_text(encoding="utf-8").splitlines(), 1):
+        z = roh.strip()
+        if not z:
+            continue
+        if z.startswith("#"):
+            m = re.match(r"#\s*(\w+)\s*:\s*(.*)", z)
+            if m:
+                kopf[m.group(1).lower()] = m.group(2).strip()
+            continue
+        m = VERKAUFSZEILE.match(z)
+        if not m:
+            sys.exit(f"Zeile {nr} nicht lesbar: {roh}")
+        kat, anz, name, ed, num, rest = m.groups()
+        f = [x.strip() for x in (rest or "").split("|")] + ["", "", ""]
+        karten.append(dict(kat=kat, anzahl=int(anz), name=name.strip(), set=(ed or "").lower(), nummer=num or "",
+                           preis=euro_wert(f[0]), preis_txt=f[0], sprache=f[1], hinweis=f[2], quelle="Sammlung",
+                           abschnitt="holen"))
+    return kopf, karten
+
+
+def eur_de(x):
+    return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def verkauf_pdf(kopf, karten, ziel, bilder):
+    """Verkaufs-PDF: Abschnitte je Kategorie mit Anzahl und Summe, je Karte Box-Etikett, Druck, Preis, Sprache
+    und – bei Kat. 2 – der volle Hinweis (bis 2 Zeilen). Ordnung in jedem Abschnitt = Box-Ablage."""
+    c = canvas.Canvas(str(ziel), pagesize=A4)
+    titel = kopf.get("titel", "Verkaufsliste")
+    c.setTitle(titel); c.setAuthor("MTG-Projekt")
+    seite_grund(c)
+
+    def kopf_folgeseite():
+        c.setFillColor(GRAU)
+        schreibe(c, RAND, H - RAND - 2 * mm, kuerzen(titel.upper(), "TitelM", 9, W - 2 * RAND), "TitelM", 9)
+        zierlinie(c, RAND, W - RAND, H - RAND - 4.5 * mm)
+        return H - RAND - 9 * mm
+
+    def fuss(s):
+        q = "Bilder: Scryfall, englische Druckversion" if not bilder.gesperrt else "Bilder teils Platzhalter"
+        fusszeile(c, f"{q} · Preise: {kopf.get('preise', 'Cardmarket über Scryfall')} · erstellt "
+                     f"{kopf.get('datum', HEUTE)}", s)
+
+    summe = lambda ks: sum(k["preis"] * k["anzahl"] for k in ks)
+    anzahl = lambda ks: sum(k["anzahl"] for k in ks)
+    y = H - RAND
+    c.setFillColor(TINTE)
+    g, t = passend(titel, "Titel", 19, 12, W - 2 * RAND)
+    schreibe(c, RAND, y - 7 * mm, t, "Titel", g)
+    unter = " · ".join(x for x in [kopf.get("deck", ""), kopf.get("datum", HEUTE)] if x)
+    g, t = passend(unter, "TextI", 11, 8, W - 2 * RAND)
+    c.setFillColor(GRAU); schreibe(c, RAND, y - 13 * mm, t, "TextI", g)
+    teile = [f"Kat. {s}: {anzahl([k for k in karten if k['kat'] == s])} · "
+             f"{eur_de(summe([k for k in karten if k['kat'] == s]))}" for s, _, _ in VERKAUF_KAT
+             if any(k["kat"] == s for k in karten)]
+    teile.append(f"zusammen {anzahl(karten)} Karten · {eur_de(summe(karten))}")
+    platz = W - 2 * RAND - (66 * mm if kopf.get("stempel") else 0)     # Stempel nicht überdecken
+    c.setFillColor(TINTE)
+    schreibe(c, RAND, y - 19 * mm, kuerzen("   ·   ".join(teile), "Text", 10.5, platz), "Text", 10.5)
+    stempel(c, kopf.get("stempel"), W - RAND - 32 * mm, y - 18 * mm, 4)
+    zierlinie(c, RAND, W - RAND, y - 22.5 * mm)
+    r = Raster(c, 4, 5 * mm, 15 * mm, kopf_folgeseite, fuss, y - 28 * mm)
+    for key, titel_ab, farbe in VERKAUF_KAT:
+        teil = [k for k in karten if k["kat"] == key]
+        if not teil:
+            continue
+        r.cap = 21.5 * mm if any(k["hinweis"] for k in teil) else 15 * mm   # Platz für 2 Zeilen Hinweis
+        r.platz(10 * mm + r.kh + r.cap)
+        c.setFillColor(farbe); c.rect(RAND, r.y - 6.5 * mm, 2.4 * mm, 6.5 * mm, fill=1, stroke=0)
+        c.setFillColor(TINTE); schreibe(c, RAND + 5 * mm, r.y - 5.2 * mm, titel_ab, "Titel", 12.5)
+        c.setFillColor(GRAU)
+        schreibe(c, W - RAND, r.y - 5 * mm, f"{anzahl(teil)} Karten · {eur_de(summe(teil))}", "TextI", 10.5, rechts=True)
+        r.y -= 10 * mm
+        ks = sorted(teil, key=lambda k: box_rang(box(k.get("scry"), k["name"])) + (k["name"],))
+
+        def zeichne(k, x, y_oben, farbe=farbe):
+            kartenbild(c, bilder.pfad(k), x, y_oben, r.kw, r.kh)
+            if k["anzahl"] > 1:
+                plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
+            sc = k.get("scry") or {}
+            yc = y_oben - r.kh
+            c.setFillColor(TINTE)
+            schreibe(c, x, yc - 3.9 * mm, kuerzen(k["name"], "TextB", 9.2, r.kw), "TextB", 9.2)
+            etikett(c, x, yc - 7.9 * mm, r.kw, k, "holen")
+            druck = f"{(sc.get('set') or k['set']).upper()} {sc.get('collector_number', k['nummer'])}".strip()
+            zeile = " · ".join(t for t in [druck, k["sprache"]] if t)
+            c.setFillColor(GRAU)
+            schreibe(c, x, yc - 11.7 * mm, kuerzen(zeile, "TextI", 7.8, r.kw - 15 * mm), "TextI", 7.8)
+            c.setFillColor(TINTE)
+            schreibe(c, x + r.kw, yc - 11.7 * mm, k["preis_txt"] or eur_de(k["preis"]), "TextB", 8.6, rechts=True)
+            if k["hinweis"]:
+                c.setFillColor(farbe)
+                for i, z in enumerate(umbrechen(k["hinweis"], "TextI", 7.6, r.kw, 2)):
+                    schreibe(c, x, yc - (15.1 + 3.1 * i) * mm, z, "TextI", 7.6)
+        r.zeile_karten(ks, zeichne)
+        r.y -= 2 * mm
+    fuss(r.seite); c.save()
 
 
 # ---------------------------------------------------------------- Deck-PDF
@@ -1542,6 +1719,10 @@ def main():
     t.add_argument("--titel"); t.add_argument("--deck", dest="deckzeile")
     t.add_argument("--db", help="mtg.sqlite: Quelle, Druck und Sprache aus der Exemplar-Zuordnung (empfohlen)")
     t.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG für den Tisch)")
+    v = sub.add_parser("verkauf", help="Verkaufs-PDF aus einer Verkaufsliste (deckbau.py verkauf)")
+    v.add_argument("verkaufsliste")
+    v.add_argument("--titel")
+    v.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG fürs Handy)")
     d = sub.add_parser("deck", help="Deck-PDF")
     d.add_argument("deckdatei")
     d.add_argument("--set", default="", help="bevorzugtes Set für Karten ohne Druckangabe (z. B. tdc)")
@@ -1562,10 +1743,10 @@ def main():
     li.add_argument("--dpi", type=int, default=110)
     li.add_argument("--cache", default=str(HIER / "cache" / "kartenbilder"))
     li.add_argument("--fonts", default=str(HIER / "fonts"))
-    for p in (t, d, b):
+    for p in (t, v, d, b):
         p.add_argument("--stempel", help="roter Stempel auf Seite 1, z. B. 'TESTLAUF – nicht gebucht'")
         p.add_argument("--mobil", action="store_true", help="kleinere Bilder (Handy)")
-    for p in (t, d, b):
+    for p in (t, v, d, b):
         p.add_argument("--out", required=True, help="Ausgabe ohne Endung")
         p.add_argument("--png", action="store_true", help="PNG für das Handy (Deck: nur Deckblatt)")
         p.add_argument("--dpi", type=int, default=110)
@@ -1588,7 +1769,16 @@ def main():
         bericht_pdf(stempel_md(md, a.stempel), ziel)
         print(f"PDF: {ziel}  ({ziel.stat().st_size / 1e6:.1f} MB)")
         return
-    if a.befehl == "tausch":
+    if a.befehl == "verkauf":
+        kopf, karten = lies_verkaufsliste(a.verkaufsliste)
+        if not karten:
+            sys.exit("Verkaufsliste ist leer.")
+        if a.titel:
+            kopf["titel"] = a.titel
+        kopf["stempel"] = a.stempel or kopf.get("stempel")
+        fehlt = scryfall(karten)
+        verkauf_pdf(kopf, karten, ziel, bilder)
+    elif a.befehl == "tausch":
         if a.db and a.alt and a.neu:
             karten, kurz = vergleich_db(a)
             kopf = {"titel": a.titel or f"Tauschübersicht {a.deckname or kurz}".strip(), "deck": a.deckzeile or "",
@@ -1631,7 +1821,7 @@ def main():
         print("Hinweis: Bildserver cards.scryfall.io nicht erreichbar – Platzhalter verwendet.")
     if fehlt:
         print("Nicht bei Scryfall gefunden: " + ", ".join(fehlt))
-    if a.png or (a.befehl == "tausch" and not a.ohne_png):
+    if a.png or (a.befehl in ("tausch", "verkauf") and not a.ohne_png):
         print("PNG: " + ", ".join(str(p) for p in png(ziel, a.dpi, nur_erste=(a.befehl == "deck"))))
 
 

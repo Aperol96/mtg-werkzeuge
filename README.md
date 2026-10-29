@@ -9,9 +9,9 @@ Entstanden sind sie als Werkzeugkasten für einen persönlichen KI-Assistenten (
 | Datei | Zweck |
 |---|---|
 | `werkzeuge/mtg_db.py` | baut eine SQLite-Datenbank aus den Scryfall-Kartendaten und der eigenen Sammlung; Besitz und freie Karten, Funktionssuche, Bracket-Prüfung, Import und Export für Moxfield und ManaBox |
-| `werkzeuge/deckbau.py` | Commander-Steckbrief mit EDHREC-Themen, Kandidaten aus der Sammlung, Deckprüfung (Rollen, Kurve, Farbquellen, Bracket, Combos), Upgrade-Vorschläge, Passungs-Check Deck ↔ Commander |
+| `werkzeuge/deckbau.py` | Commander-Steckbrief mit EDHREC-Themen, Kandidaten aus der Sammlung, Deckprüfung (Rollen, Kurve, Farbquellen, Bracket, Combos), Upgrade-Vorschläge, Passungs-Check Deck ↔ Commander, Verkaufsprüfung freier Karten |
 | `werkzeuge/archetypen.py` | Kern-Pakete gängiger Commander-Archetypen; welche Archetypen eine Sammlung trägt |
-| `werkzeuge/kartenbilder.py` | PDFs mit Kartenbildern: Deck-Übersicht, Tauschliste (Pickliste), Fazit-Bericht |
+| `werkzeuge/kartenbilder.py` | PDFs mit Kartenbildern: Deck-Übersicht, Tauschliste (Pickliste), Verkaufsliste, Fazit-Bericht |
 | `werkzeuge/paket.py` | packt Werkzeuge, Daten oder ein Gast-Archiv in eine prüfsummengesicherte Textdatei und wieder aus |
 | `werkzeuge/zugang.py` | Rollen im Projekt (Admin, User, Gast): Passwort und Gast-PIN als PBKDF2-Hash prüfen, Freischaltung, Sitzungsrolle – speichert nie einen Klartext |
 | `werkzeuge/archetypen_daten.json` | Richtwerte je Archetyp aus EDHREC-Durchschnittsdecks (Bracket 3) |
@@ -64,6 +64,8 @@ python3 mtg_db.py suche --tag spot-removal --farben W --max-mv 1   # Funktionssu
 python3 deckbau.py commander "Atraxa, Praetors' Voice" --bracket 3 # Steckbrief: Oracle-Text, EDHREC-Themen, Combos
 python3 deckbau.py pruefen mein_deck.txt --bracket 3               # Rollen, Kurve, Farbquellen, Bracket-Zeile
 python3 kartenbilder.py deck mein_deck.txt --out out/mein_deck --mobil   # Deck-PDF mit Kartenbildern
+python3 deckbau.py verkauf --min-preis 1                            # freie Karten: verkaufen, mit Hinweis, behalten
+python3 kartenbilder.py verkauf out/verkauf.txt --out out/verkauf --mobil # Verkaufsliste mit Kartenbildern
 ```
 
 - Die Befehle im Ordner `werkzeuge/` ausführen: Dort entsteht die Datenbank `mtg.sqlite`, die `deckbau.py` und `kartenbilder.py` nutzen.

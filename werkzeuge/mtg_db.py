@@ -242,24 +242,30 @@ CREATE VIEW v_bedarf AS
   GROUP BY d.oracle_id;
 CREATE VIEW v_basics AS
   SELECT oracle_id, name FROM cards WHERE type_line LIKE 'Basic%Land%';
--- Vormerkungen: Karten, die eine nicht freigegebene Idee (10_Geplante-Kaeufe-und-Ideen) reserviert hat
-CREATE TABLE vormerkungen(idee TEXT, name TEXT, oracle_id TEXT, qty INTEGER, datum TEXT, hinweis TEXT);
+-- Vormerkungen: Karten, die eine nicht freigegebene Idee (10_Geplante-Kaeufe-und-Ideen) reserviert hat.
+-- weich = 1 (Idee-ID „V-nnn“, geplanter Verkauf): zieht NICHT von frei ab, die Werkzeuge warnen nur.
+CREATE TABLE vormerkungen(idee TEXT, name TEXT, oracle_id TEXT, qty INTEGER, datum TEXT, hinweis TEXT,
+  weich INTEGER DEFAULT 0);
 CREATE VIEW v_vorgemerkt AS
   SELECT oracle_id, SUM(qty) AS vorgemerkt, GROUP_CONCAT(DISTINCT idee) AS ideen
-  FROM vormerkungen WHERE oracle_id IS NOT NULL GROUP BY oracle_id;
+  FROM vormerkungen WHERE oracle_id IS NOT NULL AND weich = 0 GROUP BY oracle_id;
+CREATE VIEW v_verkauf_geplant AS
+  SELECT oracle_id, SUM(qty) AS verkauf_geplant, GROUP_CONCAT(DISTINCT idee) AS verkauf_ideen
+  FROM vormerkungen WHERE oracle_id IS NOT NULL AND weich = 1 GROUP BY oracle_id;
 -- Exemplare: jedes physische Exemplar (Basis + Journal netto) mit Ort. zuordnung: druck (Set + Nummer aus der
 -- Deckliste/dem Scan), zeitstempel (gemeinsamer Erfassungszeitpunkt der Deckkarten), set (Precon-Set), geschätzt
 CREATE TABLE exemplare(nr INTEGER PRIMARY KEY, oracle_id TEXT, name TEXT, set_code TEXT, cn TEXT, finish TEXT,
-  lang TEXT, modified TEXT, deck_id INTEGER, zuordnung TEXT, idee TEXT);
+  lang TEXT, modified TEXT, deck_id INTEGER, zuordnung TEXT, idee TEXT, verkauf TEXT);
 CREATE INDEX exemplare_oid ON exemplare(oracle_id);
 -- frei (Sammlung) = Besitz - Deckkarten - Vormerkungen
 CREATE VIEW v_karten AS
   SELECT c.oracle_id, c.name, c.cmc, c.type_line, c.color_identity, c.game_changer,
          c.eur_min, COALESCE(b.besitz,0) AS besitz, COALESCE(v.bedarf,0) AS in_decks,
          MAX(COALESCE(b.besitz,0) - COALESCE(v.bedarf,0) - COALESCE(r.vorgemerkt,0), 0) AS frei, v.deck_ids,
-         COALESCE(r.vorgemerkt,0) AS vorgemerkt, r.ideen
+         COALESCE(r.vorgemerkt,0) AS vorgemerkt, r.ideen,
+         COALESCE(g.verkauf_geplant,0) AS verkauf_geplant, g.verkauf_ideen
   FROM cards c LEFT JOIN v_besitz b USING(oracle_id) LEFT JOIN v_bedarf v USING(oracle_id)
-  LEFT JOIN v_vorgemerkt r USING(oracle_id);
+  LEFT JOIN v_vorgemerkt r USING(oracle_id) LEFT JOIN v_verkauf_geplant g USING(oracle_id);
 """
 
 
@@ -782,8 +788,14 @@ def analyse_deck(con, deck_id, config):
                  "; ".join(hinweise) or None, deck_id))
 
 
+def ist_weich(idee):
+    """Weiche Vormerkung = geplanter Verkauf (Idee-ID „V-nnn“): sperrt nicht, die Werkzeuge warnen nur."""
+    return str(idee or "").strip().upper().startswith("V-")
+
+
 def load_vormerkungen(con, path):
-    """claude/sammlung/vormerkungen.csv (Idee, Name, Anzahl, Datum, Hinweis) laden; Konflikte melden."""
+    """claude/sammlung/vormerkungen.csv (Idee, Name, Anzahl, Datum, Hinweis) laden; Konflikte melden.
+    Ideen „V-nnn“ (geplanter Verkauf) sind weich: frei bleibt gleich, Exemplare bekommen nur den Vermerk."""
     if not path or not os.path.exists(path):
         return 0
     with open(path, encoding="utf-8-sig", newline="") as fh:
@@ -792,8 +804,9 @@ def load_vormerkungen(con, path):
         oid = resolve_name(con, r["Name"])
         if not oid:
             print(f"  Vormerkung nicht erkannt: {r['Name']} ({r.get('Idee')})")
-        con.execute("INSERT INTO vormerkungen VALUES (?,?,?,?,?,?)",
-                    (r.get("Idee"), r["Name"], oid, int(r.get("Anzahl") or 1), r.get("Datum"), r.get("Hinweis")))
+        con.execute("INSERT INTO vormerkungen VALUES (?,?,?,?,?,?,?)",
+                    (r.get("Idee"), r["Name"], oid, int(r.get("Anzahl") or 1), r.get("Datum"), r.get("Hinweis"),
+                     1 if ist_weich(r.get("Idee")) else 0))
     return len(rows)
 
 
@@ -822,7 +835,7 @@ def baue_exemplare(con):
                 break
     ex = []
     for p in pos:
-        ex += [[p[1], p[2], p[3], p[4], p[5], p[6], p[7], None, None, None] for _ in range(p[8])]
+        ex += [[p[1], p[2], p[3], p[4], p[5], p[6], p[7], None, None, None, None] for _ in range(p[8])]
     je_oid = defaultdict(list)
     for e in ex:
         je_oid[e[0]].append(e)
@@ -859,11 +872,28 @@ def baue_exemplare(con):
         frei = sorted((e for e in je_oid.get(oid, []) if e[7] is None), key=rang)
         for e in frei[:rest]:
             e[7], e[8] = did, ("zeitstempel", "set", "geschätzt", "geschätzt")[rang(e)]
-    for idee, oid, q in con.execute("SELECT idee, oracle_id, qty FROM vormerkungen WHERE oracle_id IS NOT NULL"):
+    for idee, oid, q in con.execute("SELECT idee, oracle_id, qty FROM vormerkungen WHERE oracle_id IS NOT NULL"
+                                    " AND weich = 0"):
         for e in [e for e in je_oid.get(oid, []) if e[7] is None and e[9] is None][:q]:
             e[9] = idee
+    # geplante Verkäufe (weich): freie Exemplare markieren; „Druck: SET Nr [de|en] [foil]“ im Hinweis hat Vorrang
+    for idee, oid, q, hinweis in con.execute("SELECT idee, oracle_id, qty, COALESCE(hinweis,'') FROM vormerkungen"
+                                             " WHERE oracle_id IS NOT NULL AND weich = 1"):
+        m = re.search(r"Druck:\s*([A-Za-z0-9]+)\s+([^\s;,]+)(?:\s+([a-z]{2})\b)?(?:\s+(foil|etched|nonfoil))?",
+                      hinweis, re.I)
+
+        def passt(e, m=m):
+            if not m:
+                return 1
+            ok = e[2] == m.group(1).lower() and str(e[3]).lower() == m.group(2).lower()
+            ok = ok and (not m.group(3) or e[5] == m.group(3).lower())
+            ok = ok and (not m.group(4) or e[4] == m.group(4).lower())
+            return 0 if ok else 1
+        frei = sorted((e for e in je_oid.get(oid, []) if e[7] is None and e[9] is None and e[10] is None), key=passt)
+        for e in frei[:q]:
+            e[10] = idee
     con.executemany("INSERT INTO exemplare(oracle_id, name, set_code, cn, finish, lang, modified, deck_id, zuordnung,"
-                    " idee) VALUES (?,?,?,?,?,?,?,?,?,?)", ex)
+                    " idee, verkauf) VALUES (?,?,?,?,?,?,?,?,?,?,?)", ex)
     zuo = Counter(e[8] or ("vorgemerkt" if e[9] else "frei") for e in ex)
     abw = con.execute("SELECT COUNT(*) FROM v_karten k LEFT JOIN (SELECT oracle_id, COUNT(*) AS n FROM exemplare"
                       " WHERE deck_id IS NULL AND idee IS NULL GROUP BY oracle_id) x USING(oracle_id)"
@@ -899,6 +929,9 @@ def build(args):
                 "SELECT k.name, k.besitz, k.in_decks, k.vorgemerkt, k.ideen FROM v_karten k"
                 " WHERE k.vorgemerkt > 0 AND k.besitz - k.in_decks < k.vorgemerkt"):
             print(f"  Konflikt Vormerkung: {n} – {v} vorgemerkt ({ideen}), aber nur {max(b - d, 0)} frei vor Vormerkung")
+        for n, f, g, ideen in con.execute("SELECT name, frei, verkauf_geplant, verkauf_ideen FROM v_karten"
+                                          " WHERE verkauf_geplant > frei"):
+            print(f"  Verkauf geplant: {n} – {g} zum Verkauf vorgesehen ({ideen}), aber nur {f} frei")
     zuo, abw = baue_exemplare(con)
     print("Exemplare: " + ", ".join(f"{k} {v}" for k, v in zuo.most_common())
           + (f" | {abw} Karten mit abweichender Frei-Zählung (Deck braucht mehr, als da ist)" if abw else ""))
@@ -1600,7 +1633,7 @@ def cmd_bestand_export(con, args):
     rows = con.execute("""SELECT k.name, k.besitz, k.in_decks, k.frei, k.color_identity, c.type_line,
         k.cmc, k.game_changer, k.eur_min, k.deck_ids,
         (SELECT GROUP_CONCAT(DISTINCT UPPER(set_code)) FROM collection x WHERE x.oracle_id=k.oracle_id),
-        k.vorgemerkt, k.ideen
+        k.vorgemerkt, k.ideen, k.verkauf_geplant, k.verkauf_ideen
         FROM v_karten k JOIN cards c USING(oracle_id) WHERE k.besitz > 0 ORDER BY k.name""").fetchall()
     stand = dict(con.execute("SELECT key, value FROM meta").fetchall())
     decks = ", ".join(r[0] for r in con.execute("SELECT kurz FROM decks ORDER BY kurz"))
@@ -1610,7 +1643,7 @@ def cmd_bestand_export(con, args):
         w.writerow([f"# GESAMTBESTAND je Karte (inkl. Karten in Decks) – Sammlung: {stand.get('sammlung')} – "
                     f"Preise Scryfall-EUR (günstigster Druck) Stand {stand.get('bulk_default_cards')}{zusatz}"])
         w.writerow(["Name", "Besitz", "davon in Decks", "frei", "Farbidentität", "Typ", "MV", "Game Changer",
-                    "ab EUR", "Decks", "Sets", "vorgemerkt", "Ideen"])
+                    "ab EUR", "Decks", "Sets", "vorgemerkt", "Ideen", "Verkauf geplant", "Verkaufsideen"])
         for r in rows:
             w.writerow(["" if v is None else v for v in r])
     print(f"{len(rows)} Karten -> {args.datei}")
@@ -1620,9 +1653,11 @@ def cmd_bestand_export(con, args):
             w = csv.writer(fh)
             w.writerow([f"# FREIE KARTEN = Besitz minus alle Decks ({decks}) minus Vormerkungen – Kandidaten für Upgrade-Stufe 0 – "
                         f"Sammlung: {stand.get('sammlung')} – Preise Stand {stand.get('bulk_default_cards')}{zusatz}"])
-            w.writerow(["Name", "frei", "Besitz", "Farbidentität", "Typ", "MV", "Game Changer", "ab EUR", "Sets"])
+            w.writerow(["Name", "frei", "Besitz", "Farbidentität", "Typ", "MV", "Game Changer", "ab EUR", "Sets",
+                        "Verkauf geplant"])
             for r in frei:
-                w.writerow(["" if v is None else v for v in (r[0], r[3], r[1], r[4], r[5], r[6], r[7], r[8], r[10])])
+                w.writerow(["" if v is None else v for v in (r[0], r[3], r[1], r[4], r[5], r[6], r[7], r[8], r[10],
+                                                               f"{r[13]} ({r[14]})" if r[13] else "")])
         print(f"{len(frei)} freie Karten ({sum(r[3] for r in frei)} Exemplare) -> {args.frei}")
 
 
@@ -1648,7 +1683,8 @@ def cmd_exemplare(con, args):
     """Exemplare einer Karte oder eines Decks: Druck, Sprache, Finish, Ort (Deck/vorgemerkt/frei), Zuordnung."""
     oid = None if str(args.ref).isdigit() else resolve_name(con, args.ref)
     sql = ("SELECT e.name, UPPER(e.set_code)||' '||e.cn, e.lang, e.finish, COALESCE(k.kurz, CASE WHEN e.idee IS NOT NULL"
-           " THEN 'vorgemerkt ('||e.idee||')' ELSE 'frei' END), COALESCE(e.zuordnung,''), e.modified FROM exemplare e"
+           " THEN 'vorgemerkt ('||e.idee||')' WHEN e.verkauf IS NOT NULL THEN 'frei · Verkauf geplant ('||e.verkauf||')'"
+           " ELSE 'frei' END), COALESCE(e.zuordnung,''), e.modified FROM exemplare e"
            " LEFT JOIN decks k USING(deck_id) WHERE ")
     if oid:
         rows = con.execute(sql + "e.oracle_id=? ORDER BY k.kurz IS NULL, k.kurz, e.set_code", (oid,)).fetchall()
