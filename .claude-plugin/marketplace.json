@@ -1,0 +1,12 @@
+{
+  "name": "mtg-werkzeuge",
+  "description": "Privates MTG-Projekt zum Nachbauen: Commander-Deckbau und Sammlungsverwaltung mit Claude (deutsch).",
+  "owner": { "name": "Aperol96", "url": "https://github.com/Aperol96" },
+  "plugins": [
+    {
+      "name": "mtg-commander-deckbauer",
+      "source": "./",
+      "description": "Commander-Decks aus der eigenen Sammlung bauen und verbessern, Bestand führen, Regelfragen klären (deutsch)."
+    }
+  ]
+}

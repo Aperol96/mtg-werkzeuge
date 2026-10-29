@@ -1,0 +1,23 @@
+{
+  "name": "mtg-commander-deckbauer",
+  "displayName": "MTG Commander-Deckbauer",
+  "version": "1.7.0",
+  "description": "Commander-Decks aus der eigenen Magic-Sammlung bauen und verbessern, den Bestand führen und Regelfragen klären – mit Bracket-3-Abnahme, Kosten-Nutzen in Euro und Deck-PDFs. Sprache: Deutsch.",
+  "author": {
+    "name": "Aperol96",
+    "url": "https://github.com/Aperol96"
+  },
+  "homepage": "https://github.com/Aperol96/mtg-werkzeuge",
+  "repository": "https://github.com/Aperol96/mtg-werkzeuge",
+  "license": "MIT",
+  "keywords": [
+    "magic-the-gathering",
+    "mtg",
+    "commander",
+    "edh",
+    "deckbuilding",
+    "moxfield",
+    "manabox",
+    "deutsch"
+  ]
+}

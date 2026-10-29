@@ -1,11 +1,13 @@
 ---
 name: mtg-commander-deckbauer
-description: Commander (EDH) decks bauen und verbessern, die eigene MTG-Sammlung führen und Regelfragen klären – mit Bracket-3-Abnahme, Upgrades aus freien Karten, Kosten-Nutzen in EUR und Deck-PDFs. Build and upgrade Magic: The Gathering Commander decks from your own collection (German-language skill).
+description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand (Moxfield/ManaBox) führen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
 # MTG Commander-Deckbauer und Sammlungsverwalter (V1.7)
 
 Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seine Sammlung (Moxfield/ManaBox) führen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
+
+**Skill-Ordner:** `${CLAUDE_SKILL_DIR}` – in claude.ai der Ordner, in dem diese `SKILL.md` liegt. Alle Pfade unten sind relativ dazu.
 
 **Verbindlich ist die Methodik in `projekt/`** – dieser Skill ist der Einstieg. Lies die Datei, die zur Aufgabe passt, bevor du arbeitest:
 
@@ -22,22 +24,35 @@ Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgra
 
 ## Einrichten (einmal je Sitzung)
 
-Python 3 und Netz (`api.scryfall.com`, `data.scryfall.io`, `cards.scryfall.io`, `json.edhrec.com`, `backend.commanderspellbook.com`). Für PDFs zusätzlich `pip install pillow reportlab`.
+Python 3 und Netz (`api.scryfall.com`, `data.scryfall.io`, `cards.scryfall.io`, `json.edhrec.com`, `backend.commanderspellbook.com`). Für PDFs zusätzlich `pip install pillow reportlab`. Ist das Netz gesperrt, sag dem Nutzer, dass er in claude.ai in den Einstellungen unter „Capabilities“ die Code-Ausführung und „Allow network egress“ einschalten muss.
+
+Der Skill-Ordner kann schreibgeschützt sein – arbeite in einer Kopie:
 
 ```bash
-cd werkzeuge
+mkdir -p ~/mtg && cp -r "${CLAUDE_SKILL_DIR}/werkzeuge/." ~/mtg/ && cd ~/mtg
 python3 mtg_db.py build --sammlung <sammlung.csv> [<buchungen.csv>] --decks <deck1.txt> <deck2.txt>   # im Hintergrund starten
 python3 mtg_db.py sql "SELECT name, SUM(qty) FROM collection GROUP BY oracle_id HAVING SUM(qty) < 0"   # muss leer sein
 ```
 
-Sammlung als Moxfield-CSV (ManaBox-Scans vorher: `mtg_db.py manabox-zu-moxfield`), Decks als Text `1 Kartenname`, Commander nach einer Leerzeile am Ende. **Freie Karten** = Besitz minus Deckkarten minus Vormerkungen – nur sie zählen als vorhanden.
+Sammlung als Moxfield-CSV (ManaBox-Scans vorher: `mtg_db.py manabox-zu-moxfield`), Decks als Text `1 Kartenname`, Commander nach einer Leerzeile am Ende. Hat der Nutzer noch nichts hochgeladen, bitte ihn um seinen Sammlungs-Export und die Deckliste(n). **Freie Karten** = Besitz minus Deckkarten minus Vormerkungen – nur sie zählen als vorhanden.
 
 ## Ablauf in Kürze (Details in `08`)
 
 1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit zwei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
-2. **Recherche und Vorschlag:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
-3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme.
+2. **Recherche:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
+3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme. Der Nutzer passt an – Anpassungsrunden zeigen nur Änderungen.
 4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Moxfield-Einfügeblock; gebucht wird erst, wenn das Deck physisch gebaut ist.
+
+Ohne claude.ai-Projekt gibt es keinen dauerhaften Speicher: Gib dem Nutzer am Ende geänderte Dateien (Buchungen, Decklisten) zum Aufheben mit und sag ihm, dass er sie beim nächsten Mal wieder hochlädt.
+
+## Als claude.ai-Projekt einrichten (nur auf Wunsch)
+
+Will der Nutzer Rollen (Admin/User/Gast) und einen dauerhaften Bestand, bereite das Projekt vor:
+
+1. Nach einem Admin-Passwort fragen (nirgends sonst genutzt; nie wiederholen, nirgends speichern) und im Arbeitsordner `python3 zugang.py setzen --datei zugang.json --passwort '<P>'` sowie `python3 zugang.py freischalten --datei zugang.json --user ja` ausführen.
+2. Eine ZIP-Datei zum Hochladen packen: alle Dateien aus `projekt/` außer `Projektanweisungen.md`, dazu `werkzeugkiste.txt` und `zugang.json`.
+3. Den Text von `projekt/Projektanweisungen.md` zum Kopieren ausgeben.
+4. Anleitung in einfachen Worten: neues Projekt anlegen, Text in die Projektanweisungen einfügen (geht nur in der Desktop-App oder im Browser), Dateien aus der ZIP hochladen, neuen Chat im Projekt öffnen und mit „Admin <Passwort>“ den Bestand einrichten (`13`, Abschnitt 8).
 
 ## Regeln, die immer gelten
 

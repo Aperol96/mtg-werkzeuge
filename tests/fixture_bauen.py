@@ -18,7 +18,7 @@ import re
 import sys
 
 HIER = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HIER))
+sys.path.insert(0, os.path.join(os.path.dirname(HIER), "skills", "mtg-commander-deckbauer", "werkzeuge"))
 import mtg_db as M  # noqa: E402
 
 # Freie Karten im Testbestand (nicht im Testdeck) – je eine Prüfung in tests/test_werkzeuge.py

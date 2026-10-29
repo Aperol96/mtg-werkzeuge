@@ -13,7 +13,9 @@ import time
 import pytest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WERKZEUGE = os.path.join(REPO, "werkzeuge") if os.path.exists(os.path.join(REPO, "werkzeuge", "mtg_db.py")) else REPO
+SKILL = os.path.join(REPO, "skills", "mtg-commander-deckbauer")
+WERKZEUGE = next((d for d in (os.path.join(SKILL, "werkzeuge"), os.path.join(REPO, "werkzeuge"), REPO)
+                  if os.path.exists(os.path.join(d, "mtg_db.py"))), REPO)
 DATEN = os.path.join(REPO, "tests", "daten")
 sys.path.insert(0, WERKZEUGE)
 
