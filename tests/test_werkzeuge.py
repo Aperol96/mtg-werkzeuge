@@ -81,8 +81,20 @@ def test_gegentest(arbeit):
                   "--namen", "Projekt,Konkurrenz"))
     assert "Überschneidung: 98 gemeinsame Karten" in out or "Überschneidung:" in out
     assert "Stärke-Index" in out
-    out = ok(lauf(arbeit, "deckbau.py", "gegentest", "--prompt", "--commander", "Zurgo Stormrender"))
-    assert "Commander: Zurgo Stormrender" in out and "Bracket 3" in out
+    # drei Listen mit Ausgangsstand: Abwägungsgrundlage (Konsens-Tausche)
+    out = ok(lauf(arbeit, "deckbau.py", "gegentest", "out/entwurf.txt", "Testdeck", "out/entwurf.txt",
+                  "--basis", "Testdeck", "--n", "300", "--namen", "Projekt,K1,K2"))
+    assert "Abwägung gegen den Ausgangsstand" in out and "K2" in out
+
+
+def test_gegenlauf_konkurrenten():
+    """Konkurrenten mit festem Commit, Lizenz und Lesedateien; Auftrag nennt Unabhängigkeit und Methodik-Modus."""
+    import deckbau as D
+    assert len(D.KONKURRENTEN) == 2
+    for k in D.KONKURRENTEN.values():
+        assert re.fullmatch(r"[0-9a-f]{40}", k["commit"]) and k["lizenz"] and k["lesen"]
+    t = D.GEGENLAUF_AUFTRAG
+    assert "NICHT ausgeführt" in t and "Unabhängig" in t and "{key}" in t
 
 
 def test_weitere_befehle(arbeit):

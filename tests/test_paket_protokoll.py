@@ -126,3 +126,25 @@ def test_protokoll(tmp_path):
     assert "derzeit nichts offen" in (tmp_path / "projekt/10_Geplante-Kaeufe-und-Ideen.md").read_text(encoding="utf-8")
     r = lauf(tmp_path, "protokoll.py", "register", "--deck", "Testdeck")
     assert "Zurgo Stormrender" in r.stdout
+
+
+def test_aufwand_messen_und_summe(tmp_path):
+    """Aufwand aus einem Transkript: Token je Art, API-Gegenwert, aktive Zeit ohne lange Lücken; Summenzeile in 14."""
+    import json
+    import protokoll as P
+    f = tmp_path / "s.jsonl"
+    zeilen = []
+    for ts, model in (("2026-10-29T10:00:00Z", "claude-opus-5-5"), ("2026-10-29T10:20:00Z", "claude-sonnet-5-5"),
+                      ("2026-10-29T12:00:00Z", "claude-opus-5-5")):
+        zeilen.append(json.dumps({"type": "assistant", "timestamp": ts, "message": {"model": model, "usage": {
+            "input_tokens": 1000, "output_tokens": 1000, "cache_read_input_tokens": 1_000_000,
+            "cache_creation_input_tokens": 0}}}))
+    f.write_text("\n".join(zeilen))
+    r = P.aufwand_messen([str(f)])
+    assert r["minuten"] == 20                       # Lücke 10:20 → 12:00 zählt nicht
+    assert r["token"]["cache_lesen"] == 3_000_000 and r["usd"] > 0
+    text = ("| Datum | Was | Zeit | Token | API-Gegenwert | Quelle |\n|---|---|---|---|---|---|\n"
+            "| 25.10.2026 | a | – | – | – | nicht gemessen |\n| 29.10.2026 | b | 1,5 h | 200,0 Mio. | 80 € | gemessen |\n"
+            "\n**Summe:** alt\n")
+    s = P.summen_setzen(text)
+    assert "2 Arbeitstage seit 25.10.2026 · gemessen 1,5 h · 200 Mio. Token · ≈ 80 €" in s
