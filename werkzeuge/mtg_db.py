@@ -847,7 +847,8 @@ def baue_exemplare(con):
         oids = {b[1] for b in bedarf if b[0] == did}
         c = Counter(m for oid in oids for m in {e[6] for e in je_oid.get(oid, []) if e[6]})
         if c:
-            m, n = c.most_common(1)[0]
+            # bei Gleichstand der früheste Zeitpunkt – sonst entscheidet die zufällige Set-Reihenfolge (Befund 29.10.2026)
+            m, n = min(c.items(), key=lambda kv: (-kv[1], kv[0]))
             if n >= max(5, 0.3 * len(oids)):
                 ts[did] = m
     offen = []
