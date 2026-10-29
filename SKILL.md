@@ -1,0 +1,53 @@
+---
+name: mtg-commander-deckbauer
+description: Commander (EDH) decks bauen und verbessern, die eigene MTG-Sammlung führen und Regelfragen klären – mit Bracket-3-Abnahme, Upgrades aus freien Karten, Kosten-Nutzen in EUR und Deck-PDFs. Build and upgrade Magic: The Gathering Commander decks from your own collection (German-language skill).
+---
+
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.7)
+
+Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seine Sammlung (Moxfield/ManaBox) führen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
+
+**Verbindlich ist die Methodik in `projekt/`** – dieser Skill ist der Einstieg. Lies die Datei, die zur Aufgabe passt, bevor du arbeitest:
+
+| Aufgabe | Lies |
+|---|---|
+| Neues Deck, Upgrade (Stufen A–F, Fragenplan, Passung, Abnahme) | `projekt/08_Deckbau-Verfahren.md` |
+| nach der Freigabe: Kartenerklärungen, PDFs, Buchen, Gegenlauf | `projekt/08a_Lieferung-Buchen-Gegentest.md` |
+| alle Befehle, Begriffe, Bestand und Buchungen | `projekt/05_Datenbank-und-Tools.md` |
+| Richtwerte je Archetyp | `projekt/11_Archetypen-Playbook.md` |
+| Quellen, Kennzahlen, Kosten-Nutzen-Klassen | `projekt/01_Quellen-Framework.md`, `projekt/01a_Format-Stand.md` |
+| Regelfragen | `projekt/02_Regelwerk-Referenz.md` (+ offizielle Comprehensive Rules) |
+| Import-Formate Moxfield/ManaBox | `projekt/03_Import-Formate.md` |
+| Rollen (Admin/User/Gast) – nur im claude.ai-Projekt | `projekt/13_Betriebsmodus-und-Weitergabe.md` |
+
+## Einrichten (einmal je Sitzung)
+
+Python 3 und Netz (`api.scryfall.com`, `data.scryfall.io`, `cards.scryfall.io`, `json.edhrec.com`, `backend.commanderspellbook.com`). Für PDFs zusätzlich `pip install pillow reportlab`.
+
+```bash
+cd werkzeuge
+python3 mtg_db.py build --sammlung <sammlung.csv> [<buchungen.csv>] --decks <deck1.txt> <deck2.txt>   # im Hintergrund starten
+python3 mtg_db.py sql "SELECT name, SUM(qty) FROM collection GROUP BY oracle_id HAVING SUM(qty) < 0"   # muss leer sein
+```
+
+Sammlung als Moxfield-CSV (ManaBox-Scans vorher: `mtg_db.py manabox-zu-moxfield`), Decks als Text `1 Kartenname`, Commander nach einer Leerzeile am Ende. **Freie Karten** = Besitz minus Deckkarten minus Vormerkungen – nur sie zählen als vorhanden.
+
+## Ablauf in Kürze (Details in `08`)
+
+1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit zwei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
+2. **Recherche und Vorschlag:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
+3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme.
+4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Moxfield-Einfügeblock; gebucht wird erst, wenn das Deck physisch gebaut ist.
+
+## Regeln, die immer gelten
+
+- **Nichts erfinden:** Karten nur aus `deckbau.py oracle` beschreiben, nie aus dem Gedächtnis; Regeln mit Regelnummer.
+- **Bracket-Treue:** Ziel Bracket 3 (falls nicht anders gesagt) – höchstens 3 Game Changer, keine Massen-Landzerstörung, keine Extra-Turn-Ketten, keine früh möglichen 2-Karten-Combos; Formatstand live prüfen und mit Datum nennen.
+- **Absichern:** Ramp, Kartenvorteil, Interaktion (nach Ziel, Instants), Wipes, Schutz und Länder bis zum Minimum des Archetyps; tragende Karten nicht herausnehmen (Raus-Sperren). Symmetrische Kreaturen-Wipes zählen im Go-wide-Deck nicht.
+- **Daten vor Meinung:** EDHREC ist ein Anhaltspunkt; nicht gelistet = unbekannt, nicht schwach. Daten und Einschätzung kennzeichnen.
+- **Rückfall vor Kauf:** Lücken zuerst mit freien Karten (Kompromiss-Stufe), daneben die Kauf-Alternative mit Preis und Nutzen.
+- **Sparsam ausgeben:** PDFs, Dateien und lange Listen nur nach kurzer Ja/Nein-Frage.
+
+## Einfügeblock (Moxfield)
+
+`Anzahl Name` je Zeile, alphabetisch, Commander nach einer Leerzeile am Ende, ohne Überschriften oder Kommentare.
