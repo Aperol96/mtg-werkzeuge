@@ -1,11 +1,11 @@
 ---
 name: mtg-commander-deckbauer
-description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand (Moxfield/ManaBox) führen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
+description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand führen (CSV aus Moxfield, ManaBox oder anderen Programmen), Verkaufsliste erstellen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
-# MTG Commander-Deckbauer und Sammlungsverwalter (V1.7)
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.7.1)
 
-Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seine Sammlung (Moxfield/ManaBox) führen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
+Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seinen Bestand führen oder Karten verkaufen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
 
 **Skill-Ordner:** `${CLAUDE_SKILL_DIR}` – in claude.ai der Ordner, in dem diese `SKILL.md` liegt. Alle Pfade unten sind relativ dazu.
 
@@ -19,7 +19,7 @@ Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgra
 | Richtwerte je Archetyp | `projekt/11_Archetypen-Playbook.md` |
 | Quellen, Kennzahlen, Kosten-Nutzen-Klassen | `projekt/01_Quellen-Framework.md`, `projekt/01a_Format-Stand.md` |
 | Regelfragen | `projekt/02_Regelwerk-Referenz.md` (+ offizielle Comprehensive Rules) |
-| Import-Formate Moxfield/ManaBox | `projekt/03_Import-Formate.md` |
+| Import-Formate (Moxfield, ManaBox, andere CSV) | `projekt/03_Import-Formate.md` |
 | Rollen (Admin/User/Gast) – nur im claude.ai-Projekt | `projekt/13_Betriebsmodus-und-Weitergabe.md` |
 
 ## Einrichten (einmal je Sitzung)
@@ -34,14 +34,14 @@ python3 mtg_db.py build --sammlung <sammlung.csv> [<buchungen.csv>] --decks <dec
 python3 mtg_db.py sql "SELECT name, SUM(qty) FROM collection GROUP BY oracle_id HAVING SUM(qty) < 0"   # muss leer sein
 ```
 
-Sammlung als Moxfield-CSV (ManaBox-Scans vorher: `mtg_db.py manabox-zu-moxfield`), Decks als Text `1 Kartenname`, Commander nach einer Leerzeile am Ende. Hat der Nutzer noch nichts hochgeladen, bitte ihn um seinen Sammlungs-Export und die Deckliste(n). **Freie Karten** = Besitz minus Deckkarten minus Vormerkungen – nur sie zählen als vorhanden.
+Die Werkzeuge rechnen intern im Moxfield-CSV-Format: Moxfield-CSV direkt, ManaBox-Scans vorher mit `mtg_db.py manabox-zu-moxfield`, andere CSV-Exporte (z. B. Spellbinder) über die Spaltennamen zuordnen und die Zuordnung prüfen (`03`). Decks als Text `1 Kartenname`, Commander nach einer Leerzeile am Ende. Hat der Nutzer noch nichts hochgeladen, bitte ihn um seinen Sammlungs-Export und die Deckliste(n) und frag, welches Programm seine externe Datenbank ist (dorthin gehen die Import-Listen). **Begriffe:** Bestand = Deckkarten + Sammlung · Sammlung = Bestand minus Deckkarten · **freie Karten** = Sammlung minus vorgemerkte Karten – nur sie zählen als vorhanden.
 
 ## Ablauf in Kürze (Details in `08`)
 
 1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit zwei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
 2. **Recherche:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
 3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme. Der Nutzer passt an – Anpassungsrunden zeigen nur Änderungen.
-4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Moxfield-Einfügeblock; gebucht wird erst, wenn das Deck physisch gebaut ist.
+4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Einfügeblock für die externe Datenbank des Nutzers; gebucht wird erst, wenn das Deck physisch gebaut ist.
 
 Ohne claude.ai-Projekt gibt es keinen dauerhaften Speicher: Gib dem Nutzer am Ende geänderte Dateien (Buchungen, Decklisten) zum Aufheben mit und sag ihm, dass er sie beim nächsten Mal wieder hochlädt.
 
@@ -63,6 +63,10 @@ Will der Nutzer Rollen (Admin/User/Gast) und einen dauerhaften Bestand, bereite 
 - **Rückfall vor Kauf:** Lücken zuerst mit freien Karten (Kompromiss-Stufe), daneben die Kauf-Alternative mit Preis und Nutzen.
 - **Sparsam ausgeben:** PDFs, Dateien und lange Listen nur nach kurzer Ja/Nein-Frage.
 
-## Einfügeblock (Moxfield)
+## Verkaufsliste
+
+`deckbau.py verkauf [--min-preis 1]` prüft freie Exemplare gegen alle Decks (Behalten · Kat. 2 mit Hinweis · Kat. 1 ohne Bedenken), PDF mit `kartenbilder.py verkauf <liste> --out out/verkauf --mobil` (PDF nur nach Ja/Nein-Frage).
+
+## Einfügeblock (Moxfield-Textformat; mit anderen Deck-Programmen nicht getestet)
 
 `Anzahl Name` je Zeile, alphabetisch, Commander nach einer Leerzeile am Ende, ohne Überschriften oder Kommentare.

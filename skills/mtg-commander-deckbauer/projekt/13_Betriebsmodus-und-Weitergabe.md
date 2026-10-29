@@ -1,6 +1,6 @@
 # Rollen, Betriebsmodus und Weitergabe
 
-**Stand:** 29.10.2026 (V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.0 weitergegeben, Admin-Projekt mit den Änderungen V1.1–V1.6 (Abschnitt 11) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
+**Stand:** 29.10.2026 (V1.7.1: Begriffe geschärft – Sammlung = Bestand ohne Deckkarten, freie Karten = Sammlung ohne vorgemerkte Karten (3.4) · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.0 weitergegeben, Admin-Projekt mit den Änderungen V1.1–V1.6 (Abschnitt 11) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
 
 Zweck: Das Projekt kennt vier Zustände – Start, Admin, User, Gast. Jeder Chat beginnt im Zustand Start; erst die Anmeldung gibt Rechte. Das Programm (Regeln, Abläufe, Werkzeuge, PDF-Vorlagen) ändert nur der Admin. Gäste arbeiten mit ihren eigenen Daten, die nie Teil des Grundbestands werden.
 
@@ -126,8 +126,9 @@ User und Gast kennen die Begriffe dieses Projekts nicht. Deshalb gilt:
 >
 > - **Bestand**: alle Karten, die da sind – Deckkarten und Sammlung zusammen
 > - **Deckkarten**: Karten, die gerade in einem Deck stecken
-> - **Sammlung**: die freien Karten – in keinem Deck, nicht vorgemerkt, nicht verkauft. Nur sie zählen beim Deckbau als vorhanden.
-> - **Vorgemerkt**: für eine Idee reserviert, die noch nicht umgesetzt ist – also nicht frei
+> - **Sammlung**: Karten, die in keinem Deck stecken
+> - **Vorgemerkt**: Sammlungskarten, die eine noch nicht umgesetzte Idee für sich reserviert
+> - **Freie Karten**: die Sammlung ohne vorgemerkte Karten. Nur sie zählen beim Deckbau als vorhanden.
 > - **Soll-Stand**: die maßgebliche Deckliste hier im Projekt
 > - **Buchen**: eine Änderung (Kauf, Verkauf, Scan, Deckumbau) fest eintragen – erst, wenn sie wirklich passiert ist
 >
@@ -140,7 +141,8 @@ User und Gast kennen die Begriffe dieses Projekts nicht. Deshalb gilt:
 | Grundbestand | der Bestand des Projekt-Besitzers; mit ihm arbeiten Admin und User | – (sieht ihn nie) |
 | Bestand | Deckkarten + Sammlung = alle Karten, die da sind | alle Karten aus deinen hochgeladenen Dateien |
 | Deckkarten | Karten, die gerade in einem Deck stecken | Karten in deinen Decks |
-| Sammlung (frei) | Karten in keinem Deck, nicht vorgemerkt, nicht als verkauft gemeldet; nur sie zählen als vorhanden | deine freien Karten |
+| Sammlung | Bestand ohne Deckkarten – Karten, die in keinem Deck stecken | deine Karten außerhalb deiner Decks |
+| freie Karten | Sammlung ohne vorgemerkte Karten; nur sie zählen beim Deckbau als vorhanden (geplante Verkäufe bleiben frei, sind markiert) | gleich, aus deinen Daten |
 | vorgemerkt | für eine nicht umgesetzte Idee reserviert; gesperrt, bis die Idee freigegeben oder verworfen ist | gilt nur in diesem Chat |
 | Soll-Stand | die maßgebliche Deckliste im Projekt (nicht die in Moxfield) | die Deckliste, die wir hier als umgesetzt festhalten |
 | buchen, Buchung, Beleg | eine Änderung am Bestand oder Deck fest eintragen; jede Buchung hat einen Beleg (Kaufbeleg, Scan, Meldung) | nur in deinen Dateien in diesem Chat |
@@ -397,7 +399,7 @@ Brackets gelten nur für Commander – hier zählt die Format-Legalität.
 - **Deckname:** Wizards-Name bei Precons/Precon-Umbauten, Produktname bei Händler-Decks, eigener Name bei eigenen Decks; in `claude/tools/deck_namen.json` pflegen; voller Name höchstens 100 Zeichen (Moxfield), Länge mit `mtg_db.py namen` prüfen
 - **Status:** Idee · im Bau · spielbereit · Upgrade geplant · zerlegt (gleiche Regeln für alle Decks; Vorhaben stehen als Idee in `10`)
 - **Ideen zu bestehenden Decks:** zentral in `claude/10_Geplante-Kaeufe-und-Ideen.md` (ID, Status, Kaufliste, vorgemerkte Sammlungskarten); Details in `claude/ideen/<deckname>-<thema>.md`; Soll-Stand und Register bleiben unverändert, bis der Nutzer meldet, dass das Deck nach der Freigabe physisch gebaut ist; dann Register aktualisieren und Einfügeblock für Moxfield ausgeben (Ablauf: `08_Deckbau-Verfahren`, Abschnitt 2)
-- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = freie Karten (`05_Datenbank-und-Tools`, Abschnitt 0)
+- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = Bestand − Deckkarten; freie Karten = Sammlung − vorgemerkte Karten (`05_Datenbank-und-Tools`, Abschnitt 0)
 - **Bracket-Check:** Anzahl und Namen der Game Changer (in Bracket 3 max. 3), MLD, Extra Turns, 2-Karten-Combos – mit `mtg_db.py bracket` bzw. `deckbau.py pruefen`; dazu Einstufung nach Kriterien und Einschätzung mit Datum
 - **Abnahme:** Ergebnis der Bracket-3-Abnahme (`deckbau.py abnahme`) mit Datum und offenen Punkten – nach jedem gebuchten Deckumbau neu
 - **Quelle/Stand:** Datum der Liste, aus der der Soll-Stand stammt (Moxfield-Erstübernahme, Scan oder gebuchte Änderung im Projekt)
@@ -468,7 +470,7 @@ Roter Faden über alle Chats: Was hat sich an Bestand und Decks geändert, und w
 # Geplante Käufe / Ideen
 
 **Stand:** angelegt bei der Ersteinrichtung · Zentrale Liste über alle Chats: Deck-Ideen ohne Freigabe, freigegebene Decks bis zum physischen Aufbau, geplante Käufe und Verkäufe und offene Übernahmen nach Moxfield. Ziel: am Ende **eine** Sammelbestellung über alle Vorhaben (Cardmarket-Wants / Shopping Wizard).
-**Begriffe** (siehe `05_Datenbank-und-Tools`, Abschnitt 0): Bestand = Deckkarten + Sammlung = Basis + `claude/sammlung/buchungen.csv` · Sammlung = freie Karten · Das Projekt ist die Hauptdatenbank, Moxfield wird nachgezogen. **Ablauf:** `08_Deckbau-Verfahren`, Abschnitt 2 (Stufen A–F).
+**Begriffe** (siehe `05_Datenbank-und-Tools`, Abschnitt 0): Bestand = Deckkarten + Sammlung = Basis + `claude/sammlung/buchungen.csv` · Sammlung = Bestand − Deckkarten · freie Karten = Sammlung − vorgemerkte Karten · Das Projekt ist die Hauptdatenbank, Moxfield wird nachgezogen. **Ablauf:** `08_Deckbau-Verfahren`, Abschnitt 2 (Stufen A–F).
 
 ---
 

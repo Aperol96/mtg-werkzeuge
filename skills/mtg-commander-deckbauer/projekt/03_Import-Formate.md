@@ -1,13 +1,13 @@
 # Import-Formate & Bestandsmodell
 
-**Stand:** 29.10.2026 (Basis heißt `basis.csv`) · Projekt = Hauptdatenbank; Moxfield = externe Datenbank (Ziel der Exporte); ManaBox = Zulieferer der Scans · Verarbeitung mit `mtg_db.py` (siehe `05_Datenbank-und-Tools`)
+**Stand:** 29.10.2026 (Begriffe Sammlung und freie Karten geschärft; Basis heißt `basis.csv`) · Projekt = Hauptdatenbank; Moxfield = externe Datenbank (Ziel der Exporte); ManaBox = Zulieferer der Scans · Verarbeitung mit `mtg_db.py` (siehe `05_Datenbank-und-Tools`)
 
 ---
 
 ## 0. Wichtig zum Bestand des Nutzers
 
 - **Das Projekt ist die Hauptdatenbank** (Festlegung des Nutzers, 26.10.2026). Alle Änderungen an Bestand und Decks werden hier beschlossen und gebucht; Richtung immer **Projekt → Moxfield**. Änderungen in Moxfield wirken hier nicht – außer bei Fehlerkorrektur oder wenn der Nutzer einen Moxfield-Export ausdrücklich zum Überschreiben der Daten hier nutzt.
-- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = freie Karten. Bestand = Basis (`claude/sammlung/basis.csv`, eine Moxfield-CSV) + Buchungsjournal (`claude/sammlung/buchungen.csv`).
+- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = Bestand − Deckkarten; freie Karten = Sammlung − vorgemerkte Karten (nur sie zählen als vorhanden). Bestand = Basis (`claude/sammlung/basis.csv`, eine Moxfield-CSV) + Buchungsjournal (`claude/sammlung/buchungen.csv`).
 - **ManaBox** liefert nur Scans:
   - **Neue Karten:** `mtg_db.py manabox-zu-moxfield` → Zeilen als Zugang in `buchungen.csv` buchen; die erzeugte Moxfield-CSV (und ggf. Deck-TXT) bekommt der Nutzer zum Nachziehen in Moxfield.
   - **Neuscan eines vorhandenen Decks:** nicht buchen – nur mit dem Soll-Stand vergleichen und den Soll-Stand nach Klärung korrigieren.
@@ -133,7 +133,7 @@ Der Textexport von Moxfield sieht so aus – dasselbe Format geben wir für den 
 ## 6. Was ich mit den Dateien mache
 
 - **Bestandsübersicht:** Anzahl Karten/Unikate, Verteilung nach Farbe und Typ, Wert (Scryfall-EUR).
-- **Zwei Listen (abgeleitet, nach jeder Buchung neu):** `06_Sammlung-Bestand.csv` (Bestand inkl. Deckkarten) und `07_Sammlung-Frei.csv` (Sammlung = freie Karten).
+- **Zwei Listen (abgeleitet, nach jeder Buchung neu):** `06_Sammlung-Bestand.csv` (Bestand inkl. Deckkarten) und `07_Sammlung-Frei.csv` (freie Karten = Sammlung − vorgemerkte Karten).
 - **Deck ↔ Bestand:** Was besitze ich, was fehlt (mit Preisen und Summe), welche Karten werden in mehreren Decks gleichzeitig gebraucht, Standardländer mit Nachkauf.
 - **Buchen:** Käufe, Verkäufe, Scans und Tausch als Zeilen in `buchungen.csv` mit Beleg.
 - **Ausgabe für Moxfield:** Einfügeblock bzw. Deck-TXT, Zugänge als Bestands-CSV, Abgänge als Löschliste.
