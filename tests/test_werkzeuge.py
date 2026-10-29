@@ -36,6 +36,19 @@ def test_upgrade_meldet_fehlendes_edhrec_laut(arbeit):
     assert "EDHREC nicht erreichbar" in r.stderr
 
 
+def test_thema_als_anzeigename(arbeit):
+    """--thema darf ein Anzeigename sein („Lands Matter / Landfall“): daraus werden gültige EDHREC-Slugs, nie eine
+    ungültige Adresse (Fund aus dem Gegentest vom 29.10.2026)."""
+    import deckbau
+    assert deckbau.thema_slugs("Lands Matter / Landfall")[:2] == ["lands-matter", "landfall"]
+    assert deckbau.thema_slugs("tokens") == ["tokens"]
+    assert deckbau.thema_slugs(None) == []
+    assert deckbau.edhrec("commanders/x/Lands Matter / Landfall") is None
+    r = lauf(arbeit, "deckbau.py", "upgrade", "Testdeck", "--thema", "Tokens (Go-wide)", "--out", "out/upgrade_thema.csv")
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    assert "InvalidURL" not in r.stderr and "Ziel-Archetyp Tokens" in r.stdout
+
+
 def test_pruefen_und_abnahme(arbeit):
     out = ok(lauf(arbeit, "deckbau.py", "pruefen", "decks/testdeck.txt"))
     assert "Richtwert-Quelle" in out and "Archetyp tokens" in out

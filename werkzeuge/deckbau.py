@@ -202,6 +202,8 @@ def edh_slug(name):
 def edhrec(pfad, max_alter_h=72):
     """EDHREC-JSON mit Zwischenspeicher (3 Tage). Seite fehlt → None (still). Netzfehler → Meldung auf stderr und in
     EDH_STATUS; dann ältere Zwischenspeicher-Daten mit Datum, sonst None (Bewertung nur aus Oracle-Bezug)."""
+    if not re.fullmatch(r"[A-Za-z0-9/_.-]+", pfad):          # kein gültiger EDHREC-Pfad: Seite gibt es nicht (still)
+        return None
     os.makedirs("cache/edhrec", exist_ok=True)
     fn = os.path.join("cache/edhrec", pfad.replace("/", "__") + ".json")
     if os.path.exists(fn) and time.time() - os.path.getmtime(fn) < max_alter_h * 3600:
@@ -226,16 +228,48 @@ def edhrec(pfad, max_alter_h=72):
     return d
 
 
+def thema_slugs(thema):
+    """EDHREC-Slugs zu einer Themenangabe: ein Slug wie auf edhrec.com/tags (tokens), ein Archetyp-Schlüssel (landfall)
+    oder ein Anzeigename (Lands Matter / Landfall). Nie Leerzeichen oder Schrägstriche in der URL; ein Archetyp bringt
+    seine EDHREC-Slugs mit (lands-matter, landfall)."""
+    t = (thema or "").strip()
+    if not t:
+        return []
+    roh = re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+    out = [roh] if roh == t.lower() else []
+    try:
+        import archetypen as A
+        ziel = ziel_archetyp(A, t, None)
+        out += list(A.ARCHETYPEN[ziel]["edhrec"]) if ziel else []
+    except ImportError:                          # ohne archetypen.py bleibt es beim Slug
+        pass
+    if roh:
+        out.append(roh)
+    return list(dict.fromkeys(out))
+
+
 def edhrec_commander(name, bracket=None, thema=None, budget=False):
     """Probiert vom spezifischsten Pfad zum allgemeinsten; gibt (Daten, Pfad) zurück."""
     s = edh_slug(name)
     b = BRACKET_PFAD.get(bracket) if bracket else None
+    bud = "budget" if budget else None
+    slugs = thema_slugs(thema) or [None]
     kandidaten = []
-    for teile in ([b, thema, "budget" if budget else None], [b, thema], [b, "budget" if budget else None],
-                  [b], [thema], []):
+
+    def neu(*teile):
         p = "/".join(["commanders", s] + [t for t in teile if t])
         if p not in kandidaten:
             kandidaten.append(p)
+
+    for t in slugs:
+        neu(b, t, bud)
+    for t in slugs:
+        neu(b, t)
+    neu(b, bud)
+    neu(b)
+    for t in slugs:
+        neu(t)
+    neu()
     for p in kandidaten:
         d = edhrec(p)
         if d:
@@ -454,7 +488,11 @@ def cmd_commander_suche(con, a):
             slug = FARBSLUG[next(iter(ci))]
         elif 2 <= len(ci) <= 3:
             slug = M.FARBNAMEN[frozenset(ci)][0].lower()
-        d = (edhrec(f"tags/{a.thema}/{slug}") if slug else None) or edhrec(f"tags/{a.thema}")
+        d = None
+        for ts in thema_slugs(a.thema):
+            d = (edhrec(f"tags/{ts}/{slug}") if slug else None) or edhrec(f"tags/{ts}")
+            if d:
+                break
         if not d:
             sys.exit(f"EDHREC-Thema '{a.thema}' nicht gefunden (Slug wie auf edhrec.com/tags, z. B. tokens, aristocrats)"
                      + (" – " + "; ".join(EDH_STATUS) if EDH_STATUS else ""))
