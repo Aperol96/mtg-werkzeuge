@@ -11,7 +11,7 @@ Befehle
           Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
   deck    Deck-PDF: Deckblatt mit Kurzdaten, Commander mit Oracle-Text, Manakurve, Farben,
           danach alle Karten nach Kategorien.
-  vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie im Deckbau-Verfahren, Abschnitt 12).
+  vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie in 08a_Lieferung-Buchen-Gegentest, Abschnitt 3).
   bericht Fazit-PDF (Fazit, Änderungen, Kennzahlen, Kartenerklärungen, Vorgehen, Moxfield-Anhang) aus einer
           Markdown-Datei im selben Design – Aufbau der Datei: Funktion bericht_pdf (Kopf zwischen ---,
           [kacheln] … [/kacheln], ## / ###, Absätze, - / 1. Listen, > Kasten (>! rot, >+ grün, >? blau),
@@ -51,11 +51,11 @@ Beispiele
   python3 kartenbilder.py tausch tausch/boros.txt --out out/tausch_boros --png
   python3 kartenbilder.py tausch --alt decks/boros.txt --neu entwurf.txt --frei 07.csv \\
       --bestand 06.csv --vormerkungen data/vormerkungen.csv --idee I-001 \\
-      --haves data/moxfield_haves.csv data/buchungen.csv --deckname Boros --out out/tausch_boros
+      --haves data/basis.csv data/buchungen.csv --deckname Boros --out out/tausch_boros
   python3 kartenbilder.py deck decks/mardu-surge.txt --set tdc --bracket "…" \\
       --beschreibung "…" --themen "…" --out out/deck_mardu-surge --png
 """
-import argparse, csv, html, io, json, re, subprocess, sys, time, urllib.error, urllib.request
+import argparse, csv, html, json, re, subprocess, sys, time, urllib.error, urllib.request
 from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
@@ -1390,7 +1390,7 @@ def bericht_pdf(md, ziel):
     Absätze · - Liste (zwei Leerzeichen = Unterpunkt) · 1. nummeriert · > Kasten (>! rot, >+ grün, >? blau) ·
     | Tabelle | (erste Zeile = Kopf; „| ## Text |“ = Gruppenzeile) · ``` Einfügeblock ``` (lange Blöcke zweispaltig) ·
     <seitenumbruch> · Inline: **fett**, *kursiv*, `Code`."""
-    from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Flowable, Frame, KeepTogether, PageBreak,
+    from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Flowable, Frame, PageBreak,
                                     PageTemplate, Spacer, Table, TableStyle)
     pdfmetrics.registerFont(TTFont("Mono", str(DV / "DejaVuSansMono.ttf")))
     RANDB, BAND = 14 * mm, 44 * mm

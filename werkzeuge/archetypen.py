@@ -42,6 +42,9 @@ import time
 import urllib.request
 from collections import Counter, defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bewertung as B  # noqa: E402
+
 UA = {"User-Agent": "MTG-Projekt/1.0", "Accept": "application/json"}
 BULK = "bulk"
 WUBRG = "WUBRG"
@@ -93,30 +96,14 @@ def etb_wert(k):
 
 
 def rollen(k):
-    if ist_land(k):
-        return {"land"}
-    r = set()
-    t = k["t"]
-    gegner = bool(t & {"removal", "spot-removal"}) and bool(
-        re.search(r"(its controller|that player|their controller)[^.]*search", (k["text"] or "").lower()))
-    if t & TAGS_RAMP and not gegner:            # Path to Exile u. Ä. gibt dem Gegner ein Land – kein Ramp
-        r.add("ramp")
-    if t & TAGS_KA:
-        r.add("ka")
-    if "spot-removal" in t or "counterspell" in t or ("removal" in t and "sweeper" not in t):
-        r.add("gezielt")
-        if "Instant" in front_typ(k) or "flash" in k["kw"]:
-            r.add("instant_int")
-    if "counterspell" in t:
+    """Rollen einer Karte – dieselbe Regel wie deckbau.py (bewertung.rollen_detail, mit Qualitätsfiltern);
+    dazu die Zählhilfen 'instant_int' (gezielte Interaktion mit Instant-Tempo) und 'counter'."""
+    s = B.sicht(k["name"], k["typ"], k["text"], k["kw"], k["t"], k.get("cmc"))
+    r = set(B.rollen(s))
+    if "gezielt" in r and B.ist_instant_tempo(s):
+        r.add("instant_int")
+    if "counterspell" in k["t"]:
         r.add("counter")
-    if "sweeper" in t:
-        r.add("massen")
-    if t & TAGS_SCHUTZ:
-        r.add("schutz")
-    if "tutor" in t:
-        r.add("tutor")
-    if "recursion" in t:
-        r.add("rekursion")
     return r
 
 
@@ -157,6 +144,15 @@ def p_lord(k):
                                  or ("typal" in k["t"] and "anthem" in k["t"]))
 
 
+RX_ANTHEM_BREIT = re.compile(r"\b(?:other )?(?:creatures|creature tokens|tokens) you control get \+", re.I)
+
+
+def p_anthem_breit(k):
+    """Anthem für alle eigenen Kreaturen bzw. Tokens (nicht nur ein Typ wie „Golems“, nicht „nontoken“)."""
+    return hat(k, "anthem") and bool(RX_ANTHEM_BREIT.search(k["text"] or "")) and "nontoken creatures" not in (
+        k["text"] or "").lower()
+
+
 # Pakete: (Schlüssel, Anzeige, Prüffunktion, Kernpaket?) – Kernpakete bestimmen die Einstufung im Profil
 ARCHETYPEN = {
     "tokens": {
@@ -164,7 +160,7 @@ ARCHETYPEN = {
         "pakete": [
             ("quelle", "Token-Quellen (Kreaturen)", p_token_quelle, True),
             ("wiederholt", "davon wiederholbar", lambda k: hat(k, "repeatable-creature-tokens") and not ist_land(k), False),
-            ("anthem", "Anthems (dauerhaft)", lambda k: hat(k, "anthem"), True),
+            ("anthem", "Anthems (dauerhaft, für alle)", p_anthem_breit, True),
             ("overrun", "Overrun-Finisher", lambda k: hat(k, "overrun"), False),
             ("verdoppler", "Token-Verdoppler", lambda k: hat(k, "token-doubler", "token-increaser"), False),
         ]},
@@ -223,7 +219,7 @@ ARCHETYPEN = {
         "pakete": [
             ("payoff", "Landfall-Payoffs", lambda k: hat(k, "landfall"), True),
             ("extra_land", "zusätzliche Landdrops", lambda k: hat(k, "extra-land", "play-additional-land"), True),
-            ("land_ramp", "Land-Ramp", lambda k: hat(k, "land-ramp") and not ist_land(k), True),
+            ("land_ramp", "Land-Ramp", lambda k: hat(k, "land-ramp") and not ist_land(k) and "ramp" in rollen(k), True),
             ("fetch", "Opfer-/Fetch-Länder", lambda k: ist_land(k) and hat(k, "fetchland"), False),
             ("rekursion", "Land-Rekursion", lambda k: hat(k, "reanimate-land", "regrowth-land"), False),
         ]},
@@ -284,6 +280,8 @@ def pakete_von(k):
 
 # ----------------------------------------------------------------- Daten laden
 def get_json(url):
+    if os.environ.get("MTG_OFFLINE"):
+        raise OSError(f"offline (MTG_OFFLINE gesetzt): {url}")
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.load(r)
@@ -717,7 +715,19 @@ def cmd_profil(a):
             zeilen.append("Schlüsselkarten laut EDHREC (hohe Synergie im Thema) – Status: " + "; ".join(teile) + ".\n")
     zeilen.append("\\* Kernpaket (zählt für die Ampel). Status der Schlüsselkarten: **frei** · im Deck (Deckname) · fehlt = nicht im Besitz oder vorgemerkt.\n")
     if a.decks:
-        zeilen += deck_abschnitt(a.decks, karten, namen, richt, a.config)
+        raster = deck_abschnitt(a.decks, karten, namen, richt, a.config)
+        if a.raster_out and raster:          # V1.6: Deck-Raster als eigene, kurze Datei (12a)
+            kopf = ["# Deck-Raster – Commander-Decks gegen die Archetyp-Pakete\n",
+                    f"**Stand:** {time.strftime('%d.%m.%Y')} · erzeugt mit `archetypen.py profil --raster-out` · "
+                    f"Richtwerte `archetypen_daten.json` (Stand {(richt or {}).get('stand', '–')}) · Grundlage für Upgrades "
+                    "(Ablauf B) – ersetzt nicht `deckbau.py pruefen`/`abnahme`.\n"]
+            kopf.append("Paket-Zählung der Soll-Stände (`claude/decks/`); Ziel-Archetyp = Strategie aus `deck_namen.json`; "
+                        "⚠ = Kernpaket unter dem kleinsten Wert der Datenbasis.\n")
+            open(a.raster_out, "w", encoding="utf-8").write("\n".join(kopf + raster[2:]) + "\n")
+            print(f"Deck-Raster -> {a.raster_out}")
+            zeilen.append("## Bestehende Commander-Decks im Archetyp-Raster\n\nEigene Datei: `12a_Deck-Raster`.\n")
+        else:
+            zeilen += raster
     if not a.ohne_commander:
         zeilen += commander_abschnitt(frei, karten)
     text = "\n".join(zeilen)
@@ -828,6 +838,12 @@ def cmd_deck(a):
         ziele = sorted(ARCHETYPEN, key=lambda k: -deckung(z, richt, k))[:3]
         print("\nAm besten abgedeckte Archetypen: " + ", ".join(f"{ARCHETYPEN[k]['name']} ({deckung(z, richt, k) * 100:.0f} %)"
                                                              for k in ziele) + " – Einzelprüfung mit --archetyp")
+    if ziele and ziele[0] in B.GO_WIDE:
+        eigen = [karten[o]["name"] for o in deck if o in karten and o not in c_oids and B.zerstoert_plan(
+            B.sicht(karten[o]["name"], karten[o]["typ"], karten[o]["text"], karten[o]["kw"], karten[o]["t"]), ziele[0])]
+        if eigen:
+            print(f"  Hinweis {ARCHETYPEN[ziele[0]]['name']}: {', '.join(eigen)} zerstört den eigenen Plan – zählt in "
+                  "deckbau.py nicht als Massen-Interaktion")
     print("\nPakete" + (" (Richtwert = Median der Durchschnittsdecks des Archetyps):" if richt else ":"))
     for a_key in ziele:
         d = ARCHETYPEN[a_key]
@@ -862,7 +878,11 @@ def edhrec(pfad, cache="cache/edhrec"):
         d = get_json(f"https://json.edhrec.com/pages/{pfad}.json")
         if not isinstance(d, dict) or "redirect" in d or "container" not in d:
             d = {}
-    except Exception:
+    except Exception as e:
+        if getattr(e, "code", None) not in (403, 404):     # Netzfehler: laut melden, nichts Falsches zwischenspeichern
+            print(f"!! EDHREC nicht erreichbar ({pfad}: {e.__class__.__name__}) – "
+                  + ("nutze alten Zwischenspeicher" if os.path.exists(fn) else "keine Daten"), file=sys.stderr)
+            return (json.load(open(fn, encoding="utf-8")) or None) if os.path.exists(fn) else None
         d = {}
     json.dump(d, open(fn, "w", encoding="utf-8"))
     return d or None
@@ -988,6 +1008,7 @@ def main():
                                                "und Abschnitt „Commander-Decks im Archetyp-Raster“")
     p.add_argument("--einschaetzung", help="Markdown-Datei mit Claudes Einschätzung, wird nach dem Kopf eingefügt")
     p.add_argument("--config", default="deck_namen.json", help="deck_namen.json (Strategie je Commander) für den Deck-Abschnitt")
+    p.add_argument("--raster-out", help="Deck-Raster als eigene Datei (12a_Deck-Raster.md) statt im Profil")
     p = sp.add_parser("karten")
     p.add_argument("archetyp")
     p.add_argument("--paket")

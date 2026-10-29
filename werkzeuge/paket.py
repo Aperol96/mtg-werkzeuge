@@ -4,13 +4,15 @@
 Warum: `project_read` liefert Projektdateien als Text in den Chat; einzelne Dateien in den Arbeitsbereich
 abzuschreiben kostet viel und ist fehleranfällig. Ein Arbeitspaket ist eine einzige Textdatei
 (tar.xz, Base64) mit Prüfsummen. Claude liest sie mit `project_read`; der Startbefehl in
-`05_Datenbank-und-Tools`, Abschnitt 2 holt sie aus dem Sitzungsprotokoll und packt sie aus.
+`05a_Sitzungsstart` holt sie aus dem Sitzungsprotokoll und packt sie aus.
 
 Pakete (Projektpfad im Admin-Projekt)
-  werkzeuge  claude/pakete/werkzeugkiste.txt – mtg_db.py, deckbau.py, archetypen.py, kartenbilder.py, paket.py,
-             zugang.py, archetypen_daten.json (Admin zusätzlich weitergabe.py). Programm – ändert sich selten.
-  daten      claude/pakete/datenpaket.txt – Basis + buchungen.csv + vormerkungen.csv, Soll-Stände claude/decks/,
-             Entwürfe claude/ideen/*.txt, deck_namen.json. Nach JEDER Schreibrunde in diese Dateien neu packen.
+  werkzeuge  claude/pakete/werkzeugkiste.txt – mtg_db.py, deckbau.py, bewertung.py, simulation.py, archetypen.py,
+             kartenbilder.py, protokoll.py, paket.py, zugang.py, archetypen_daten.json, projektanweisungen.md
+             (Admin zusätzlich weitergabe.py). Programm – ändert sich selten.
+  daten      claude/pakete/datenpaket.txt – Basis (claude/sammlung/basis.csv) + buchungen.csv + vormerkungen.csv,
+             Soll-Stände claude/decks/, Entwürfe claude/ideen/, deck_namen.json und die Listen 04, 09, 10
+             (nach projekt/, gelesen und gepflegt mit protokoll.py). Nach JEDER Schreibrunde neu packen.
   gast       claude/gaeste/<slug>.txt – Archiv eines Gastes (13_Betriebsmodus-und-Weitergabe): seine Bestandsdateien,
              Soll-Stände, Entwürfe, deck_namen.json, gast_profil.json; im Kopf Name und PIN-Hash. Wird nur nach
              richtiger PIN ausgepackt und ist nie Teil des Bestands des Projekts.
@@ -27,7 +29,8 @@ Befehle
         Gast-Archiv aus dem Arbeitsordner (data/*.csv, decks/*.txt, ideen/*, deck_namen.json, gast_profil.json).
   auspacken <paketdatei …> [--ziel /home/claude/mtg] [--pin <PIN>]
         Prüft die Prüfsummen und legt an: Werkzeuge in <ziel>/, Bestand in <ziel>/data/, Soll-Stände in
-        <ziel>/decks/, Entwürfe in <ziel>/ideen/; schreibt <ziel>/paket_manifest.json (lokal ↔ Projektpfad).
+        <ziel>/decks/, Entwürfe in <ziel>/ideen/, 04/09/10 in <ziel>/projekt/; schreibt <ziel>/paket_manifest.json
+        (lokal ↔ Projektpfad).
         Ein Gast-Archiv wird nur mit richtiger --pin ausgepackt (sonst übersprungen).
   holen --art <art> --out <datei>
         Das zuletzt mit project_read gelesene vollständige Paket dieser Art aus dem Sitzungsprotokoll als Datei
@@ -51,8 +54,9 @@ import time
 
 KENNUNG = "MTG-PAKET"
 VERSION = 1
-WERKZEUGE = ["mtg_db.py", "deckbau.py", "archetypen.py", "kartenbilder.py", "paket.py", "zugang.py",
-             "archetypen_daten.json"]
+WERKZEUGE = ["mtg_db.py", "deckbau.py", "bewertung.py", "simulation.py", "archetypen.py", "kartenbilder.py",
+             "protokoll.py", "paket.py", "zugang.py", "archetypen_daten.json", "projektanweisungen.md"]
+LISTEN = ["04_Deckregister.md", "09_Aenderungsprotokoll.md", "10_Geplante-Kaeufe-und-Ideen.md"]   # im Datenpaket
 NUR_ADMIN = ["weitergabe.py"]
 ZEILE = 100
 
@@ -102,6 +106,8 @@ def lokal_fuer(projektpfad):
         return f"decks/{name}"
     if "ideen" in teile[:-1]:
         return f"ideen/{name}"
+    if name in LISTEN:
+        return f"projekt/{name}"                  # 04/09/10 – protokoll.py liest und pflegt sie dort
     return name                                   # Werkzeuge und deck_namen.json in den Stamm
 
 
@@ -117,6 +123,11 @@ def dateien_daten(quelle):
         if os.path.exists(os.path.join(quelle, kand)):
             out.append(kand)
             break
+    for name in LISTEN:
+        for kand in (f"claude/{name}", name):
+            if os.path.exists(os.path.join(quelle, kand)):
+                out.append(kand)
+                break
     return out
 
 
@@ -173,6 +184,9 @@ def cmd_packen(a):
                         if unter == "data" and f not in (man.get("datendateien") or []):
                             continue              # in data/ nur die Bestandsdateien des Projekts
                         bekannt[f"{unter}/{f}"] = f"{praefix}{ziel}/{f}"
+            for f in LISTEN:                      # 04/09/10 (z. B. nach der Ersteinrichtung in projekt/ abgelegt)
+                if os.path.exists(os.path.join(a.arbeit, "projekt", f)) and f"projekt/{f}" not in bekannt:
+                    bekannt[f"projekt/{f}"] = f"{praefix}{f}"
         eintraege = [(p, os.path.join(a.arbeit, l)) for l, p in sorted(bekannt.items(), key=lambda x: x[1])
                      if os.path.exists(os.path.join(a.arbeit, l))]
     if not eintraege:
@@ -199,7 +213,7 @@ def cmd_packen(a):
     kopf = (f"{KENNUNG} {a.art} v{VERSION} · Stand {manifest['stand']} · {len(eintraege)} Dateien · "
             f"{sum(d['bytes'] for d in manifest['dateien']) // 1024} KB entpackt{extra} · sha256 {sha(roh)}")
     inhalt = "Inhalt: " + ", ".join(e[0] for e in eintraege)
-    text = "\n".join([kopf, inhalt, "Auspacken: Startbefehl in 05_Datenbank-und-Tools, Abschnitt 2 (nicht von Hand "
+    text = "\n".join([kopf, inhalt, "Auspacken: Startbefehl in 05a_Sitzungsstart (nicht von Hand "
                       "abschreiben). Projektdateien bleiben maßgeblich; dieses Paket ist ihre Transportkopie.",
                       "=====BEGIN====="] + [b64[i:i + ZEILE] for i in range(0, len(b64), ZEILE)] + ["=====END====="])
     open(a.out, "w", encoding="utf-8").write(text + "\n")
@@ -273,7 +287,7 @@ def cmd_auspacken(a):
         gesamt[f"stand_{man['art']}"] = man["stand"]
         print(f"{kopf.split(' · sha256')[0]}\n  -> {len(man['dateien'])} Dateien nach {a.ziel}")
     json.dump(gesamt, open(mpfad, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    basis = [d["lokal"] for d in gesamt["dateien"] if re.search(r"data/moxfield_haves_.*\.csv$", d["lokal"])]
+    basis = [d["lokal"] for d in gesamt["dateien"] if re.search(r"data/(basis|moxfield_haves_.*)\.csv$", d["lokal"])]
     if not basis:                                 # Gast-Archiv: alle Bestandsdateien außer Journal und Vormerkungen
         basis = [d["lokal"] for d in gesamt["dateien"] if d["art"] == "gast" and d["lokal"].startswith("data/")
                  and d["lokal"].endswith(".csv") and not re.search(r"(buchungen|vormerkungen)\.csv$", d["lokal"])]
