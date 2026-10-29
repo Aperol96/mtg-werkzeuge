@@ -53,7 +53,7 @@ So sieht ein Ausschnitt aus einem Vorschlag aus (gekürztes Beispiel):
 
 | Raus → Rein | Rolle | Warum | Status |
 |---|---|---|---|
-| Release the Dogs → Grasp of Fate | Interaktion | 4 Mana nur für Spielsteine → 3 Mana, entfernt bei jedem Gegner eine bleibende Karte | frei in der Sammlung |
+| Release the Dogs → Grasp of Fate | Interaktion | 4 Mana für vier 1/1-Spielsteine → 3 Mana, schickt bei jedem Gegner eine bleibende Karte (kein Land) ins Exil, solange die Verzauberung liegt | frei in der Sammlung |
 
 > Bracket 3 – 2/3 Game Changer – keine Massen-Landzerstörung, keine Extra-Züge in Serie, keine frühe 2-Karten-Combo.
 
