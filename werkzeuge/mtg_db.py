@@ -148,6 +148,9 @@ MAX_NAME = 100   # Moxfield-Grenze für Decknamen
 
 
 def get_json(url, data=None):
+    """JSON von einer Web-Schnittstelle. MTG_OFFLINE=1 (Tests, kein Netz): sofort Fehler statt Wartezeit."""
+    if os.environ.get("MTG_OFFLINE"):
+        raise OSError(f"offline (MTG_OFFLINE gesetzt): {url}")
     headers = dict(UA)
     if data is not None:
         headers["Content-Type"] = "application/json"
@@ -1109,7 +1112,6 @@ def cmd_mehrfach(con, args):
 
 def cmd_bracket(con, args):
     did = find_deck(con, args.deck)
-    d = con.execute("SELECT format, commander FROM decks WHERE deck_id=?", (did,)).fetchone()
     rows = con.execute("SELECT d.board, d.name, d.qty, d.oracle_id FROM deck_cards d WHERE deck_id=?"
                        " AND board IN ('main','commander')", (did,)).fetchall()
     oids = [r[3] for r in rows if r[3]]
@@ -1597,6 +1599,29 @@ def vergleich_snapshots(con, args):
     print("\n\n".join(eintraege) if eintraege else "Keine Abweichungen.")
 
 
+def cmd_frei(con, args):
+    """Schnellabfrage „Habe ich X frei?“: Besitz, Decks, Vormerkungen, geplanter Verkauf, frei – je Karte eine Zeile."""
+    zeilen = []
+    for n in args.karten:
+        oid = resolve_name(con, n)
+        if not oid:
+            zeilen.append((n, "–", "–", "–", "–", "nicht gefunden (englischen Oracle-Namen verwenden)"))
+            continue
+        k = con.execute("SELECT name, besitz, in_decks, vorgemerkt, ideen, frei, verkauf_geplant, verkauf_ideen"
+                        " FROM v_karten WHERE oracle_id=?", (oid,)).fetchone()
+        decks = [r[0] for r in con.execute("SELECT DISTINCT d.kurz FROM deck_cards c JOIN decks d USING(deck_id)"
+                                           " WHERE c.oracle_id=? AND c.board IN ('main','commander','sideboard',"
+                                           "'companion')", (oid,))]
+        hinweis = []
+        if k[3]:
+            hinweis.append(f"vorgemerkt {k[3]} ({k[4]})")
+        if k[6]:
+            hinweis.append(f"Verkauf geplant {k[6]} ({k[7]})")
+        zeilen.append((k[0], k[1], f"{k[2]}" + (f" ({', '.join(decks)})" if decks else ""), k[5],
+                       "ja" if k[5] > 0 else "nein", " · ".join(hinweis)))
+    table(zeilen, ["Karte", "Besitz", "in Decks", "frei", "verfügbar", "Hinweis"])
+
+
 def cmd_suche(con, args):
     where, par = ["1=1"], []
     if args.tag:
@@ -1751,6 +1776,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--db", default="mtg.sqlite")
     sp = ap.add_subparsers(dest="cmd", required=True)
+    fr = sp.add_parser("frei", help="Schnellabfrage: Habe ich diese Karten frei?")
+    fr.add_argument("karten", nargs="+")
     b = sp.add_parser("build")
     b.add_argument("--sammlung", nargs="+", required=True)
     b.add_argument("--decks", nargs="*", default=[])
@@ -1825,14 +1852,14 @@ def main():
     sc.add_argument("--moxfield", help="Ausgabe: Moxfield-CSV nur mit den gebuchten Zugängen")
     mx = sp.add_parser("moxfield-export", help="Gesamtbestand als Moxfield-Sammlungs-CSV")
     mx.add_argument("datei")
-    mx.add_argument("--basis", default="data/moxfield_haves_2026-10-26-0709Z.csv")
+    mx.add_argument("--basis", default="data/basis.csv")
     mx.add_argument("--journal", default="data/buchungen.csv")
     args = ap.parse_args()
     if args.cmd == "build":
         return build(args)
     con = sqlite3.connect(args.db)
     {"sammlung": cmd_sammlung, "decks": cmd_decks, "namen": cmd_namen, "besitz": cmd_besitz,
-     "mehrfach": cmd_mehrfach, "bracket": cmd_bracket, "export": cmd_export, "suche": cmd_suche,
+     "mehrfach": cmd_mehrfach, "bracket": cmd_bracket, "export": cmd_export, "suche": cmd_suche, "frei": cmd_frei,
      "laender": cmd_laender, "bestand-export": cmd_bestand_export, "sql": cmd_sql, "exemplare": cmd_exemplare, "drucke": cmd_drucke,
      "snapshot": cmd_snapshot, "vergleich": cmd_vergleich,
      "manabox-zu-moxfield": cmd_manabox_zu_moxfield, "scan": cmd_scan,

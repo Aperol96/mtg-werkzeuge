@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 1 * *"      # monatlich: Rauchtest mit Live-Daten
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: Tests ohne Netz (Testdeck, kleine Scryfall-/EDHREC-Daten)
+        run: python -m pytest tests -q
+
+  rauchtest:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Quellen erreichbar, Formate unverändert (Scryfall, EDHREC, Commander Spellbook)
+        run: python tests/rauchtest.py
