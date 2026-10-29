@@ -219,7 +219,7 @@ ARCHETYPEN = {
         "pakete": [
             ("payoff", "Landfall-Payoffs", lambda k: hat(k, "landfall"), True),
             ("extra_land", "zusätzliche Landdrops", lambda k: hat(k, "extra-land", "play-additional-land"), True),
-            ("land_ramp", "Land-Ramp", lambda k: hat(k, "land-ramp") and not ist_land(k), True),
+            ("land_ramp", "Land-Ramp", lambda k: hat(k, "land-ramp") and not ist_land(k) and "ramp" in rollen(k), True),
             ("fetch", "Opfer-/Fetch-Länder", lambda k: ist_land(k) and hat(k, "fetchland"), False),
             ("rekursion", "Land-Rekursion", lambda k: hat(k, "reanimate-land", "regrowth-land"), False),
         ]},

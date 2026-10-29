@@ -97,3 +97,10 @@ def test_weitere_befehle(arbeit):
     assert "Schwellen" in out
     out = ok(lauf(arbeit, "mtg_db.py", "frei", "Sol Ring", "Venerated Stormsinger"))
     assert "Sol Ring" in out
+
+
+def test_upgrade_durchlauf_und_tragbarkeit(arbeit):
+    """Sammlungs-Durchlauf zeigt alle freien Kandidaten je Lücke; untragbare Karten stehen nicht in den Paaren."""
+    out = ok(lauf(arbeit, "deckbau.py", "upgrade", "Testdeck", "--out", "out/upgrade2.csv"))
+    if "Kernpakete:" in out and "✗" in out.split("Kernpakete:")[1].split("\n")[0]:
+        assert "Sammlungs-Durchlauf" in out

@@ -134,6 +134,27 @@ def besitz(con, oid, ohne_deck=None):
     return b, d, max(b - d - v, 0)
 
 
+def vorgemerkt_fuer(con, oid):
+    """Harte Vormerkungen anderer Ideen → z. B. 'I-003', sonst ''."""
+    try:
+        r = con.execute("SELECT GROUP_CONCAT(DISTINCT idee) FROM vormerkungen WHERE oracle_id=? AND idee IS NOT ?"
+                        " AND COALESCE(weich,0)=0", (oid, IDEE)).fetchone()
+    except sqlite3.OperationalError:
+        return ""
+    return (r[0] or "") if r else ""
+
+
+def grund_nicht_frei(con, oid, b, d):
+    """Warum eine Karte nicht (ganz) frei ist: nicht im Besitz · in anderen Decks · vorgemerkt (I-nnn)."""
+    if b <= 0:
+        return "nicht im Besitz"
+    teile = ["in anderen Decks"] if d > 0 else []
+    v = vorgemerkt_fuer(con, oid)
+    if v:
+        teile.append(f"vorgemerkt ({v}) – mit --idee {v.split(',')[0]} als frei rechnen")
+    return " · ".join(teile) or "nicht frei"
+
+
 def verkauf_geplant(con, oid):
     """Geplanter Verkauf (weiche Vormerkung „V-nnn“) → z. B. 'V-001', sonst ''. Sperrt nicht, nur Hinweis."""
     try:
@@ -896,14 +917,16 @@ def pruefe_besitz(con, alle, main, ersetzt):
         if f >= q_:
             frei_n += q_
         else:
-            kauf.append((c["name"], q_ - f, c["eur"], "alle Exemplare in anderen Decks" if b > 0 else "nicht im Besitz"))
+            kauf.append((c["name"], q_ - f, c["eur"], grund_nicht_frei(con, c["oid"], b, d)))
     summe = sum((e or 0) * n for _, n, e, _ in kauf)
     print(f"\nBesitz: {frei_n} Karten frei in der Sammlung | zu kaufen/tauschen: {sum(n for _, n, _, _ in kauf)}"
           f" | Summe ab {summe:.2f} € (Scryfall-EUR, günstigster Druck, {time.strftime('%d.%m.%Y')})")
     if kauf:
         M.table(sorted(kauf, key=lambda k: -(k[2] or 0)), ["Karte", "Anzahl", "ab €", "Grund"])
-        print("\nKaufliste (zum Einfügen in Moxfield):")
-        print("\n".join(f"{n} {k}" for k, n, _, _ in sorted(kauf)))
+        echt = [(k, n) for k, n, _, g in sorted(kauf) if not g.startswith("vorgemerkt")]
+        if echt:
+            print("\nKaufliste (zum Einfügen in Moxfield; ohne nur vorgemerkte Karten):")
+            print("\n".join(f"{n} {k}" for k, n in echt))
     plan = {}
     for q_, c in main:
         if basic(c):
@@ -979,18 +1002,39 @@ def cmd_pruefen(con, a):
         print(f"  - {w}")
 
 
-def combos_fehlend(con, body, alle):
+def beinahe_combos(con, body, alle):
+    """Combos aus Commander Spellbook, denen genau 1 Karte fehlt -> [{karten, fehlt, tag, zwei, status}] oder None
+    (nicht erreichbar). zwei = die Combo hat nur 2 Karten (Bracket 3: „kein frühes 2-Karten-Combo“)."""
     try:
         r = M.get_json("https://backend.commanderspellbook.com/find-my-combos", body)
-        fast = (r.get("results", r) or {}).get("almostIncluded", [])
-        print(f"\nCombos, denen genau 1 Karte fehlt: {len(fast)} (Auszug)")
-        namen = {M.front(c["name"]) for _, c in alle}
-        for v in fast[:15]:
-            k = [u["card"]["name"] for u in v["uses"]]
-            fehlt = [x for x in k if M.front(x) not in namen]
-            print(f"  fehlt {', '.join(fehlt)} | {' + '.join(k)} | Tag {v.get('bracketTag')}")
     except Exception as e:
         print("!! find-my-combos nicht erreichbar:", e)
+        return None
+    fast = (r.get("results", r) or {}).get("almostIncluded", [])
+    namen = {M.front(c["name"]) for _, c in alle}
+    out = []
+    for v in fast:
+        k = [u["card"]["name"] for u in v["uses"]]
+        fehlt = [x for x in k if M.front(x) not in namen]
+        status = []
+        for f in fehlt:
+            oid = M.resolve_name(con, f)
+            b, d, fr = besitz(con, oid) if oid else (0, 0, 0)
+            status.append("frei in der Sammlung" if fr else "in einem Deck" if d else "nicht im Besitz")
+        out.append({"karten": k, "fehlt": fehlt, "tag": v.get("bracketTag"), "zwei": len(k) == 2,
+                    "status": status})
+    out.sort(key=lambda x: (not x["zwei"], "frei in der Sammlung" not in x["status"]))
+    return out
+
+
+def combos_fehlend(con, body, alle):
+    fast = beinahe_combos(con, body, alle)
+    if fast is None:
+        return
+    print(f"\nCombos, denen genau 1 Karte fehlt: {len(fast)} (Auszug; 2-Karten-Combos zuerst)")
+    for v in fast[:15]:
+        print(f"  fehlt {', '.join(v['fehlt'])} ({', '.join(v['status'])}) | {' + '.join(v['karten'])} | Tag {v['tag']}"
+              + (" | 2-Karten-Combo" if v["zwei"] else ""))
 
 
 # ----------------------------------------------------------------- erklaerung, alternativen, oracle
@@ -1114,13 +1158,46 @@ def upgrade_kontext(con, a):
     return {"pfad": pfad, "did": did, "cmdr": cmdr, "main": main, "cname": cname, "ckurz": kurzname(cname),
             "ci": set("".join(c["ci"] for _, c in cmdr)), "edh": edh, "them": them, "epfad": epfad, "prof": prof,
             "ak": ak, "deck": deck, "zaehl": zaehl, "inst": inst, "soll": {k: v for k, v in ak["soll"].items()},
-            "typen": typen,
+            "typen": typen, "anteil": pip_anteile(cmdr + main),
+            "mv": mv_schnitt(cmdr + main),
             "im_deck": {c["oid"] for _, c in cmdr + main}}
+
+
+def pip_anteile(karten):
+    """Anteil der farbigen Mana-Pips je Farbe (Nichtländer inkl. Commander)."""
+    s = Counter()
+    for q, c in karten:
+        if "Land" not in front_type(c):
+            for f, n in pips(c["mana_cost"]).items():
+                s[f] += n * q
+    ges = sum(s.values()) or 1
+    return {f: s[f] / ges for f in "WUBRG"}
+
+
+def mv_schnitt(karten):
+    sp = [(q, c) for q, c in karten if "Land" not in front_type(c)]
+    return sum((c["cmc"] or 0) * q for q, c in sp) / (sum(q for q, _ in sp) or 1)
+
+
+def nicht_tragbar(ctx, k, x=None):
+    """Grund, warum k nicht ins Deck passt, obwohl der Wert stimmt – oder None.
+    Drei oder mehr Pips einer Farbe, die weniger als die Hälfte der Pips stellt (Karsten: braucht sehr viele Quellen);
+    beim reinen Wert-Tausch zusätzlich: Kurve schon hoch (Ø MV ≥ 3,4) und die Karte kostet 7+ und mehr als x."""
+    for f, n in pips(k["c"]["mana_cost"]).items():
+        if n >= 3 and ctx["anteil"].get(f, 0) < 0.5:
+            return f"{f * n} bei {ctx['anteil'].get(f, 0) * 100:.0f} % {FARB_DE.get(f, f)}-Anteil"
+    if x is not None and ctx["mv"] >= 3.4 and (k["c"]["cmc"] or 0) >= 7 and (k["c"]["cmc"] or 0) > (x["c"]["cmc"] or 0):
+        return f"Kurve schon hoch (Ø MV {de(ctx['mv'])}) – MV {k['c']['cmc']:g} statt {x['c']['cmc']:g}"
+    return None
+
+
+FARB_DE = {"W": "Weiß", "U": "Blau", "B": "Schwarz", "R": "Rot", "G": "Grün"}
 
 
 def upgrade_kandidaten(con, ctx, a):
     """Freie Karten (Stufe 1: auch Käufe bis --max-preis) mit Bewertung; Karten, die den Plan zerstören, getrennt."""
-    pool = {oid: "Sammlung" for (oid,) in con.execute("SELECT oracle_id FROM v_karten WHERE frei > 0")}
+    pool = {oid: "Sammlung" for (oid,) in con.execute(      # mit --idee: deren Vormerkungen gelten als frei
+        "SELECT oracle_id FROM v_karten WHERE frei > 0 OR (? IS NOT NULL AND ideen LIKE '%' || ? || '%')", (IDEE, IDEE))}
     if a.stufe:
         for n in list(ctx["edh"]) + list(ctx["them"]):
             oid = M.resolve_name(con, n)
@@ -1147,6 +1224,8 @@ def upgrade_kandidaten(con, ctx, a):
              "pakete": karte_pakete(ctx["ak"], oid, ctx["typen"]),
              "status": ("frei" + (f" · Verkauf geplant ({vk})" if vk else "") + (" ⚑" if oid in beim_deck else ""))
              if f else f"{c['eur']:.2f} €"}
+        k["untragbar"] = nicht_tragbar(ctx, k)
+        k["prio"] = k["b"]["wert"] * (0.6 + 0.4 * max([B.funktionsgrad(b["sicht"], r) for r in k["rollen"]] or [0.7]))
         kand.append(k)
     kand.sort(key=lambda k: -k["b"]["wert"])
     return kand, stoert, (zp if beim_deck else None)
@@ -1183,7 +1262,7 @@ class Tausch:
         self.median = {p["key"]: p["median"] for p in ctx["ak"]["pakete"] if p["kern"] and p["median"] is not None}
         self.label = {p["key"]: p["label"] for p in ctx["ak"]["pakete"]}
         self.paare, self.raus_ok, self.rein_ok = [], set(), set()
-        self.gesperrt, self.phase = {}, 1
+        self.gesperrt, self.abgelehnt, self.phase = {}, {}, 1
         self.iz = Counter()
         for x in ctx["deck"]:
             for z in B.interaktion_ziele(x["b"]["sicht"]):
@@ -1197,6 +1276,9 @@ class Tausch:
             if m is not None and self.paket[p] - 1 < int(m) and p not in k["pakete"]:
                 return f"Kernpaket {self.label[p]} ({self.paket[p]}/{A_de(m)})"
         bx, bk = x["b"], k["b"]
+        inkl = (bx["v"] or {}).get("inclusion") or 0
+        if streng and inkl >= 0.2 and bk["quelle"] != "EDHREC":
+            return f"in {inkl * 100:.0f} % der Decks (EDHREC) – reine Schätzung reicht nicht"   # Daten vor Meinung
         if bx["bezug"] >= B.BEZUG_SPERRE:
             gleich = bk["bezug"] >= bx["bezug"] and set(bk["gruende"]) & set(bx["gruende"])
             if streng:
@@ -1210,6 +1292,9 @@ class Tausch:
         soll = self.ctx["soll"]
         stufe = 1 if streng or self.phase >= 2 else 0      # Rollen auffüllen: bis Minimum · sonst: Ziel halten
         for r in x["rollen"]:
+            if (self.phase >= 2 and r in k["rollen"]
+                    and B.funktionsgrad(k["b"]["sicht"], r) < B.funktionsgrad(x["b"]["sicht"], r) - 0.05):
+                return f"{ROLLE_NAME[r]}: Ersatz erfüllt die Rolle schlechter"      # kein Abstieg nur fürs Paket
             if r in soll and self.ist[r] - 1 < soll[r][stufe]:
                 was = "Minimum" if stufe == 0 else "Ziel"
                 if r not in k["rollen"]:
@@ -1276,7 +1361,7 @@ def bilde_paare(ctx, kand, kauf_alt, a):
     for r, (mn, ziel, _) in sorted(soll.items(), key=lambda kv: t.ist[kv[0]] - kv[1][0]):
         if r == "land":
             continue
-        passend = [k for k in kand if r in k["rollen"] and "Land" not in front_type(k["c"])]
+        passend = [k for k in kand if r in k["rollen"] and "Land" not in front_type(k["c"]) and not k["untragbar"]]
         passend.sort(key=lambda k: (not k["frei"], -B.funktionsgrad(k["b"]["sicht"], r) * k["b"]["wert"] - k["b"]["wert"]))
         for k in passend:
             if t.ist[r] >= mn or len(t.paare) >= a.paare:
@@ -1292,21 +1377,24 @@ def bilde_paare(ctx, kand, kauf_alt, a):
     # 2. Kernpakete unter dem Median (Rollen bleiben ab hier auf dem Ziel)
     t.phase = 2
     for key, m in sorted(t.median.items(), key=lambda kv: t.paket[kv[0]] - kv[1]):
-        for k in [k for k in kand if key in k["pakete"]]:
+        for k in sorted((k for k in kand if key in k["pakete"] and not k["untragbar"]), key=lambda k: -k["prio"]):
             if t.paket[key] >= m or len(t.paare) >= a.paare:
                 break
             if k["c"]["oid"] in t.rein_ok:
                 continue
-            x = t.raus_fuer(k, schwach, paket=key, max_wert=k["b"]["wert"])
+            x = t.raus_fuer(k, schwach, paket=key, max_wert=k["b"]["wert"] - 0.02)     # kein Tausch ohne Gewinn
             if x:
                 t.tausche(x, k, f"Kernpaket {t.label[key]} unter Median")
     # 3. Wert verbessern (Länder nur gegen Länder und nur mit EDHREC-Wert)
     for k in kand:
         if len(t.paare) >= a.paare or k["c"]["oid"] in t.rein_ok:
             continue
-        if "Land" in front_type(k["c"]) and k["b"]["edh"] is None:
+        if "Land" in front_type(k["c"]) and k["b"]["edh"] is None or k["untragbar"]:
             continue
         x = t.raus_fuer(k, schwach, streng=True)
+        if x and nicht_tragbar(ctx, k, x):
+            t.abgelehnt.setdefault(k["c"]["name"], nicht_tragbar(ctx, k, x))
+            continue
         # nur geschätzter Wert (nicht auf der EDHREC-Seite) → doppelter Mindestabstand
         if x and k["b"]["wert"] - x["b"]["wert"] >= a.abstand * (2 if k["b"]["quelle"] != "EDHREC" else 1):
             t.tausche(x, k, "stärker laut EDHREC" if k["b"]["quelle"] == "EDHREC" else "stärkerer Oracle-Bezug")
@@ -1363,12 +1451,18 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
         for k_, n in ROLLEN[1:6] + [("plan", "Plan/Synergie")]:
             sel = [x for x in kand if (k_ in x["rollen"]) or (k_ == "plan" and not x["rollen"])]
             if sel:
-                print(f"  {n}: " + "; ".join(f"{x['c']['name']} ({wert_txt(x['b'])}, {x['status']})" for x in sel[:6]))
+                print(f"  {n}: " + "; ".join(f"{x['c']['name']} ({wert_txt(x['b'])}, {x['status']})" for x in sel[:8]))
     if t.gesperrt:
         print(f"\nRaus-Sperren ({len(t.gesperrt)} Deckkarten bleiben, Auszug): "
               + "; ".join(f"{n} – {g}" for n, g in list(t.gesperrt.items())[:8]))
     if stoert:
         print(f"Nicht vorgeschlagen – zerstört den eigenen Plan ({ak['name']}): {', '.join(stoert[:8])}")
+    abgel = dict(t.abgelehnt)
+    abgel.update({k["c"]["name"]: k["untragbar"] for k in kand if k["untragbar"] and k["b"]["wert"] >= 0.2})
+    if abgel:
+        print("Nicht vorgeschlagen – passt nicht zu Manabasis oder Kurve: "
+              + "; ".join(f"{n} ({g})" for n, g in list(abgel.items())[:6]))
+    durchlauf(ctx, kand, t)
     print(f"\nTauschpaare – Startpunkt, Claude prüft jedes Paar am Oracle-Text und am Spielplan ({len(t.paare)}):")
     M.table([(i + 1, x["c"]["name"], wert_txt(x["b"]), k["c"]["name"], wert_txt(k["b"]),
               f"{k['b']['wert'] - x['b']['wert']:+.2f}".replace(".", ","), k["status"], grund)
@@ -1418,6 +1512,28 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
     print("\n\n".join(oracle_block(con, k["c"]) for _, k, *_ in t.paare))
     print("\nOracle-Text der Karten, die raus sollen (auch die Raus-Begründung nur hieraus):\n")
     print("\n\n".join(oracle_block(con, x["c"]) for x, *_ in t.paare))
+
+
+def durchlauf(ctx, kand, t):
+    """Sammlungs-Durchlauf: alle freien Kandidaten für jedes offene Kernpaket und jede Rolle unter dem Minimum –
+    nach Wert × Funktionsgrad, nicht nur die Spitze. Claude prüft die Liste am Oracle-Text (wie ein Mensch, der die
+    Sammlung durchsieht); die vollständige Tabelle steht in der CSV."""
+    offen = [(p["label"], lambda k, key=p["key"]: key in k["pakete"]) for p in ctx["ak"]["pakete"]
+             if p["kern"] and p["median"] and p["ist"] < p["median"]]
+    offen += [(f"{ROLLE_NAME[r]} (unter Minimum)", lambda k, r=r: r in k["rollen"])
+              for r in KERN if r != "land" and ctx["zaehl"][r] < ctx["soll"][r][0]]
+    if not offen:
+        return
+    print("\nSammlungs-Durchlauf – alle freien Kandidaten je Lücke (Wert × Funktionsgrad; ✓ = schon in einem Paar):")
+    for label, fn in offen:
+        sel = sorted((k for k in kand if k["frei"] and fn(k) and not k["untragbar"]), key=lambda k: -k["prio"])
+        if not sel:
+            print(f"  {label}: keine freie Karte")
+            continue
+        print(f"  {label} ({len(sel)}): " + "; ".join(
+            f"{k['c']['name']} {wert_txt(k['b'])}{' ✓' if k['c']['oid'] in t.rein_ok else ''}"
+            + (" · V" if "Verkauf" in k["status"] else "") for k in sel[:12])
+              + (f" … +{len(sel) - 12} in der CSV" if len(sel) > 12 else ""))
 
 
 def upgrade_dateien(ctx, kand, t, a):
@@ -1527,7 +1643,8 @@ def abnahme_daten(con, pfad, bracket=3, archetyp=None, n=5000, did=None):
     return {"pfad": pfad, "cmdr": cmdr, "main": main, "cname": cname, "unbekannt": unbekannt, "ak": ak,
             "zaehl": zaehl, "inst": inst, "bz": bz, "iz": iz, "iz_karten": iz_karten, "siegwege": sw, "sim": sim,
             "o_wert": o_wert, "o_bezug": o_bezug, "teile": teile, "index": staerke_index(teile), "epfad": epfad,
-            "legal": legal_warnungen(cmdr, main), "bracket": bracket}
+            "legal": legal_warnungen(cmdr, main), "bracket": bracket,
+            "beinahe": beinahe_combos(con, bz["body"], cmdr + main) if bracket <= 3 else []}
 
 
 def abnahme_punkte(d, basis=None):
@@ -1604,6 +1721,23 @@ def cmd_abnahme(con, a):
           + (f" (Basis {de(basis['index'], 3)})" if basis else ""))
     print("Schwellen für Interaktion und Simulation sind vorläufig (Einschätzung, 08 Abschnitt 8a) – nach weiteren "
           "Abnahmen nachschärfen.")
+    beinahe_hinweis(d)
+
+
+def beinahe_hinweis(d):
+    """Bracket-Treue: 2-Karten-Combos, denen nur eine Karte fehlt – kein Abnahme-Punkt, aber vor jedem Tausch prüfen."""
+    b = d.get("beinahe")
+    if b is None:
+        print("\nBeinahe-Combos: Commander Spellbook nicht erreichbar – vor der Freigabe mit pruefen --combos-fehlend nachholen")
+        return
+    zwei = [x for x in b if x["zwei"]]
+    if not zwei:
+        print(f"\nBeinahe-Combos: keine 2-Karten-Combo, der nur eine Karte fehlt ({len(b)} größere Combos – pruefen --combos-fehlend)")
+        return
+    print(f"\nBeinahe-Combos (Bracket-Treue – diese Karten nicht ohne Absicht ins Deck nehmen; {len(zwei)} mit 2 Karten):")
+    for x in zwei[:8]:
+        warn = " ⚠" if "frei in der Sammlung" in x["status"] else ""
+        print(f"  {' + '.join(x['karten'])} – fehlt {', '.join(x['fehlt'])} ({', '.join(x['status'])}){warn}")
 
 
 # ----------------------------------------------------------------- Gegentest (Projekt gegen Konkurrenz-Skill)

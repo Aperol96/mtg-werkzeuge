@@ -300,7 +300,8 @@ def _leben_nutzer(k):
 
 
 def _land_geber(k):
-    return _t(k, "extra-land", "play-additional-land") or (_t(k, "land-ramp") and not ist_land(k)) or (
+    return _t(k, "extra-land", "play-additional-land") or (
+        _t(k, "land-ramp") and not ist_land(k) and "ramp" in rollen(k)) or (
         ist_land(k) and _t(k, "fetchland"))
 
 
@@ -522,16 +523,41 @@ def zerstoert_plan(k, archetyp):
 STUFEN = ("gleichwertig", "funktional, aber langsamer", "nur Platzhalter")
 
 
+RX_WIEDERHOLBAR = re.compile(r"\b(harmonize|flashback|retrace|jump-start|escape|buyback|rebound|recover)\b"
+                             r"|return (this card|it) from your graveyard to your hand")
+
+
+def wiederholbar(k):
+    """Zauber, der sich aus dem Friedhof erneut wirken lässt (Harmonize, Flashback, Retrace …)."""
+    return bool(RX_WIEDERHOLBAR.search(k["tl"]))
+
+
+def aktivierung_mv(k):
+    """Mana einer Fähigkeit „…, sacrifice this …“, die erst den Effekt bringt (Font of Fertility) – sonst 0."""
+    name = re.escape((k["name"] or "").split(" // ")[0].lower())
+    m = re.search(r"((?:\{[^}]+\})+),\s*sacrifice (?:this \w+|" + (name or "~") + r")\s*:", k["tl"])
+    if not m:
+        return 0
+    n = 0
+    for sym in re.findall(r"\{([^}]+)\}", m.group(1)):
+        n += int(sym) if sym.isdigit() else (0 if sym in ("t", "q", "x") else 1)
+    return n
+
+
 def funktionsgrad(k, rolle):
     """Wie gut erfüllt die Karte die Rolle (0–1)? Einfache, prüfbare Regeln je Rolle – Einschätzung."""
     t, tl, mv = k["t"], k["tl"], k["cmc"] or 0
     if rolle == "ramp":
+        mv = mv + aktivierung_mv(k)               # Font of Fertility: {1}{G} + {1}{G}, opfern = effektiv 3 Mana
         g = 1.0 if mv <= 2 else 0.8 if mv <= 3 else 0.5
         dauerhaft = bool(re.search(r"\{t\}[^.:]*: add", tl) or RX_LAND_AUFS_FELD.search(tl)
                          or re.search(r"costs? \{\d\} less", tl) or re.search(r"\bwhenever\b[^.]*(treasure|\badd)", tl))
         if not dauerhaft:                        # nur einmalig (Spawn, Treasure) oder an Bedingung geknüpft
             g -= 0.3
-        return round(g if not ist_spontan(k) else min(g, 0.8), 2)
+        elif re.search(r"deals combat damage to (a|an opponent|that) player[^.]*(search|\badd)", tl):
+            g -= 0.3                             # nur bei Kampfschaden (One with Nature) – unzuverlässig
+        g = g if not ist_spontan(k) else min(g, 0.8)
+        return round(min(g + (0.1 if wiederholbar(k) else 0), 1.0), 2)
     if rolle == "ka":
         g = 1.0 if t & {"repeatable-draw", "draw-engine", "repeatable-card-advantage"} else 0.6
         return g - (0.2 if "cantrip" in t and g < 1 else 0)
