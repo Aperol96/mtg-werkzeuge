@@ -118,3 +118,25 @@ def test_nicht_tragbar():
     assert D.nicht_tragbar(ctx, hoof) is None                       # GG im Hauptfarbton ist tragbar
     assert "Kurve" in D.nicht_tragbar(ctx, hoof, klein)            # Wert-Tausch 3 → 7 bei hoher Kurve
     assert D.nicht_tragbar(ctx, klein, hoof) is None
+
+
+def test_situativ_und_drain():
+    """Funde aus Gegentest 2 (Mardu Surge): situative Payoffs als Hinweis, Drain-Siegweg ohne Gift-Klausel."""
+    bone = B.sicht("Bone Devourer", "Creature — Dragon", "Flash\nFlying\nThis creature enters with a number of +1/+1 "
+                   "counters on it equal to the number of creatures that died this turn.", "Flash, Flying", set(), 4)
+    ohne = B.sicht("Testkarte", "Creature", "This creature enters with a +1/+1 counter on it for each creature that "
+                   "died this turn.", "", set(), 3)
+    blood = B.sicht("Blood Artist", "Creature", "Whenever Blood Artist or another creature dies, target player loses "
+                    "1 life and you gain 1 life.", "", {"drain-life"}, 2)
+    atlas = B.sicht("Phyrexian Atlas", "Artifact", "{T}: Add one mana of any color.\nCorrupted — Whenever this artifact "
+                    "becomes tapped, each opponent who has three or more poison counters loses 1 life.", "", set(), 3)
+    assert "Flash" in B.situativ(bone) and "ohne sie" in B.situativ(ohne)
+    assert B.situativ(blood) is None
+    assert B.drain_ok(blood) and not B.drain_ok(atlas)
+
+
+def test_rauschen():
+    s = {"landdrops_bis_4": 0.85, "commander_plus1": 0.8, "fehlstart": 0.05, "farbproblem": 0.1, "n": 5000}
+    band = D.rauschen({"sim": s}, {"sim": s})
+    assert 0 < band < 0.005                      # bei n = 5000 liegt das Rauschen unter der Schwelle
+    assert D.rauschen({"sim": dict(s, n=200)}, {"sim": dict(s, n=200)}) > band

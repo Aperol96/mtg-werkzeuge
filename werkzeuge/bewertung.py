@@ -544,6 +544,32 @@ def aktivierung_mv(k):
     return n
 
 
+RX_SITUATIV = re.compile(r"(equal to|for each)[^.]*(died|dealt damage|entered|you've gained life|cards? drawn) this turn"
+                         r"|\bif (a|another) creature died this turn|\bmorbid\b")
+
+
+def situativ(k):
+    """Hinweis, wenn die Hauptwirkung von einem Ereignis im selben Zug abhängt und ohne es fast nichts tut
+    (Bone Devourer ohne Tode = 0/0). Flash mildert das: Die Karte lässt sich nach dem Ereignis wirken. Einschätzung."""
+    if not RX_SITUATIV.search(k["tl"]):
+        return None
+    if "flash" in k["kw"] or re.search(r"\bflash\b", k["tl"]) or ist_spontan(k):
+        return "situativ (hängt an Ereignissen im selben Zug) – mit Flash/Instant planbar"
+    return "situativ (hängt an Ereignissen im selben Zug) – ohne sie kaum Wirkung"
+
+
+RX_DRAIN = re.compile(r"(each opponent|target opponent|target player|each player|that player|defending player)"
+                      r"[^.]*\blos(es|e) (x|\d+|that much|life equal)")
+
+
+def drain_ok(k):
+    """Ein Drain-Siegweg braucht Lebensverlust für Gegner ohne Gift-Bedingung (Phyrexian Atlas zählt nicht)."""
+    for satz in re.split(r"(?<=[.\n])", k["tl"]):
+        if RX_DRAIN.search(satz) and "poison" not in satz:
+            return True
+    return False
+
+
 def funktionsgrad(k, rolle):
     """Wie gut erfüllt die Karte die Rolle (0–1)? Einfache, prüfbare Regeln je Rolle – Einschätzung."""
     t, tl, mv = k["t"], k["tl"], k["cmc"] or 0

@@ -1353,9 +1353,15 @@ def kompromiss(k, rolle, kauf_alt):
     return stufe, q, satz
 
 
+def raus_wert(x):
+    """Wert für die Raus-Reihenfolge: situative Karten ohne Flash zählen 15 % weniger (nur Reihenfolge, nicht Index)."""
+    sit = B.situativ(x["b"]["sicht"])
+    return x["b"]["wert"] * (0.85 if sit and "ohne sie" in sit else 1.0)
+
+
 def bilde_paare(ctx, kand, kauf_alt, a):
     t = Tausch(ctx, a.abstand)
-    schwach = sorted((x for x in ctx["deck"] if not basic(x["c"])), key=lambda x: x["b"]["wert"])
+    schwach = sorted((x for x in ctx["deck"] if not basic(x["c"])), key=raus_wert)
     soll = ctx["soll"]
     # 1. Rollen unter dem Minimum – freie Karten zuerst (Rückfall vor Kauf), Kompromiss-Stufe je Karte
     for r, (mn, ziel, _) in sorted(soll.items(), key=lambda kv: t.ist[kv[0]] - kv[1][0]):
@@ -1410,6 +1416,9 @@ def grund_raus(x, zaehl, soll, ckurz):
             teile.append(f"{ROLLE_NAME[r]} über Richtwert ({zaehl[r]}/{soll[r][1]})")
     if not x["rollen"]:
         teile.append("keine Kernrolle (nur Plan/Synergie)")
+    sit = B.situativ(x["b"]["sicht"])
+    if sit:
+        teile.append(sit)
     return "; ".join(teile)
 
 
@@ -1427,6 +1436,9 @@ def grund_rein(k, vorher, nachher, soll, ckurz):
             teile.append(f"füllt {ROLLE_NAME[r]} ({vorher[r]} → {nachher[r]}, Minimum {soll[r][0]})")
     if k["c"].get("gc"):
         teile.append("Game Changer")
+    sit = B.situativ(k["b"]["sicht"])
+    if sit:
+        teile.append(sit)
     return "; ".join(teile)
 
 
@@ -1445,7 +1457,9 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
         schwach = sorted((x for x in ctx["deck"] if not basic(x["c"])), key=lambda x: x["b"]["wert"])
         print("\nSchwächste Deckkarten (Wert = max(EDHREC, Oracle-Bezug); ≈ = geschätzt):")
         M.table([(x["c"]["name"], rollen_txt(x["rollen"]), wert_txt(x["b"]), de(x["b"]["bezug"]),
-                  "; ".join(x["b"]["gruende"][:2]) or "–") for x in schwach[:a.paare]],
+                  "; ".join(x["b"]["gruende"][:2] + ([B.situativ(x["b"]["sicht"]).split(" (")[0]]
+                                                     if B.situativ(x["b"]["sicht"]) else [])) or "–")
+                 for x in schwach[:a.paare]],
                 ["Karte", "Rollen", "Wert", "Bezug", "warum"])
         print("\nBeste Kandidaten je Rolle (" + ("frei" if not a.stufe else "frei oder Kauf") + "):")
         for k_, n in ROLLEN[1:6] + [("plan", "Plan/Synergie")]:
@@ -1579,7 +1593,8 @@ SIEGWEGE = [
     # (Name, Prüfung je Karte, Mindestanzahl)
     ("Kampf / Go-wide", lambda s: bool(s["t"] & {"overrun", "anthem", "power-boost-to-all", "extra-combat-phase"}), 3),
     ("Drain / Aristokraten", lambda s: bool(s["t"] & {"opponent-loses-life", "drain-life", "blood-artist-ability",
-                                                       "burn-player-each"}), 3),
+                                                       "burn-player-each"})
+     and (B.drain_ok(s) or "burn-player-each" in s["t"]), 3),
     ("Commander-Schaden / Voltron", lambda s: any(x in s["typ"] for x in ("Equipment", "Aura"))
      and bool(s["t"] & {"gives-evasion", "gives-double-strike", "power-boost"}), 4),
     ("Große Kreaturen", lambda s: B.ist_kreatur(s) and _staerke(s) >= 6, 5),
@@ -1647,6 +1662,18 @@ def abnahme_daten(con, pfad, bracket=3, archetyp=None, n=5000, did=None):
             "beinahe": beinahe_combos(con, bz["body"], cmdr + main) if bracket <= 3 else []}
 
 
+def rauschen(d, basis):
+    """2σ-Band des Index-Unterschieds aus der Simulation (Binomialfehler der vier Anteile, je 1/4 im
+    Simulationsteil, der 1/5 des Index ist). Zeigt, ob ein kleiner Gewinn mehr ist als Zufall der Ziehungen."""
+    import math
+
+    def sigma(x):
+        s, n = x["sim"], max(x["sim"].get("n", 5000), 1)
+        ps = [s["landdrops_bis_4"], s.get("commander_plus1", 1), s["fehlstart"], s.get("farbproblem", 0)]
+        return math.sqrt(sum(p * (1 - p) / n for p in ps)) / 4 / 5
+    return round(2 * math.sqrt(sigma(d) ** 2 + sigma(basis) ** 2), 4)
+
+
 def abnahme_punkte(d, basis=None):
     """-> Liste (Prüfpunkt, Ergebnis, Status ✓/✗/offen/–) – Definition of Done aus 08, Abschnitt 8a."""
     import simulation as S
@@ -1687,9 +1714,10 @@ def abnahme_punkte(d, basis=None):
     pk.append(("Konsistenz-Simulation (vorläufige Schwellen)", "; ".join(fail) or "alle Schwellen erfüllt",
                "✗" if fail else "✓"))
     if basis:
-        besser = d["index"] > basis["index"] + 0.005
+        band = rauschen(d, basis)
+        besser = d["index"] > basis["index"] + max(0.005, band)
         pk.append(("Messbar stärker als der Ausgangsstand",
-                   f"Stärke-Index {de(basis['index'], 3)} → {de(d['index'], 3)} ("
+                   f"Stärke-Index {de(basis['index'], 3)} → {de(d['index'], 3)}, Rauschen der Simulation ±{de(band, 3)} ("
                    + ", ".join(f"{k} {de(basis['teile'][k], 2)}→{de(v, 2)}" for k, v in d["teile"].items()) + ")",
                    "✓" if besser else "✗"))
     else:
