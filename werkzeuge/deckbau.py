@@ -779,6 +779,16 @@ def wert(v, c):
     return 0.06 if r <= 1500 else 0.03 if r <= 5000 else 0.0
 
 
+NOT_SCHWELLE = 0.10    # unter diesem Wert (oder ohne EDHREC-Eintrag) ist eine freie Karte eine „Notlösung aus der Sammlung“
+NOTLOESUNG = "Notlösung aus der Sammlung"
+
+
+def ist_notloesung(v, c, frei):
+    """Freie Karte mit schwachem oder fehlendem EDHREC-Wert – kostenlos, aber nur, wenn nichts Besseres frei ist.
+    EDHREC ist ein Anhaltspunkt, kein Urteil: entscheidend sind Oracle-Text, Rolle und Spielplan (08, Grundsatz 14)."""
+    return bool(frei) and not basic(c) and wert(v, c) < NOT_SCHWELLE
+
+
 def deck_aus_ref(con, ref):
     """Deckdatei oder Deckname -> (Pfad, deck_id)."""
     if os.path.exists(ref):
@@ -843,9 +853,23 @@ def cmd_upgrade(con, a):
             continue
         v = edh.get(c["name"]) or edh.get(M.front(c["name"])) or {}
         tv = them.get(c["name"]) or them.get(M.front(c["name"])) or {}
-        kand.append({"c": c, "rollen": rollen(con, c), "v": v, "tv": tv, "wert": wert(v, c), "frei": f,
-                     "status": "frei" if f else f"{c['eur']:.2f} €"})
+        nl = ist_notloesung(v, c, f)
+        kand.append({"c": c, "rollen": rollen(con, c), "v": v, "tv": tv, "wert": wert(v, c), "frei": f, "not": nl,
+                     "status": ("frei · Notlösung" if nl else "frei") if f else f"{c['eur']:.2f} €"})
     kand.sort(key=lambda k: -k["wert"])
+    # Kauf-Alternativen je Rolle (nur zur Information neben einer Notlösung; EDHREC-Liste des Commanders)
+    kauf_alt = {}
+    for n, v in edh.items():
+        oid = M.resolve_name(con, n)
+        if not oid or oid in im_deck or oid in pool and pool[oid] == "Sammlung":
+            continue
+        c = card(con, oid)
+        if not c or c["legal"] != "legal" or not set(c["ci"]) <= ci or basic(c) or c["eur"] is None:
+            continue
+        w = wert(v, c)
+        for r in rollen(con, c):
+            if r not in kauf_alt or w > kauf_alt[r][1]:
+                kauf_alt[r] = (c, w)
     land = lambda c: "Land" in front_type(c)
     zp, beim_deck = M.deck_zeitstempel(con, did) if did else (None, None)
     beim_deck = {r[3] for r in beim_deck or []}
@@ -884,13 +908,15 @@ def cmd_upgrade(con, a):
     for r, (mn, ziel) in sorted(soll.items(), key=lambda kv: ist[kv[0]] - kv[1][0]):
         if r == "land":
             continue
-        for k in [k for k in kand if r in k["rollen"] and not land(k["c"])]:
+        passend = [k for k in kand if r in k["rollen"] and not land(k["c"])]
+        # Rückfall vor Kauf: eigene Karten zuerst – auch schwache, wenn nichts Besseres frei ist (08, Grundsatz 14)
+        for k in [k for k in passend if k["frei"]] + [k for k in passend if not k["frei"]]:
             if ist[r] >= mn or len(paare) >= a.paare:
                 break
             x = next((x for x in schwach if x["c"]["oid"] not in raus_ok and not land(x["c"])
                       and raus_moeglich(x, k)), None)
             if x and k["c"]["oid"] not in rein_ok:
-                tausch(x, k, f"{ROLLE_NAME[r]} unter Minimum")
+                tausch(x, k, f"{ROLLE_NAME[r]} unter Minimum" + (f" – {NOTLOESUNG}" if k["not"] else ""))
     for k in kand:
         if len(paare) >= a.paare or k["c"]["oid"] in rein_ok:
             continue
@@ -904,16 +930,32 @@ def cmd_upgrade(con, a):
     M.table([(i + 1, x["c"]["name"], f"{x['wert']:.2f}", k["c"]["name"], f"{k['wert']:.2f}",
               f"{k['wert'] - x['wert']:+.2f}", k["status"], grund) for i, (x, k, grund) in enumerate(paare)],
             ["#", "raus", "Wert", "rein", "Wert", "Δ", "Status", "Grund"])
+    nots = [(x, k) for x, k, _ in paare if k.get("not")]
+    if nots:
+        print(f"\n{NOTLOESUNG} – kostenlos, EDHREC-Wert schwach oder fehlend; Kauf-Alternative zur Entscheidung:")
+        for x, k in nots:
+            alt = next((kauf_alt[r] for r in k["rollen"] if r in kauf_alt), None)
+            print(f"  {k['c']['name']} ({rollen_txt(k['rollen'])}) → Kauf-Alternative: "
+                  + (f"{alt[0]['name']} ({alt[1]:.2f}, ab {alt[0]['eur']:.2f} €)" if alt else "keine in der EDHREC-Liste"))
+    rueck = [k for k in kand if k["not"] and k["rollen"]]
+    if rueck:
+        print("\nFreie Karten ohne starken EDHREC-Wert, aber mit Rolle (Rückfall – am Oracle-Text prüfen; "
+              "EDHREC ist nur ein Anhaltspunkt):")
+        for k_, n, *_ in ROLLEN:
+            sel = [x["c"]["name"] for x in rueck if k_ in x["rollen"]]
+            if sel:
+                print(f"  {n}: " + ", ".join(sel[:10]) + (f" (+{len(sel) - 10})" if len(sel) > 10 else ""))
     ckurz = kurzname(cname)
     print("\nWarum raus / warum rein (Datenbasis – im Vorschlag und im Fazit in einen Satz aus dem Oracle-Text fassen):")
     for i, (x, k, _) in enumerate(paare):
         print(f"  {i + 1}. raus {x['c']['name']}: {grund_raus(x['c'], x['v'], x['rollen'], zaehl, ckurz)}")
-        print(f"     rein {k['c']['name']}: {grund_rein(k['c'], k['v'], k['rollen'], zaehl, ist, ckurz, k['tv'])}")
+        print(f"     rein {k['c']['name']}: {grund_rein(k['c'], k['v'], k['rollen'], zaehl, ist, ckurz, k['tv'], k['not'])}")
     pfad_paare = os.path.splitext(a.out or "upgrade.csv")[0] + "_paare.txt"
     os.makedirs(os.path.dirname(pfad_paare) or ".", exist_ok=True)   # --out in einem neuen Ordner (z. B. out/)
     with open(pfad_paare, "w", encoding="utf-8") as fh:
         fh.write("# Tauschpaare „Raus -> Rein“ (eine Seite darf leer sein) – für deckbau.py fazit --paare\n")
-        fh.writelines(f"{x['c']['name']} -> {k['c']['name']}\n" for x, k, _ in paare)
+        fh.writelines(f"{x['c']['name']} -> {k['c']['name']}" + (f"  # {NOTLOESUNG}" if k["not"] else "") + "\n"
+                      for x, k, _ in paare)
     if beim_deck:
         print(f"⚑ = frei, aber zusammen mit diesem Deck erfasst ({zp[:16]}): liegt vielleicht schon beim Deck "
               f"(Maybeboard oder fehlende Deckkarte) – vor dem Vorschlag mit dem Nutzer klären "
@@ -978,9 +1020,11 @@ def grund_raus(c, v, r, zaehl, ckurz):
     return "; ".join(teile)
 
 
-def grund_rein(c, v, r, vorher, nachher, ckurz, tv=None):
-    """Datenbasis für „warum rein“: EDHREC-Wert, gefüllte Rollen, Thema-Synergie."""
+def grund_rein(c, v, r, vorher, nachher, ckurz, tv=None, notloesung=False):
+    """Datenbasis für „warum rein“: EDHREC-Wert, gefüllte Rollen, Thema-Synergie, ggf. Notlösung."""
     teile = [edh_txt(v, ckurz)]
+    if notloesung:
+        teile.append(f"{NOTLOESUNG}: kostenlos, Rolle zählt mehr als der EDHREC-Wert")
     if tv and tv.get("synergy") is not None:
         teile.append(f"Thema-Synergie {tv['synergy'] * 100:+.0f} %")
     for x in r:
@@ -1341,7 +1385,7 @@ def cmd_fazit(con, a):
             return "Standardland"
         b, d, f = besitz(con, c["oid"], did)
         if f > 0:
-            return "frei" + (" ⚑" if c["oid"] in beim_deck else "")
+            return ("frei · Notlösung" if ist_notloesung(v_von(c), c, f) else "frei") + (" ⚑" if c["oid"] in beim_deck else "")
         return "aus anderem Deck" if b > 0 else (f"Kauf ab {c['eur']:.2f} €".replace(".", ",") if c["eur"] else "Kauf")
     kauf = sum(cards[o]["eur"] or 0 for o in set(rein) if status(cards[o]).startswith("Kauf"))
     n_tausch = sum(1 for r_, n_ in paare if r_ and n_)
@@ -1382,7 +1426,7 @@ def cmd_fazit(con, a):
             gr = ("–" if not cr else "‹warum raus›" if basic(cr) else
                   f"‹warum raus› *({grund_raus(cr, v_von(cr), rollen_je[o_r], k_alt, ckurz)})*")
             gn = ("–" if not cn else "‹warum rein›" if basic(cn) else
-                  f"‹warum rein, aus dem Oracle-Text› *({grund_rein(cn, v_von(cn), rollen_je[o_n], k_alt, k_neu, ckurz)})*")
+                  f"‹warum rein, aus dem Oracle-Text› *({grund_rein(cn, v_von(cn), rollen_je[o_n], k_alt, k_neu, ckurz, None, status(cn).startswith('frei · Notlösung'))})*")
             L.append(f"| {cr['name'] if cr else '–'} | {gr} | {cn['name'] if cn else '–'} | {gn} | {status(cn) if cn else '–'} |")
         if any("⚑" in status(cards[o]) for o in set(rein)):
             L += ["", ">! **⚑ Rückfrage:** Diese Karten wurden zusammen mit dem Deck erfasst und liegen vielleicht schon "
