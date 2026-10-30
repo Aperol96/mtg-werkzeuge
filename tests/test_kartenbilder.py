@@ -61,22 +61,22 @@ def test_verkauf_hat_kaestchen_je_karte(umgebung):
 def test_einkauf_aus_liste_und_aus_10(umgebung):
     d, bilder = umgebung
     liste = d / "einkauf.txt"
-    liste.write_text("# titel: Einkauf\n3 Arcane Signet | 0,50 € | I-004 Mardu Surge | günstigster Druck\n"
-                     "1 Sol Ring (C21) 263 | 1,20 € | I-003 Endless Harvest |\n", encoding="utf-8")
+    liste.write_text("# titel: Einkauf\n3 Arcane Signet | 0,50 € | I-002 Testdeck | günstigster Druck\n"
+                     "1 Sol Ring (C21) 263 | 1,20 € | I-003 Zweitdeck |\n", encoding="utf-8")
     kopf, karten = kb.lies_einkaufsliste(liste)
-    assert [k["anzahl"] for k in karten] == [3, 1] and karten[0]["zweck"] == "I-004 Mardu Surge"
+    assert [k["anzahl"] for k in karten] == [3, 1] and karten[0]["zweck"] == "I-002 Testdeck"
     kb.einkauf_pdf(kopf, karten, d / "einkauf.pdf", bilder)
     namen, form = felder(d / "einkauf.pdf")
     assert form and len(namen) == 2
 
     zehn = d / "10.md"
     zehn.write_text("**Stand:** 29.10.2026\n\n## Offene Ideen\n\n| ID | Datum | Deck / Vorhaben | Inhalt | Status | Details |\n"
-                    "|---|---|---|---|---|---|\n| I-001 | 26.10.2026 | Boros (Pioneer) | x | wartet | – |\n\n"
+                    "|---|---|---|---|---|---|\n| I-001 | 26.10.2026 | Testdeck (Pioneer) | x | wartet | – |\n\n"
                     "## Kaufliste (Sammelbestellung)\n\n| ID | Karte | Anzahl | Art | Preis ab € (Stand) | Hinweis |\n"
                     "|---|---|---|---|---|---|\n| I-001 | Mountain | 11 | Standardland | 0,02 / Stück (25.10.2026) | erst zählen |\n\n"
                     "Summe …\n\n## Aus der Sammlung vorgemerkt\n", encoding="utf-8")
     kopf, karten = kb.einkauf_aus_10(zehn)
-    assert len(karten) == 1 and karten[0]["zweck"] == "I-001 Boros (Pioneer)" and karten[0]["preis"] == 0.02
+    assert len(karten) == 1 and karten[0]["zweck"] == "I-001 Testdeck (Pioneer)" and karten[0]["preis"] == 0.02
     assert "Standardland" in karten[0]["hinweis"]
 
 

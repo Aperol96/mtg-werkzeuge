@@ -215,7 +215,7 @@ Steht seit V1.6 in **`01a_Format-Stand`** (Brackets, Game Changer, Banlist, näc
 
 ## 8. Zugriffshinweise für Claude (im Admin-Projekt getestet 25.10.2026)
 
-In der Nutzer-Kopie hängt der Zugriff von den Netzwerk-Einstellungen des Kontos ab (erlaubte Domains, siehe `LIESMICH` des Pakets). Schlägt ein Abruf fehl, sagt Claude das und nennt die Domain.
+In der Nutzer-Kopie hängt der Zugriff von den Netzwerk-Einstellungen des Kontos ab (erlaubte Domains, siehe README des Repos). Schlägt ein Abruf fehl, sagt Claude das und nennt die Domain.
 
 | Quelle | per Skript (Bash) | per WebFetch | Hinweise |
 |---|---|---|---|

@@ -10,7 +10,7 @@ Befehle
           Kat. 2 (mit Hinweis) mit Anzahl und Summe, je Karte Box-Etikett, Druck, Sprache, Preis und voller
           Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
   einkauf Einkaufsliste-PDF (Sammelbestellung): Abschnitte je Idee/Vorhaben mit Anzahl und Summe, je Karte Bild,
-          Box-Etikett „später“, Druck, Preis und Hinweis. Liste: 3 Name (SET) Nr | 0,25 € | I-004 Mardu Surge | Hinweis
+          Box-Etikett „später“, Druck, Preis und Hinweis. Liste: 3 Name (SET) Nr | 0,25 € | I-002 Testdeck | Hinweis
           (Preis je Stück) oder --aus-10 projekt/10_Geplante-Kaeufe-und-Ideen.md (Tabelle „Kaufliste“).
   Abhaken (V1.8): Tausch-, Verkaufs- und Einkaufs-PDF haben je Karte ein Kästchen, das im PDF-Reader anklickbar ist
           (AcroForm); der Haken wird mit dem PDF gespeichert.
@@ -35,7 +35,7 @@ Set bzw. Scryfall-Standarddruck). Ohne Bildserver zeichnet das Skript Platzhalte
 
 Tauschliste (Modus 1), eine Karte pro Zeile:
     +3 Fields of Strife (SOS) 255 | Sammlung | besitzt: Deutsch
-    +1 Sol Ring | Deck: Mardu Surge
+    +1 Sol Ring | Deck: Testdeck
     +1 Swords to Plowshares | Kauf
     +10 Plains | Standardland | 9 frei, 1 kaufen
     -1 Luminous Bonds (GRN) 21 | Sammlung
@@ -1042,7 +1042,7 @@ EINKAUFSZEILE = re.compile(r"^\s*(\d+)\s*x?\s+(.+?)\s*(?:\(([A-Za-z0-9]+)\)\s*([
 
 def lies_einkaufsliste(pfad):
     """Einkaufsliste: Kopf `# titel:` / `# datum:` / `# preise:` und je Position
-    `3 Name (SET) Nr | 0,25 € | I-004 Mardu Surge | Hinweis` – Preis je Stück, Zweck = Abschnitt (Idee/Vorhaben)."""
+    `3 Name (SET) Nr | 0,25 € | I-002 Testdeck | Hinweis` – Preis je Stück, Zweck = Abschnitt (Idee/Vorhaben)."""
     kopf, karten = {}, []
     for nr, roh in enumerate(Path(pfad).read_text(encoding="utf-8").splitlines(), 1):
         z = roh.strip()

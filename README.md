@@ -332,7 +332,7 @@ Claude bekommt in jedem Gespräch einen kleinen Rechner mit Python. Dort laufen 
 
 ## Aufwand und Kosten
 
-Das Projekt ist an **fünf Arbeitstagen vom 25. bis 29.10.2026** entstanden – von der ersten Datenbank bis zu dieser README.
+Das Projekt ist an **sechs Arbeitstagen vom 25. bis 30.10.2026** entstanden – von der ersten Datenbank bis zu dieser README.
 
 | Tag | Was entstanden ist | gemessen |
 |---|---|---|
@@ -341,6 +341,7 @@ Das Projekt ist an **fünf Arbeitstagen vom 25. bis 29.10.2026** entstanden – 
 | 27.10.2026 | Archetypen, PDFs mit Kartenbildern, Weitergabe-Paket, Upgrade-Modus, Werkzeuge auf GitHub | – |
 | 28.10.2026 | Rollen und Anmeldung (Admin, User, Gast) | – |
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
+| 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 
 - **Gemessen** wird erst seit dem 29.10.2026, und nur in Sitzungen mit lesbarem Protokoll (Werkzeug- und GitHub-Arbeit). Die Chats der ersten Tage in claude.ai lassen sich nicht auswerten – der tatsächliche Aufwand liegt also höher.
 - **API-Gegenwert** heißt: So viel hätte dieselbe Nutzung über die Anthropic-API zu Listenpreisen gekostet (umgerechnet mit rund 1,15 USD je Euro). Den größten Teil der Token macht das günstige Cache-Lesen aus, weil jede Antwort den ganzen Gesprächsstand neu liest.

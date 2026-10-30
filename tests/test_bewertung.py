@@ -93,7 +93,7 @@ def _s(name, text, tags, cmc):
 
 
 def test_ramp_funktionsgrad_gegentest():
-    """Funde aus dem Gegentest Endless Harvest (29.10.2026): Aktivierungskosten, Wiederholbarkeit, Kampfschaden."""
+    """Funde aus Gegentest 1 (29.10.2026): Aktivierungskosten, Wiederholbarkeit, Kampfschaden."""
     font = B.sicht("Font of Fertility", "Enchantment", "{1}{G}, Sacrifice this enchantment: Search your library for a "
                    "basic land card, put it onto the battlefield tapped, then shuffle.", "", {"land-ramp", "ramp"}, 1)
     roamer = _s("Roamer's Routine", "Search your library for a basic land card, put it onto the battlefield tapped, then "
@@ -121,7 +121,7 @@ def test_nicht_tragbar():
 
 
 def test_situativ_und_drain():
-    """Funde aus Gegentest 2 (Mardu Surge): situative Payoffs als Hinweis, Drain-Siegweg ohne Gift-Klausel."""
+    """Funde aus Gegentest 2: situative Payoffs als Hinweis, Drain-Siegweg ohne Gift-Klausel."""
     bone = B.sicht("Bone Devourer", "Creature — Dragon", "Flash\nFlying\nThis creature enters with a number of +1/+1 "
                    "counters on it equal to the number of creatures that died this turn.", "Flash, Flying", set(), 4)
     ohne = B.sicht("Testkarte", "Creature", "This creature enters with a +1/+1 counter on it for each creature that "

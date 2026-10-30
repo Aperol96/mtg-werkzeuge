@@ -1,6 +1,6 @@
 # Rollen, Betriebsmodus und Weitergabe
 
-**Stand:** 30.10.2026 (V1.8: Einkaufsliste-PDF, Abhak-Kästchen in den Listen-PDFs, Begriffe Einkaufsliste und Abhaken (3.4) · V1.7.1: Begriffe geschärft – Sammlung = Bestand ohne Deckkarten, freie Karten = Sammlung ohne vorgemerkte Karten (3.4) · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.0 weitergegeben, Admin-Projekt mit den Änderungen V1.1–V1.6 (Abschnitt 11) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
+**Stand:** 30.10.2026 (V1.8.1: Weitergabe nur noch über das Repo, Abschnitte 10–12 · V1.8: Einkaufsliste-PDF, Abhak-Kästchen in den Listen-PDFs, Begriffe Einkaufsliste und Abhaken (3.4) · V1.7.1: Begriffe geschärft – Sammlung = Bestand ohne Deckkarten, freie Karten = Sammlung ohne vorgemerkte Karten (3.4) · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.8.1, Weitergabe über das Repo (Abschnitte 10–12) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
 
 Zweck: Das Projekt kennt vier Zustände – Start, Admin, User, Gast. Jeder Chat beginnt im Zustand Start; erst die Anmeldung gibt Rechte. Das Programm (Regeln, Abläufe, Werkzeuge, PDF-Vorlagen) ändert nur der Admin. Gäste arbeiten mit ihren eigenen Daten, die nie Teil des Grundbestands werden.
 
@@ -231,7 +231,7 @@ Gilt in allen Zuständen. Ein Satz Absage, ein Satz Weg dorthin, darunter kursiv
 
 - Alle Rechte. Claude ist zusätzlich **technischer Berater**: Programm, Werkzeuge, Weitergabe, GitHub-Repo, Versionen – wie beim Aufbau des Projekts. Programmänderungen mit Eintrag „Werkzeug“ in `09a_Programm-Protokoll` (Freigabe-Ablauf: `05`, Abschnitt 9), Entscheidungen mit Eintrag in `09`; was auch Weitergabe-Kopien betrifft, ist Kandidat für die nächste Version (Abschnitt 11).
 - **Gast-Archive:** auflisten (`project_info`, Pfade `claude/gaeste/`), auf Wunsch löschen (`project_delete`); Inhalte nur auf ausdrücklichen Wunsch ansehen.
-- **In einer Weitergabe-Kopie:** Ersteinrichtung des Grundbestands und Freischaltung (Abschnitt 8), Zugang pflegen. Das Programm ändert der Admin dort nicht – Änderungen kommen als neue Version (Abschnitt 11).
+- **In einer Weitergabe-Kopie:** Der Besitzer ist selbst Admin (eigenes Passwort aus der Einrichtung): Ersteinrichtung des Grundbestands (Abschnitt 8), Zugang pflegen. Das Programm kommt als neue Version aus dem Repo (Abschnitt 11); eigene Änderungen gehen verloren, wenn er die Dateien ersetzt.
 
 ### 5.1 Testlauf (nur Admin)
 
@@ -249,7 +249,7 @@ Ein Testlauf spielt einen Ablauf vollständig durch, ohne etwas im Projekt zu ve
 - Direkt nach der Anmeldung: Kurzblock „Die wichtigsten Begriffe“ (Abschnitt 3.4); weitere Begriffe beim ersten Gebrauch erklären.
 - Sitzungsstart wie in `05a_Sitzungsstart`, danach `python3 zugang.py sitzung user` (sperrt das Packen der Werkzeuge).
 - Programm gesperrt, keine Verbesserungsvorschläge zum Programm; bei schweren Problemen oder Widersprüchen der Hinweis an den Admin (Abschnitt 4).
-- In der Weitergabe-Kopie erst nach der Freischaltung durch den Admin (Abschnitt 8, E7).
+- In der Weitergabe-Kopie erst nach der Freischaltung (Abschnitt 8, E7; bei der Einrichtung aus dem Repo schon erledigt).
 
 ## 7. Zustand 3 – Gast
 
@@ -270,7 +270,7 @@ Der Gast hat die Rechte eines Users – aber nur auf seinen eigenen, hochgeladen
 
 ## 8. Ersteinrichtung eines Grundbestands (Admin)
 
-Wann: in einer Weitergabe-Kopie (Admin vor Ort mit dem neuen Besitzer) oder wenn ein Grundbestand neu angelegt wird. Werkzeuge und Sitzungs-Setup wie in `05a_Sitzungsstart` (Werkzeugkiste lesen und mit dem Startbefehl auspacken – ein Datenpaket gibt es vorher noch nicht). Den Datenbank-Bau startet Claude im Hintergrund, sobald die Sammlungsdatei da ist.
+Wann: in einer Weitergabe-Kopie (der Besitzer als Admin, gleich nach der Einrichtung aus dem Repo) oder wenn ein Grundbestand neu angelegt wird. Werkzeuge und Sitzungs-Setup wie in `05a_Sitzungsstart` (Werkzeugkiste lesen und mit dem Startbefehl auspacken – ein Datenpaket gibt es vorher noch nicht). Den Datenbank-Bau startet Claude im Hintergrund, sobald die Sammlungsdatei da ist.
 
 | Schritt | Was Claude tut |
 |---|---|
@@ -280,7 +280,7 @@ Wann: in einer Weitergabe-Kopie (Admin vor Ort mit dem neuen Besitzer) oder wenn
 | E4 Deckkarten-Check | Besitz-Abgleich je Deck (`besitz <deck>`). Fehlt ein großer Teil der Deckkarten in der Sammlungsdatei (Richtwert > 20 %), fragen, ob die Decks getrennt von der Sammlung geführt werden; wenn ja, die Deckkarten als Zugang „Ersteinrichtung – Deckkarten“ in `buchungen.csv` buchen. Ob Standardländer vollständig erfasst sind, im Nutzerprofil offen lassen (Standard: wahrscheinlich nicht). |
 | E5 Ableiten und anlegen | `06`/`07` (`bestand-export`), `12_Sammlungsprofil` (`archetypen.py profil`), `04_Deckregister` (Bracket-Check je Commander-Deck, Format-Legalität je 60-Karten-Deck, Deckwert), dazu `09`, `10`, `Moxfield-Beschreibungen` und `claude/nutzerprofil.md` aus dem Anhang (04/09/10 kommen danach ins Datenpaket) (Quelle, Deckkarten-Antwort und genannte Wünsche eintragen). Protokolleintrag „Import · Ersteinrichtung“. 04, 09 und 10 zusätzlich nach `projekt/` im Arbeitsbereich legen (dort liest und pflegt sie `protokoll.py`). Zum Schluss das Datenpaket bauen und schreiben (`paket.py packen --art daten --arbeit /home/claude/mtg --out datenpaket.txt` → `claude/pakete/datenpaket.txt`). |
 | E6 Antwort | Kurzübersicht: Bestand, Sammlung, Wert, Decks mit Bracket-Zeile bzw. Format; offene Punkte; drei mögliche nächste Schritte (Deck analysieren, neues Deck bauen, Bestand ansehen). |
-| E7 Freischalten (Kopie) | Erst wenn der Grundbestand steht: Zugangsdatei in den Arbeitsbereich kopieren, `python3 zugang.py freischalten --datei zugang.json --user ja` → `project_write(path="zugang.json", local_path=…)`. Ab dem nächsten Chat kann der Besitzer „2 User“ wählen. |
+| E7 Freischalten (Kopie) | Bei der Einrichtung aus dem Repo schon erledigt (`zugang.json` mit `user_freigeschaltet: true`). Sonst erst wenn der Grundbestand steht: Zugangsdatei in den Arbeitsbereich kopieren, `python3 zugang.py freischalten --datei zugang.json --user ja` → `project_write(path="zugang.json", local_path=…)`. Ab dem nächsten Chat kann der Besitzer „2 User“ wählen. |
 
 ## 9. Sparsam ausgeben (alle Zustände)
 
@@ -288,29 +288,31 @@ Wann: in einer Weitergabe-Kopie (Admin vor Ort mit dem neuen Besitzer) oder wenn
 - Ohne Frage bleiben: die Antwort selbst, der Vorschlag mit seinen Begründungen nach `08`, Bracket-Zeile, Warnungen, die Bestätigung einer Buchung – und für User und Gast der Kurzblock der Begriffe nach der Anmeldung sowie die Halbsatz-Erklärung eines Begriffs beim ersten Gebrauch (Abschnitt 3.4).
 - Eine Frage je Punkt, nacheinander, ohne Vorrede. Sagt jemand „immer Ja“ (z. B. PDFs), gilt das für den Rest des Chats.
 
-## 10. Weitergabe-Kopie
+## 10. Weitergabe-Kopie (eigenes Projekt aus dem Repo)
 
-- **Inhalt:** das Programm und `zugang.json` mit dem Admin-Passwort (nur Hash), `user_freigeschaltet: false`, `kopie: true`; keine Daten des Admins.
-- **Ablauf:** Der neue Besitzer richtet das Projekt nach `LIESMICH` ein → neuer Chat → Zustand Start; **Gast** ist sofort nutzbar. Der Admin meldet sich vor Ort an, richtet den Grundbestand ein (Abschnitt 8) und schaltet **User** frei (E7). Danach arbeitet der Besitzer als User mit seinem Bestand.
-- Das Programm bleibt für User und Gast gesperrt; der Admin ändert es in der Kopie nicht. Einen Passwort-Reset gibt es in der Kopie nicht – vergessen → der Admin lädt eine neue `zugang.json` hoch.
-- Der Besitzer der Kopie kann sein Projekt technisch selbst ändern; die Rollen sind eine Absprache, kein Schutz.
+- **Weg (seit 30.10.2026):** nur noch über das öffentliche Repo `Aperol96/mtg-werkzeuge` – Plugin und Marketplace. Wer das Plugin installiert und „Richte mir den MTG-Deckbauer als Projekt ein“ schreibt, bekommt eine ZIP (Methodik aus `projekt/`, `werkzeugkiste.txt`, `zugang.json`) und den Text für die Projektanweisungen (Anleitung im README).
+- **Zugang:** Der neue Besitzer setzt bei der Einrichtung **sein eigenes** Admin-Passwort und ist Admin seines Projekts; User ist sofort freigeschaltet. Der Admin dieses Projekts hat dort keinen Zugang.
+- **Inhalt:** nur das Programm in der neutralen Fassung – keine Daten des Admins (Bestand, Decks, Ideen, Protokolle, Gast-Archive).
+- Der Besitzer kann sein Projekt technisch selbst ändern; die Rollen sind eine Absprache, kein Schutz.
+- **Früher (V1.0, 27.10.2026):** ZIP-Paket mit dem Admin-Passwort des Admins, User erst nach Freischaltung vor Ort. Dieser Weg ist stillgelegt; bestehende Kopien laufen weiter.
 
 ## 11. Neue Versionen
 
-- Eine neue Version (V1.1 …) kommt vom Admin als neues Paket. Der Besitzer ersetzt die Projektanweisungen und die Programmdateien im Projektstamm; **`zugang.json` und seine Daten unter `claude/` bleiben unverändert**.
-- Nach dem Wechsel: Claude nennt die neue Version einmal und prüft, ob die Daten zur neuen Fassung passen (Datenbank-Bau ohne Hinweise). Die neue `werkzeugkiste.txt` ersetzt die alte; das Datenpaket des Besitzers bleibt.
+- Neue Versionen kommen über das Repo: Plugin-Nutzer bekommen sie mit „Sync automatically“ von selbst. In einem eigenen Projekt ersetzt der Besitzer die Projektanweisungen und die Methodik-Dateien aus `projekt/` sowie `werkzeugkiste.txt`; **`zugang.json` und seine Daten unter `claude/` bleiben unverändert**.
+- Nach dem Wechsel: Claude nennt die neue Version einmal und prüft, ob die Daten zur neuen Fassung passen (Datenbank-Bau ohne Hinweise).
+- Die Tabelle zeigt die Versionen bis V1.8; Neuerungen danach stehen im README des Repos.
 
 | Version | Datum | Inhalt |
 |---|---|---|
-| V1.0 | 27.10.2026 | erste Weitergabe: geführter Deckbau mit Stufen A–F, Bestand mit Buchungsjournal und Vormerkungen, Archetypen-Playbook und Sammlungsprofil, Tauschübersicht und Deck-PDF mit Kartenbildern |
-| V1.1 (Kandidat) | – | Arbeitspakete (Werkzeugkiste und Datenpaket statt Abschreiben), Exemplar-Zuordnung (Druck und Sprache je Karte, „zusammen mit dem Deck erfasst“), Upgrade-Modus `deckbau.py upgrade`, Oracle-Pflicht `deckbau.py oracle`, Fazit-PDF `kartenbilder.py bericht`, Handy-Variante, Testlauf-Schalter, einheitliche Kennzahlen |
-| V1.2 (Kandidat) | – | Fragenplan statt Fragenlimit (Pflicht/bedingt/optional, „Weiß nicht – entscheide du“), Passungs-Check `deckbau.py passung` (Deck ↔ Commander ↔ Ziel, bessere Commander aus Deck, Sammlung und Kauf), „warum raus“ und „warum rein“ in Vorschlag und Fazit, vorbefüllter Fazit-Entwurf `deckbau.py fazit`, Lieferung in einem Lauf `kartenbilder.py lieferung` |
-| V1.3 (Kandidat) | – | Masterprompt gestrafft (−20 %, Regeln unverändert): Dopplungen zu `05`, `08`, `13` durch Verweise ersetzt · Werkzeuge im Admin-Projekt von GitHub (`werkzeuge-quelle.txt`, Rückfall Werkzeugkiste; die Kopie nutzt weiter die Werkzeugkiste) |
-| V1.5 (Kandidat) | – | EDHREC als Anhaltspunkt statt Hauptquelle; Rückfall vor Kauf: `deckbau.py upgrade` füllt Mindestrollen zuerst aus freien Karten, auch als „Notlösung aus der Sammlung“ mit Kauf-Alternative, Rückfall-Pool je Rolle, Kennzeichnung im Fazit · kurzes Abweisen mit Kartentext-Gag (Abschnitt 4.1) · neue Willkommensnachricht mit Absätzen und Emojis, Gast nennt seinen Namen gleich mit (3.1) · Begriffe für User und Gast: Kurzblock nach der Anmeldung, Erklärung beim ersten Gebrauch, Begriffstabelle (3.4) · nach dem Testlauf vom 29.10.: Verkaufsprüfung `deckbau.py verkauf` und Verkaufs-PDF `kartenbilder.py verkauf` (Kat. 1/2 mit Summen, Ausweichschrift für Sonderzeichen auch in der Tauschübersicht), geplante Verkäufe als weiche Vormerkung `V-nnn` (bleibt frei, Werkzeuge warnen), feste Orientierung im Zustand Start (3.3), einfachere Admin-Prüfung mit eingesetztem Hash (2) |
-| V1.6 (Kandidat) | – | Umsetzung des Reviews vom 29.10.2026: Projektanweisungen ≈ 8.000 Zeichen mit wörtlicher Willkommensnachricht (Quelle `projektanweisungen.md` in der Werkzeugkiste) · Werkzeuge: Raus-Sperren im Upgrade (Kernpakete, Commander-Bezug, Rollen, Interaktion nach Ziel), Oracle-Bezug und `deckbau.py synergie` (Karten ohne EDHREC-Eintrag), Archetyp-Richtwert vor Template, eigene Wipes im Go-wide-Deck zählen nicht, Rollen mit Qualitätsregeln für alle Werkzeuge (`bewertung.py`), Kompromiss-Stufen statt „Notlösung“, Klassen A–D gerechnet, Bracket-3-Abnahme als Definition of Done (`abnahme`, im Fazit), Konsistenz-Simulation (`simulation.py`), Gegentest gegen Konkurrenz-Skills, kurze Ausgabe (`--voll`), laute EDHREC-Fehler, Schnellabfrage `mtg_db.py frei`, `protokoll.py` für 04/09/10 (im Datenpaket), automatische Tests · Dateien: `01a`, `05a`, `08a`, `09a`, `12a`; Basis heißt `basis.csv` |
-| V1.7 (Kandidat) | – | Gegenlauf als feste Routine: zwei Konkurrenz-Agenten (Commander Deck Skills, MTG Master) bauen unabhängig mit denselben Vorgaben, Claude wägt drei Vorschläge ab (`deckbau.py gegenlauf`, `gegentest` mit mehreren Listen und Konsens-Tauschen); Frage danach am Ende von Stufe A für Admin, User und Gast mit Ressourcenhinweis · Funde der Gegentests in den Werkzeugen (Sammlungs-Durchlauf, Tauschpaare, Beinahe-Combos, situative Karten, Drain-Siegweg, Rauschband) |
-| V1.8 (Kandidat) | – | Einkaufsliste-PDF `kartenbilder.py einkauf` (Sammelbestellung, auch direkt aus der Kaufliste) · Abhak-Kästchen je Karte in Tauschübersicht, Verkaufs- und Einkaufsliste, im PDF-Reader anklickbar · Kopfzeile der Verkaufsliste „Freie Karten“ |
-| V1.4 (Kandidat) | – | Rollen und Anmeldung: Zustände Start, Admin (Passwort, technischer Berater), User (Grundbestand, bucht ohne Freigabe, Programm gesperrt), Gast (eigener temporärer Bestand, Quittung, Archiv mit PIN oder löschen) · `zugang.py` (Passwort- und PIN-Hashes, Freischaltung, Sitzungsrolle), Gast-Archive mit `paket.py` (`--art gast`, `holen`), Sperren je Rolle in `paket.py` · Weitergabe-Kopie ohne „fresh start“: Gast sofort, User nach Einrichtung und Freischaltung durch den Admin vor Ort · sparsame Ausgabe: PDFs und Dateien nur nach Ja/Nein-Frage – geht mit V1.1–V1.3 in die nächste Weitergabe |
+| V1.0 | 27.10.2026 | erste Weitergabe (ZIP): geführter Deckbau mit Stufen A–F, Bestand mit Buchungsjournal und Vormerkungen, Archetypen-Playbook und Sammlungsprofil, Tauschübersicht und Deck-PDF mit Kartenbildern |
+| V1.1 | im Repo seit 29./30.10.2026 | Arbeitspakete (Werkzeugkiste und Datenpaket statt Abschreiben), Exemplar-Zuordnung (Druck und Sprache je Karte, „zusammen mit dem Deck erfasst“), Upgrade-Modus `deckbau.py upgrade`, Oracle-Pflicht `deckbau.py oracle`, Fazit-PDF `kartenbilder.py bericht`, Handy-Variante, Testlauf-Schalter, einheitliche Kennzahlen |
+| V1.2 | im Repo seit 29./30.10.2026 | Fragenplan statt Fragenlimit (Pflicht/bedingt/optional, „Weiß nicht – entscheide du“), Passungs-Check `deckbau.py passung` (Deck ↔ Commander ↔ Ziel, bessere Commander aus Deck, Sammlung und Kauf), „warum raus“ und „warum rein“ in Vorschlag und Fazit, vorbefüllter Fazit-Entwurf `deckbau.py fazit`, Lieferung in einem Lauf `kartenbilder.py lieferung` |
+| V1.3 | im Repo seit 29./30.10.2026 | Masterprompt gestrafft (−20 %, Regeln unverändert): Dopplungen zu `05`, `08`, `13` durch Verweise ersetzt · Werkzeuge im Admin-Projekt von GitHub (`werkzeuge-quelle.txt`, Rückfall Werkzeugkiste; die Kopie nutzt weiter die Werkzeugkiste) |
+| V1.5 | im Repo seit 29./30.10.2026 | EDHREC als Anhaltspunkt statt Hauptquelle; Rückfall vor Kauf: `deckbau.py upgrade` füllt Mindestrollen zuerst aus freien Karten, auch als „Notlösung aus der Sammlung“ mit Kauf-Alternative, Rückfall-Pool je Rolle, Kennzeichnung im Fazit · kurzes Abweisen mit Kartentext-Gag (Abschnitt 4.1) · neue Willkommensnachricht mit Absätzen und Emojis, Gast nennt seinen Namen gleich mit (3.1) · Begriffe für User und Gast: Kurzblock nach der Anmeldung, Erklärung beim ersten Gebrauch, Begriffstabelle (3.4) · nach dem Testlauf vom 29.10.: Verkaufsprüfung `deckbau.py verkauf` und Verkaufs-PDF `kartenbilder.py verkauf` (Kat. 1/2 mit Summen, Ausweichschrift für Sonderzeichen auch in der Tauschübersicht), geplante Verkäufe als weiche Vormerkung `V-nnn` (bleibt frei, Werkzeuge warnen), feste Orientierung im Zustand Start (3.3), einfachere Admin-Prüfung mit eingesetztem Hash (2) |
+| V1.6 | im Repo seit 29./30.10.2026 | Umsetzung des Reviews vom 29.10.2026: Projektanweisungen ≈ 8.000 Zeichen mit wörtlicher Willkommensnachricht (Quelle `projektanweisungen.md` in der Werkzeugkiste) · Werkzeuge: Raus-Sperren im Upgrade (Kernpakete, Commander-Bezug, Rollen, Interaktion nach Ziel), Oracle-Bezug und `deckbau.py synergie` (Karten ohne EDHREC-Eintrag), Archetyp-Richtwert vor Template, eigene Wipes im Go-wide-Deck zählen nicht, Rollen mit Qualitätsregeln für alle Werkzeuge (`bewertung.py`), Kompromiss-Stufen statt „Notlösung“, Klassen A–D gerechnet, Bracket-3-Abnahme als Definition of Done (`abnahme`, im Fazit), Konsistenz-Simulation (`simulation.py`), Gegentest gegen Konkurrenz-Skills, kurze Ausgabe (`--voll`), laute EDHREC-Fehler, Schnellabfrage `mtg_db.py frei`, `protokoll.py` für 04/09/10 (im Datenpaket), automatische Tests · Dateien: `01a`, `05a`, `08a`, `09a`, `12a`; Basis heißt `basis.csv` |
+| V1.7 | im Repo seit 29./30.10.2026 | Gegenlauf als feste Routine: zwei Konkurrenz-Agenten (Commander Deck Skills, MTG Master) bauen unabhängig mit denselben Vorgaben, Claude wägt drei Vorschläge ab (`deckbau.py gegenlauf`, `gegentest` mit mehreren Listen und Konsens-Tauschen); Frage danach am Ende von Stufe A für Admin, User und Gast mit Ressourcenhinweis · Funde der Gegentests in den Werkzeugen (Sammlungs-Durchlauf, Tauschpaare, Beinahe-Combos, situative Karten, Drain-Siegweg, Rauschband) |
+| V1.8 | im Repo seit 29./30.10.2026 | Einkaufsliste-PDF `kartenbilder.py einkauf` (Sammelbestellung, auch direkt aus der Kaufliste) · Abhak-Kästchen je Karte in Tauschübersicht, Verkaufs- und Einkaufsliste, im PDF-Reader anklickbar · Kopfzeile der Verkaufsliste „Freie Karten“ |
+| V1.4 | im Repo seit 29./30.10.2026 | Rollen und Anmeldung: Zustände Start, Admin (Passwort, technischer Berater), User (Grundbestand, bucht ohne Freigabe, Programm gesperrt), Gast (eigener temporärer Bestand, Quittung, Archiv mit PIN oder löschen) · `zugang.py` (Passwort- und PIN-Hashes, Freischaltung, Sitzungsrolle), Gast-Archive mit `paket.py` (`--art gast`, `holen`), Sperren je Rolle in `paket.py` · Weitergabe-Kopie ohne „fresh start“: Gast sofort, User nach Einrichtung und Freischaltung durch den Admin vor Ort · sparsame Ausgabe: PDFs und Dateien nur nach Ja/Nein-Frage |
 
 
 ## Anhang: Vorlagen für die Nutzerdaten
@@ -342,7 +344,7 @@ Idee,Name,Anzahl,Datum,Hinweis
 ~~~~
 # Nutzerprofil
 
-Persönliche Einstellungen des Nutzers (V1.7, frei änderbar). Claude liest die Datei zu Beginn jeder Aufgabe zu Deck, Bestand oder Kauf. Ändert der Nutzer im Chat eine Einstellung, trägt Claude sie hier mit Datum ein und notiert sie im Protokoll (Typ „Entscheidung“). Leere Felder = Standard.
+Persönliche Einstellungen des Nutzers (V1.8.1, frei änderbar). Claude liest die Datei zu Beginn jeder Aufgabe zu Deck, Bestand oder Kauf. Ändert der Nutzer im Chat eine Einstellung, trägt Claude sie hier mit Datum ein und notiert sie im Protokoll (Typ „Entscheidung“). Leere Felder = Standard.
 
 | Einstellung | Wert | Standard | Stand |
 |---|---|---|---|
@@ -402,7 +404,7 @@ Brackets gelten nur für Commander – hier zählt die Format-Legalität.
 - **Deckname:** Wizards-Name bei Precons/Precon-Umbauten, Produktname bei Händler-Decks, eigener Name bei eigenen Decks; in `claude/tools/deck_namen.json` pflegen; voller Name höchstens 100 Zeichen (Moxfield), Länge mit `mtg_db.py namen` prüfen
 - **Status:** Idee · im Bau · spielbereit · Upgrade geplant · zerlegt (gleiche Regeln für alle Decks; Vorhaben stehen als Idee in `10`)
 - **Ideen zu bestehenden Decks:** zentral in `claude/10_Geplante-Kaeufe-und-Ideen.md` (ID, Status, Kaufliste, vorgemerkte Sammlungskarten); Details in `claude/ideen/<deckname>-<thema>.md`; Soll-Stand und Register bleiben unverändert, bis der Nutzer meldet, dass das Deck nach der Freigabe physisch gebaut ist; dann Register aktualisieren und Einfügeblock für Moxfield ausgeben (Ablauf: `08_Deckbau-Verfahren`, Abschnitt 2)
-- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = Bestand − Deckkarten; freie Karten = Sammlung − vorgemerkte Karten (`05_Datenbank-und-Tools`, Abschnitt 0)
+- **Begriffe:** Bestand = Deckkarten + Sammlung; Sammlung = freie Karten (`05_Datenbank-und-Tools`, Abschnitt 0)
 - **Bracket-Check:** Anzahl und Namen der Game Changer (in Bracket 3 max. 3), MLD, Extra Turns, 2-Karten-Combos – mit `mtg_db.py bracket` bzw. `deckbau.py pruefen`; dazu Einstufung nach Kriterien und Einschätzung mit Datum
 - **Abnahme:** Ergebnis der Bracket-3-Abnahme (`deckbau.py abnahme`) mit Datum und offenen Punkten – nach jedem gebuchten Deckumbau neu
 - **Quelle/Stand:** Datum der Liste, aus der der Soll-Stand stammt (Moxfield-Erstübernahme, Scan oder gebuchte Änderung im Projekt)
@@ -473,7 +475,7 @@ Roter Faden über alle Chats: Was hat sich an Bestand und Decks geändert, und w
 # Geplante Käufe / Ideen
 
 **Stand:** angelegt bei der Ersteinrichtung · Zentrale Liste über alle Chats: Deck-Ideen ohne Freigabe, freigegebene Decks bis zum physischen Aufbau, geplante Käufe und Verkäufe und offene Übernahmen nach Moxfield. Ziel: am Ende **eine** Sammelbestellung über alle Vorhaben (Cardmarket-Wants / Shopping Wizard).
-**Begriffe** (siehe `05_Datenbank-und-Tools`, Abschnitt 0): Bestand = Deckkarten + Sammlung = Basis + `claude/sammlung/buchungen.csv` · Sammlung = Bestand − Deckkarten · freie Karten = Sammlung − vorgemerkte Karten · Das Projekt ist die Hauptdatenbank, Moxfield wird nachgezogen. **Ablauf:** `08_Deckbau-Verfahren`, Abschnitt 2 (Stufen A–F).
+**Begriffe** (siehe `05_Datenbank-und-Tools`, Abschnitt 0): Bestand = Deckkarten + Sammlung = Basis + `claude/sammlung/buchungen.csv` · Sammlung = freie Karten · Das Projekt ist die Hauptdatenbank, Moxfield wird nachgezogen. **Ablauf:** `08_Deckbau-Verfahren`, Abschnitt 2 (Stufen A–F).
 
 ---
 

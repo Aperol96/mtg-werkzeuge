@@ -245,8 +245,7 @@ def simuliere(deck, commander, n=10000, seed=1, zuege=None):
     return k
 
 
-# Vorläufige Schwellen – festgelegt nach der ersten Messung am 29.10.2026 (Mardu Surge, Endless Harvest, Dance of the
-# Elements; 10.000 Spiele je Deck): Mulligan 9–13 % zwei+, Landdrops 85–91 %, Fehlstart 3–5 %, Commander +1 73–83 %,
+# Vorläufige Schwellen – festgelegt nach der ersten Messung am 29.10.2026 (drei Commander-Decks des Admin-Projekts): Mulligan 9–13 % zwei+, Landdrops 85–91 %, Fehlstart 3–5 %, Commander +1 73–83 %,
 # Farbproblem 0,5–9 %. Nach weiteren Abnahmen nachschärfen (08, Bracket-3-Abnahme).
 SCHWELLEN = {
     "zwei_plus_mulligans": (0.15, "≤", "zwei oder mehr Mulligans (echter Kartenverlust)"),
