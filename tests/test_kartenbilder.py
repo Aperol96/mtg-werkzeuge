@@ -55,7 +55,7 @@ def test_verkauf_hat_kaestchen_je_karte(umgebung):
     kopf, karten = kb.lies_verkaufsliste(liste)
     kb.verkauf_pdf(kopf, karten, d / "verkauf.pdf", bilder)
     namen, form = felder(d / "verkauf.pdf")
-    assert form and len(namen) == 2
+    assert form and len(namen) == 3          # 2 Karten + „Bedenken geklärt“ für die Kat.-2-Karte
 
 
 def test_einkauf_aus_liste_und_aus_10(umgebung):
@@ -78,3 +78,16 @@ def test_einkauf_aus_liste_und_aus_10(umgebung):
     kopf, karten = kb.einkauf_aus_10(zehn)
     assert len(karten) == 1 and karten[0]["zweck"] == "I-001 Boros (Pioneer)" and karten[0]["preis"] == 0.02
     assert "Standardland" in karten[0]["hinweis"]
+
+
+def test_verkauf_bedenken_kasten_und_ueberblick(umgebung):
+    d, bilder = umgebung
+    liste = d / "verkauf_bedenken.txt"
+    liste.write_text("# titel: Test\n# bedenken: Preise am Tag des Einstellens prüfen.\n# bedenken: Nur das gelistete Exemplar.\n"
+                     "K1 1 Daze (SOA) 15 | 2,19 € | DE |\nK2 1 Vampiric Tutor | 30,00 € | EN | Game Changer mit Platz in zwei Decks\n",
+                     encoding="utf-8")
+    kopf, karten = kb.lies_verkaufsliste(liste)
+    assert kopf["bedenken"] == ["Preise am Tag des Einstellens prüfen.", "Nur das gelistete Exemplar."]
+    kb.verkauf_pdf(kopf, karten, d / "verkauf_bedenken.pdf", bilder)
+    namen, form = felder(d / "verkauf_bedenken.pdf")
+    assert form and len(namen) == 3          # 2 Karten + 1 Kästchen „Bedenken geklärt“ im Überblick

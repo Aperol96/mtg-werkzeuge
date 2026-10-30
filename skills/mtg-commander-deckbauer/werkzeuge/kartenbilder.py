@@ -859,7 +859,7 @@ def etikett(c, x, y, breite, k, key):
 # ---------------------------------------------------------------- Verkaufsliste
 VERKAUF_KAT = [  # Schlüssel, Überschrift, Farbe
     ("1", "Kat. 1 – ohne Bedenken verkaufen", HexColor("#2E6B3F")),
-    ("2", "Kat. 2 – Verkauf möglich, mit Hinweis", HexColor("#9A6A12")),
+    ("2", "Kat. 2 – Verkauf möglich, mit Bedenken", HexColor("#9A6A12")),
 ]
 VERKAUFSZEILE = re.compile(r"^\s*K([12])\s+(\d+)\s*x?\s+(.+?)\s*(?:\(([A-Za-z0-9]+)\)\s*([^\s|]+))?\s*(?:\|(.*))?$")
 
@@ -879,7 +879,9 @@ def lies_verkaufsliste(pfad):
             continue
         if z.startswith("#"):
             m = re.match(r"#\s*(\w+)\s*:\s*(.*)", z)
-            if m:
+            if m and m.group(1).lower() == "bedenken":
+                kopf.setdefault("bedenken", []).append(m.group(2).strip())
+            elif m:
                 kopf[m.group(1).lower()] = m.group(2).strip()
             continue
         m = VERKAUFSZEILE.match(z)
@@ -895,6 +897,26 @@ def lies_verkaufsliste(pfad):
 
 def eur_de(x):
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def bedenken_kasten(c, punkte, y_oben, titel="Vor dem Verkauf bedenken"):
+    """Kasten „Vor dem Verkauf bedenken“ (Kopfzeilen `# bedenken: …` der Verkaufsliste): Pergament, Goldrand, Rauten
+    als Aufzählung, je Punkt bis 3 Zeilen. Gibt die Unterkante zurück."""
+    breite = W - 2 * RAND - 10 * mm
+    zeilen = [umbrechen(p, "Text", 9, breite - 5 * mm, 3) for p in punkte]
+    hoehe = 9.5 * mm + sum(len(z) for z in zeilen) * 4.1 * mm + len(zeilen) * 1.2 * mm
+    c.setFillColor(PAPIER2); c.setStrokeColor(GOLD); c.setLineWidth(0.6)
+    c.roundRect(RAND, y_oben - hoehe, W - 2 * RAND, hoehe, 2 * mm, fill=1, stroke=1)
+    c.setFillColor(HexColor("#9A6A12")); c.rect(RAND, y_oben - hoehe, 2.4 * mm, hoehe, fill=1, stroke=0)
+    c.setFillColor(TINTE); schreibe(c, RAND + 5 * mm, y_oben - 6 * mm, titel, "Titel", 11)
+    y = y_oben - 11 * mm
+    for z in zeilen:
+        raute(c, RAND + 6.5 * mm, y + 1.1 * mm, 1 * mm, GOLD)
+        for t in z:
+            c.setFillColor(TINTE); schreibe(c, RAND + 9.5 * mm, y, t, "Text", 9)
+            y -= 4.1 * mm
+        y -= 1.2 * mm
+    return y_oben - hoehe
 
 
 def verkauf_pdf(kopf, karten, ziel, bilder):
@@ -934,12 +956,16 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
     schreibe(c, RAND, y - 19 * mm, kuerzen("   ·   ".join(teile), "Text", 10.5, platz), "Text", 10.5)
     stempel(c, kopf.get("stempel"), W - RAND - 32 * mm, y - 18 * mm, 4)
     zierlinie(c, RAND, W - RAND, y - 22.5 * mm)
-    r = Raster(c, 4, 5 * mm, 15 * mm, kopf_folgeseite, fuss, y - 28 * mm)
+    start = y - 28 * mm
+    if kopf.get("bedenken"):
+        start = bedenken_kasten(c, kopf["bedenken"], start) - 5 * mm
+    r = Raster(c, 4, 5 * mm, 15 * mm, kopf_folgeseite, fuss, start)
     for key, titel_ab, farbe in VERKAUF_KAT:
         teil = [k for k in karten if k["kat"] == key]
         if not teil:
             continue
-        r.cap = 21.5 * mm if any(k["hinweis"] for k in teil) else 15 * mm   # Platz für 2 Zeilen Hinweis
+        zeilen_max = 3 if key == "2" else 2                     # Kat. 2: Bedenken bis 3 Zeilen, Kat. 1: Hinweis bis 2
+        r.cap = (15 + 3.1 * zeilen_max + 0.3) * mm if any(k["hinweis"] for k in teil) else 15 * mm
         r.platz(10 * mm + r.kh + r.cap)
         c.setFillColor(farbe); c.rect(RAND, r.y - 6.5 * mm, 2.4 * mm, 6.5 * mm, fill=1, stroke=0)
         c.setFillColor(TINTE); schreibe(c, RAND + 5 * mm, r.y - 5.2 * mm, titel_ab, "Titel", 12.5)
@@ -948,7 +974,7 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
         r.y -= 10 * mm
         ks = sorted(teil, key=lambda k: box_rang(box(k.get("scry"), k["name"])) + (k["name"],))
 
-        def zeichne(k, x, y_oben, farbe=farbe):
+        def zeichne(k, x, y_oben, farbe=farbe, key=key, zeilen_max=zeilen_max):
             kartenbild(c, bilder.pfad(k), x, y_oben, r.kw, r.kh)
             if k["anzahl"] > 1:
                 plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
@@ -964,11 +990,49 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
             schreibe(c, x + r.kw, yc - 11.7 * mm, k["preis_txt"] or eur_de(k["preis"]), "TextB", 8.6, rechts=True)
             if k["hinweis"]:
                 c.setFillColor(farbe)
-                for i, z in enumerate(umbrechen(k["hinweis"], "TextI", 7.6, r.kw, 2)):
+                text = ("Bedenken: " if key == "2" else "") + k["hinweis"]
+                for i, z in enumerate(umbrechen(text, "TextI", 7.6, r.kw - 1.5 * mm, zeilen_max)):
+                    if i == 0 and key == "2":                         # Stichwort fett, Rest kursiv
+                        schreibe(c, x, yc - 15.1 * mm, "Bedenken:", "TextB", 7.6)
+                        z = z[len("Bedenken:"):]
+                        schreibe(c, x + textbreite("Bedenken:", "TextB", 7.6), yc - 15.1 * mm, z, "TextI", 7.6)
+                        continue
                     schreibe(c, x, yc - (15.1 + 3.1 * i) * mm, z, "TextI", 7.6)
         r.zeile_karten(ks, zeichne)
         r.y -= 2 * mm
+    bedenken_ueberblick(c, r, [k for k in karten if k["kat"] == "2" and k["hinweis"]])
     fuss(r.seite); c.save()
+
+
+def bedenken_ueberblick(c, r, karten):
+    """Abschluss der Verkaufsliste: alle Bedenken der Kat. 2 ungekürzt – Karte, Preis, Bedenken, Feld zum Abhaken."""
+    if not karten:
+        return
+    farbe = VERKAUF_KAT[1][2]
+    sp_name, sp_preis = 52 * mm, 18 * mm
+    sp_text = W - 2 * RAND - sp_name - sp_preis - 6 * mm
+    zeilen = {id(k): umbrechen(k["hinweis"], "Text", 9, sp_text, 6) for k in karten}
+    r.platz(16 * mm + 4.4 * mm * len(zeilen[id(karten[0])]) + 3 * mm)
+    c.setFillColor(farbe); c.rect(RAND, r.y - 6.5 * mm, 2.4 * mm, 6.5 * mm, fill=1, stroke=0)
+    c.setFillColor(TINTE); schreibe(c, RAND + 5 * mm, r.y - 5.2 * mm, "Bedenken im Überblick", "Titel", 12.5)
+    c.setFillColor(GRAU)
+    schreibe(c, W - RAND, r.y - 5 * mm, "ungekürzt · vor dem Einstellen entscheiden", "TextI", 10.5, rechts=True)
+    r.y -= 11 * mm
+    for k in sorted(karten, key=lambda k: -k["preis"] * k["anzahl"]):
+        z = zeilen[id(k)]
+        h = 4.4 * mm * len(z) + 3 * mm
+        r.platz(h)
+        y = r.y - 3.6 * mm
+        c.setFillColor(TINTE)
+        name = (f"{k['anzahl']}× " if k["anzahl"] > 1 else "") + k["name"]
+        schreibe(c, RAND + 2 * mm, y, kuerzen(name, "TextB", 9.2, sp_name - HAKEN - 4 * mm), "TextB", 9.2)
+        haken(c, RAND + sp_name - HAKEN - 1 * mm, y - 0.9 * mm, f"Bedenken geklärt: {k['name']}")
+        schreibe(c, RAND + sp_name + sp_preis, y, k["preis_txt"] or eur_de(k["preis"]), "TextB", 9, rechts=True)
+        c.setFillColor(TINTE)
+        for i, t in enumerate(z):
+            schreibe(c, RAND + sp_name + sp_preis + 6 * mm, y - 4.4 * mm * i, t, "Text", 9)
+        r.y -= h
+        c.setStrokeColor(GOLD); c.setLineWidth(0.3); c.line(RAND, r.y + 1 * mm, W - RAND, r.y + 1 * mm)
 
 
 # ---------------------------------------------------------------- Einkaufsliste (V1.8)
