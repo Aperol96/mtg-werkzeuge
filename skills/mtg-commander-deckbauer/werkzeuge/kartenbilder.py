@@ -511,6 +511,9 @@ class Bilder:
     def _pfad(self, k, groesse="normal"):
         c = k.get("scry")
         url = bild_url(c, groesse)
+        if url and (self.cache / f"{c['id']}_{groesse}.jpg").exists():   # Zwischenspeicher auch bei gesperrtem Server
+            self.echt += 1
+            return self.cache / f"{c['id']}_{groesse}.jpg"
         if url and not self.gesperrt:
             datei = self.cache / f"{c['id']}_{groesse}.jpg"
             try:
