@@ -2159,7 +2159,7 @@ def verkauf_ausgabe(kat1, kat2, halten, stand, a):
     out = a.out or "out/verkauf.txt"
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", encoding="utf-8") as fh:
-        fh.write(f"# titel: Verkaufsliste Cardmarket\n# deck: Sammlung (freie Karten) ab {eur(a.min_preis)}\n"
+        fh.write(f"# titel: Verkaufsliste Cardmarket\n# deck: Freie Karten ab {eur(a.min_preis)}\n"
                  f"# datum: {time.strftime('%d.%m.%Y')}\n# preise: Cardmarket über Scryfall, Stand {stand}\n")
         for k, l in (("K1", kat1), ("K2", kat2)):
             for z in sorted(l, key=lambda z: z["name"]):

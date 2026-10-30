@@ -9,6 +9,11 @@ Befehle
   verkauf Verkaufs-PDF aus der Verkaufsliste von deckbau.py verkauf: Abschnitte Kat. 1 (ohne Bedenken) und
           Kat. 2 (mit Hinweis) mit Anzahl und Summe, je Karte Box-Etikett, Druck, Sprache, Preis und voller
           Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
+  einkauf Einkaufsliste-PDF (Sammelbestellung): Abschnitte je Idee/Vorhaben mit Anzahl und Summe, je Karte Bild,
+          Box-Etikett „später“, Druck, Preis und Hinweis. Liste: 3 Name (SET) Nr | 0,25 € | I-004 Mardu Surge | Hinweis
+          (Preis je Stück) oder --aus-10 projekt/10_Geplante-Kaeufe-und-Ideen.md (Tabelle „Kaufliste“).
+  Abhaken (V1.8): Tausch-, Verkaufs- und Einkaufs-PDF haben je Karte ein Kästchen, das im PDF-Reader anklickbar ist
+          (AcroForm); der Haken wird mit dem PDF gespeichert.
   deck    Deck-PDF: Deckblatt mit Kurzdaten, Commander mit Oracle-Text, Manakurve, Farben,
           danach alle Karten nach Kategorien.
   vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie in 08a_Lieferung-Buchen-Gegentest, Abschnitt 3).
@@ -706,6 +711,26 @@ def plakette(c, x, y, text, farbe, r=4.4 * mm):
     c.drawCentredString(x, y - 1.5 * mm, text)
 
 
+HAKEN = 3.6 * mm       # Kantenlänge der Abhak-Kästchen (V1.8)
+
+
+def haken(c, x, y, tip="", groesse=HAKEN):
+    """Abhak-Kästchen, im PDF-Reader anklickbar (AcroForm-Checkbox); x/y = linke untere Ecke.
+    Dezent im Design: Papierfarbe, Goldrand, Haken in Tinte. Jede Box bekommt einen eigenen Feldnamen."""
+    n = getattr(c, "_haken_nr", 0) + 1
+    c._haken_nr = n
+    c.acroForm.checkbox(name=f"erledigt_{n:03d}", tooltip=(tip or f"erledigt {n}")[:120], x=x, y=y, size=groesse,
+                        buttonStyle="check", shape="square", fillColor=PAPIER, borderColor=GOLD, textColor=TINTE,
+                        borderWidth=0.8, borderStyle="solid", forceBorder=True, fieldFlags="", checked=False)
+
+
+def name_mit_haken(c, x, y, breite, name, tip=None, size=9.2):
+    """Kartenname links, Abhak-Kästchen rechts in derselben Zeile (Grundlinie y)."""
+    c.setFillColor(TINTE)
+    schreibe(c, x, y, kuerzen(name, "TextB", size, breite - HAKEN - 1.4 * mm), "TextB", size)
+    haken(c, x + breite - HAKEN, y - 0.9 * mm, tip or name)
+
+
 def fusszeile(c, links, seite):
     c.setFont("Text", 7.5); c.setFillColor(GRAU)
     c.drawString(RAND, 9.5 * mm, links)
@@ -750,7 +775,7 @@ def tausch_pdf(kopf, karten, ziel, bilder):
 
     def fuss(s):
         q = "Bilder: Scryfall, englische Druckversion" if not bilder.gesperrt else "Bilder teils Platzhalter (Bildserver nicht erreichbar)"
-        fusszeile(c, f"{q} · erstellt {kopf.get('datum', HEUTE)}", s)
+        fusszeile(c, f"{q} · Kästchen im PDF-Reader anklickbar · erstellt {kopf.get('datum', HEUTE)}", s)
 
     # Kopf Seite 1
     y = H - RAND
@@ -793,8 +818,7 @@ def tausch_pdf(kopf, karten, ziel, bilder):
                 plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
             sc = k.get("scry") or {}
             yc = y_oben - r.kh
-            c.setFillColor(TINTE)
-            schreibe(c, x, yc - 3.9 * mm, kuerzen(k["name"], "TextB", 9.2, r.kw), "TextB", 9.2)
+            name_mit_haken(c, x, yc - 3.9 * mm, r.kw, k["name"], f"{titel_ab}: {k['anzahl']}× {k['name']}")
             # Box-Etikett mit Farbsymbol
             etikett(c, x, yc - 7.9 * mm, r.kw, k, key)
             druck = f"{(sc.get('set') or k['set']).upper()} {sc.get('collector_number', k['nummer'])}".strip()
@@ -886,8 +910,8 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
 
     def fuss(s):
         q = "Bilder: Scryfall, englische Druckversion" if not bilder.gesperrt else "Bilder teils Platzhalter"
-        fusszeile(c, f"{q} · Preise: {kopf.get('preise', 'Cardmarket über Scryfall')} · erstellt "
-                     f"{kopf.get('datum', HEUTE)}", s)
+        fusszeile(c, f"{q} · Preise: {kopf.get('preise', 'Cardmarket über Scryfall')} · Kästchen anklickbar · "
+                     f"erstellt {kopf.get('datum', HEUTE)}", s)
 
     summe = lambda ks: sum(k["preis"] * k["anzahl"] for k in ks)
     anzahl = lambda ks: sum(k["anzahl"] for k in ks)
@@ -927,8 +951,7 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
                 plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
             sc = k.get("scry") or {}
             yc = y_oben - r.kh
-            c.setFillColor(TINTE)
-            schreibe(c, x, yc - 3.9 * mm, kuerzen(k["name"], "TextB", 9.2, r.kw), "TextB", 9.2)
+            name_mit_haken(c, x, yc - 3.9 * mm, r.kw, k["name"], f"Kat. {k['kat']}: {k['anzahl']}× {k['name']}")
             etikett(c, x, yc - 7.9 * mm, r.kw, k, "holen")
             druck = f"{(sc.get('set') or k['set']).upper()} {sc.get('collector_number', k['nummer'])}".strip()
             zeile = " · ".join(t for t in [druck, k["sprache"]] if t)
@@ -940,6 +963,132 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
                 c.setFillColor(farbe)
                 for i, z in enumerate(umbrechen(k["hinweis"], "TextI", 7.6, r.kw, 2)):
                     schreibe(c, x, yc - (15.1 + 3.1 * i) * mm, z, "TextI", 7.6)
+        r.zeile_karten(ks, zeichne)
+        r.y -= 2 * mm
+    fuss(r.seite); c.save()
+
+
+# ---------------------------------------------------------------- Einkaufsliste (V1.8)
+EINKAUF_FARBEN = [HexColor(x) for x in ("#2F4F86", "#2E6B3F", "#9A6A12", "#7A3E6E", "#5E5850")]
+EINKAUFSZEILE = re.compile(r"^\s*(\d+)\s*x?\s+(.+?)\s*(?:\(([A-Za-z0-9]+)\)\s*([^\s|]+))?\s*(?:\|(.*))?$")
+
+
+def lies_einkaufsliste(pfad):
+    """Einkaufsliste: Kopf `# titel:` / `# datum:` / `# preise:` und je Position
+    `3 Name (SET) Nr | 0,25 € | I-004 Mardu Surge | Hinweis` – Preis je Stück, Zweck = Abschnitt (Idee/Vorhaben)."""
+    kopf, karten = {}, []
+    for nr, roh in enumerate(Path(pfad).read_text(encoding="utf-8").splitlines(), 1):
+        z = roh.strip()
+        if not z:
+            continue
+        if z.startswith("#"):
+            m = re.match(r"#\s*(\w+)\s*:\s*(.*)", z)
+            if m:
+                kopf[m.group(1).lower()] = m.group(2).strip()
+            continue
+        m = EINKAUFSZEILE.match(z)
+        if not m:
+            sys.exit(f"Zeile {nr} nicht lesbar: {roh}")
+        anz, name, ed, num, rest = m.groups()
+        f = [x.strip() for x in (rest or "").split("|")] + ["", "", ""]
+        karten.append(dict(anzahl=int(anz), name=name.strip(), set=(ed or "").lower(), nummer=num or "",
+                           preis=euro_wert(f[0]), preis_txt=f[0], zweck=f[1] or "ohne Zuordnung", hinweis=f[2],
+                           quelle="Kauf", abschnitt="kauf"))
+    return kopf, karten
+
+
+def einkauf_aus_10(pfad):
+    """Kaufliste (Sammelbestellung) aus 10_Geplante-Kaeufe-und-Ideen.md als Einkaufsliste lesen:
+    Tabelle „## Kaufliste“ (ID | Karte | Anzahl | Art | Preis ab € (Stand) | Hinweis), Deckname aus „## Offene Ideen“."""
+    text = Path(pfad).read_text(encoding="utf-8")
+    def tabelle(ueberschrift):
+        m = re.search(r"^## " + re.escape(ueberschrift) + r".*?\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+        zeilen = [z for z in (m.group(1) if m else "").splitlines() if z.startswith("|")]
+        return [[x.strip() for x in z.strip("|").split("|")] for z in zeilen[2:]]
+    decks = {r[0]: r[2] for r in tabelle("Offene Ideen") if len(r) > 2}
+    karten = []
+    for r in tabelle("Kaufliste"):
+        if len(r) < 6 or not r[2].isdigit():
+            continue
+        iid, name, anz, art, preis, hinweis = r[:6]
+        zweck = f"{iid} {decks.get(iid, '')}".strip()
+        hinweis = " · ".join(x for x in [art if art.lower() != "kauf" else "", hinweis] if x)
+        karten.append(dict(anzahl=int(anz), name=name, set="", nummer="", preis=euro_wert(preis),
+                           preis_txt=f"{eur_de(euro_wert(preis))}/St." if euro_wert(preis) else "", zweck=zweck,
+                           hinweis=hinweis, quelle="Kauf", abschnitt="kauf"))
+    stand = re.search(r"\*\*Stand:\*\*\s*([\d.]+)", text)
+    return {"titel": "Einkaufsliste Sammelbestellung", "deck": f"aus der Kaufliste (Stand {stand.group(1) if stand else '–'})",
+            "preise": "laut Kaufliste – vor der Bestellung neu prüfen"}, karten
+
+
+def einkauf_pdf(kopf, karten, ziel, bilder):
+    """Einkaufsliste: Abschnitte je Zweck (Idee/Vorhaben) mit Anzahl und Summe, je Karte Abhak-Kästchen,
+    Box-Etikett „später“, Druck, Preis (Stück × Anzahl) und Hinweis. Ordnung je Abschnitt = Box-Ablage."""
+    c = canvas.Canvas(str(ziel), pagesize=A4)
+    titel = kopf.get("titel", "Einkaufsliste")
+    c.setTitle(titel); c.setAuthor("MTG-Projekt")
+    seite_grund(c)
+
+    def kopf_folgeseite():
+        c.setFillColor(GRAU)
+        schreibe(c, RAND, H - RAND - 2 * mm, kuerzen(titel.upper(), "TitelM", 9, W - 2 * RAND), "TitelM", 9)
+        zierlinie(c, RAND, W - RAND, H - RAND - 4.5 * mm)
+        return H - RAND - 9 * mm
+
+    def fuss(s):
+        q = "Bilder: Scryfall, englische Druckversion" if not bilder.gesperrt else "Bilder teils Platzhalter"
+        fusszeile(c, f"{q} · Preise: {kopf.get('preise', 'Cardmarket über Scryfall')} · Kästchen anklickbar · "
+                     f"erstellt {kopf.get('datum', HEUTE)}", s)
+
+    summe = lambda ks: sum(k["preis"] * k["anzahl"] for k in ks)
+    anzahl = lambda ks: sum(k["anzahl"] for k in ks)
+    zwecke = list(dict.fromkeys(k["zweck"] for k in karten))
+    y = H - RAND
+    c.setFillColor(TINTE)
+    g, t = passend(titel, "Titel", 19, 12, W - 2 * RAND)
+    schreibe(c, RAND, y - 7 * mm, t, "Titel", g)
+    unter = " · ".join(x for x in [kopf.get("deck", ""), kopf.get("datum", HEUTE)] if x)
+    g, t = passend(unter, "TextI", 11, 8, W - 2 * RAND)
+    c.setFillColor(GRAU); schreibe(c, RAND, y - 13 * mm, t, "TextI", g)
+    zeile = (f"{len(karten)} Positionen · {anzahl(karten)} Karten · zusammen {eur_de(summe(karten))}"
+             f"   ·   Tipp: Cardmarket-Wants + Shopping Wizard")
+    platz = W - 2 * RAND - (66 * mm if kopf.get("stempel") else 0)
+    c.setFillColor(TINTE)
+    schreibe(c, RAND, y - 19 * mm, kuerzen(zeile, "Text", 10.5, platz), "Text", 10.5)
+    stempel(c, kopf.get("stempel"), W - RAND - 32 * mm, y - 18 * mm, 4)
+    zierlinie(c, RAND, W - RAND, y - 22.5 * mm)
+    r = Raster(c, 4, 5 * mm, 15 * mm, kopf_folgeseite, fuss, y - 28 * mm)
+    for i, zweck in enumerate(zwecke):
+        farbe = EINKAUF_FARBEN[i % len(EINKAUF_FARBEN)]
+        teil = [k for k in karten if k["zweck"] == zweck]
+        r.cap = 21.5 * mm if any(k["hinweis"] for k in teil) else 15 * mm
+        r.platz(10 * mm + r.kh + r.cap)
+        c.setFillColor(farbe); c.rect(RAND, r.y - 6.5 * mm, 2.4 * mm, 6.5 * mm, fill=1, stroke=0)
+        c.setFillColor(TINTE)
+        schreibe(c, RAND + 5 * mm, r.y - 5.2 * mm, kuerzen(zweck, "Titel", 12.5, W - 2 * RAND - 60 * mm), "Titel", 12.5)
+        c.setFillColor(GRAU)
+        schreibe(c, W - RAND, r.y - 5 * mm, f"{anzahl(teil)} Karten · {eur_de(summe(teil))}", "TextI", 10.5, rechts=True)
+        r.y -= 10 * mm
+        ks = sorted(teil, key=lambda k: box_rang(box(k.get("scry"), k["name"])) + (k["name"],))
+
+        def zeichne(k, x, y_oben, farbe=farbe, zweck=zweck):
+            kartenbild(c, bilder.pfad(k), x, y_oben, r.kw, r.kh)
+            if k["anzahl"] > 1:
+                plakette(c, x + r.kw - 6 * mm, y_oben - r.kh * 0.36, f"{k['anzahl']}×", farbe)
+            sc = k.get("scry") or {}
+            yc = y_oben - r.kh
+            name_mit_haken(c, x, yc - 3.9 * mm, r.kw, k["name"], f"{zweck}: {k['anzahl']}× {k['name']}")
+            etikett(c, x, yc - 7.9 * mm, r.kw, k, "kauf")
+            druck = f"{(k['set'] or '').upper()} {k['nummer']}".strip() if k["set"] else "günstigster Druck"
+            c.setFillColor(GRAU)
+            schreibe(c, x, yc - 11.7 * mm, kuerzen(druck, "TextI", 7.8, r.kw - 17 * mm), "TextI", 7.8)
+            preis = eur_de(k["preis"] * k["anzahl"]) if k["preis"] else "Preis offen"
+            c.setFillColor(TINTE)
+            schreibe(c, x + r.kw, yc - 11.7 * mm, preis, "TextB", 8.6, rechts=True)
+            if k["hinweis"]:
+                c.setFillColor(farbe)
+                for j, z in enumerate(umbrechen(k["hinweis"], "TextI", 7.6, r.kw, 2)):
+                    schreibe(c, x, yc - (15.1 + 3.1 * j) * mm, z, "TextI", 7.6)
         r.zeile_karten(ks, zeichne)
         r.y -= 2 * mm
     fuss(r.seite); c.save()
@@ -1723,6 +1872,11 @@ def main():
     v.add_argument("verkaufsliste")
     v.add_argument("--titel")
     v.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG fürs Handy)")
+    e = sub.add_parser("einkauf", help="Einkaufsliste-PDF (Sammelbestellung) zum Abhaken")
+    e.add_argument("einkaufsliste", nargs="?", help="Liste: 3 Name (SET) Nr | 0,25 € | Zweck | Hinweis")
+    e.add_argument("--aus-10", dest="aus10", help="Kaufliste aus 10_Geplante-Kaeufe-und-Ideen.md übernehmen")
+    e.add_argument("--titel")
+    e.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG fürs Handy)")
     d = sub.add_parser("deck", help="Deck-PDF")
     d.add_argument("deckdatei")
     d.add_argument("--set", default="", help="bevorzugtes Set für Karten ohne Druckangabe (z. B. tdc)")
@@ -1743,10 +1897,10 @@ def main():
     li.add_argument("--dpi", type=int, default=110)
     li.add_argument("--cache", default=str(HIER / "cache" / "kartenbilder"))
     li.add_argument("--fonts", default=str(HIER / "fonts"))
-    for p in (t, v, d, b):
+    for p in (t, v, e, d, b):
         p.add_argument("--stempel", help="roter Stempel auf Seite 1, z. B. 'TESTLAUF – nicht gebucht'")
         p.add_argument("--mobil", action="store_true", help="kleinere Bilder (Handy)")
-    for p in (t, v, d, b):
+    for p in (t, v, e, d, b):
         p.add_argument("--out", required=True, help="Ausgabe ohne Endung")
         p.add_argument("--png", action="store_true", help="PNG für das Handy (Deck: nur Deckblatt)")
         p.add_argument("--dpi", type=int, default=110)
@@ -1778,6 +1932,20 @@ def main():
         kopf["stempel"] = a.stempel or kopf.get("stempel")
         fehlt = scryfall(karten)
         verkauf_pdf(kopf, karten, ziel, bilder)
+    elif a.befehl == "einkauf":
+        if a.aus10:
+            kopf, karten = einkauf_aus_10(a.aus10)
+        elif a.einkaufsliste:
+            kopf, karten = lies_einkaufsliste(a.einkaufsliste)
+        else:
+            sys.exit("Einkaufsliste oder --aus-10 angeben")
+        if not karten:
+            sys.exit("Einkaufsliste ist leer.")
+        if a.titel:
+            kopf["titel"] = a.titel
+        kopf["stempel"] = a.stempel or kopf.get("stempel")
+        fehlt = scryfall(karten)
+        einkauf_pdf(kopf, karten, ziel, bilder)
     elif a.befehl == "tausch":
         if a.db and a.alt and a.neu:
             karten, kurz = vergleich_db(a)
@@ -1821,7 +1989,7 @@ def main():
         print("Hinweis: Bildserver cards.scryfall.io nicht erreichbar – Platzhalter verwendet.")
     if fehlt:
         print("Nicht bei Scryfall gefunden: " + ", ".join(fehlt))
-    if a.png or (a.befehl in ("tausch", "verkauf") and not a.ohne_png):
+    if a.png or (a.befehl in ("tausch", "verkauf", "einkauf") and not a.ohne_png):
         print("PNG: " + ", ".join(str(p) for p in png(ziel, a.dpi, nur_erste=(a.befehl == "deck"))))
 
 

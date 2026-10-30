@@ -53,7 +53,7 @@ Das **Ziel**: bessere, konsistentere Decks aus dem, was du schon hast – mit m�
 | **Vorschlag mit Tauschpaaren** | Welche Karte raus, welche rein – je mit „warum raus“ und „warum rein“ aus dem Oracle-Text und dem Hinweis, ob die neue Karte frei in deiner Sammlung liegt |
 | **Bracket-Zeile und Abnahme** | Ein Satz zum Bracket und eine Prüfliste mit acht Punkten, ob das Deck fertig ist ([Abnahme](#die-abnahme-wann-ein-deck-fertig-ist)) |
 | **Kaufliste** | Nur was fehlt: Rolle, Preis in Euro (günstigster Druck auf Cardmarket, mit Datum), günstigere Alternative und [Klasse A–D](#klassen-a-bis-d-lohnt-sich-ein-kauf) |
-| **PDFs mit Kartenbildern** | Deck-PDF (ganzes Deck mit Manakurve), Tauschübersicht (welche Karte du aus welcher Box holst), Fazit (alle Änderungen erklärt) – auch als kleinere Handy-Variante |
+| **PDFs mit Kartenbildern** | Deck-PDF (ganzes Deck mit Manakurve), Tauschübersicht (welche Karte du aus welcher Box holst), Einkaufsliste (Sammelbestellung), Fazit (alle Änderungen erklärt) – auch als kleinere Handy-Variante; in Tausch-, Einkaufs- und Verkaufsliste hakst du jede Karte im PDF-Reader per Klick ab |
 | **Import-Liste für deine externe Datenbank** | Deckliste zum Einfügen und neue Karten als CSV – für das Programm, in dem du Decks und Sammlung außerhalb von Claude pflegst ([mehr dazu](#deine-daten-und-deine-externe-datenbank)) |
 | **Verkaufsliste mit PDF** | Welche freien Karten kein Deck braucht und was sie wert sind ([Verkaufsliste](#die-verkaufsliste)) |
 | **Regelantworten** | Ergebnis in einem Satz, dann die Regelnummern aus den Comprehensive Rules |
@@ -327,7 +327,7 @@ Claude bekommt in jedem Gespräch einen kleinen Rechner mit Python. Dort laufen 
 | **Bewertung** (`bewertung.py`) | ein Regelwerk für alle: Rollen, Wert, Oracle-Bezug, Kompromiss-Stufen, Klassen A–D | gleiche Maßstäbe für jedes Deck |
 | **Simulation** (`simulation.py`) | spielt die ersten Züge eines Decks tausendfach durch | Du siehst, ob das Deck verlässlich startet |
 | **Archetypen** (`archetypen.py`) | Richtwerte je Archetyp aus den EDHREC-Durchschnittsdecks (Tokens, Landfall, Aristocrats …) | Lücken fallen auf, bevor sie im Spiel wehtun |
-| **PDF-Ersteller** (`kartenbilder.py`) | Deck-PDF, Tauschübersicht, Fazit und Verkaufsliste mit Kartenbildern | Etwas zum Ausdrucken oder fürs Handy |
+| **PDF-Ersteller** (`kartenbilder.py`) | Deck-PDF, Tauschübersicht, Einkaufsliste, Fazit und Verkaufsliste mit Kartenbildern; Listen mit anklickbaren Kästchen zum Abhaken | Etwas zum Ausdrucken oder fürs Handy |
 | **Protokoll, Pakete, Zugang** (`protokoll.py`, `paket.py`, `zugang.py`) | nur im Projekt: Änderungsprotokoll, Datentransport, Passwort und Rollen | Nachvollziehbar, was wann geändert wurde |
 
 ## Aufwand und Kosten
