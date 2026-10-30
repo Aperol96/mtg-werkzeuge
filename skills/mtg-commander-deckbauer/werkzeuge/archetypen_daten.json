@@ -1,5 +1,5 @@
 {
- "stand": "2026-10-29",
+ "stand": "2026-10-30",
  "bracket": 3,
  "top": 6,
  "methode": "EDHREC: Top-Commander der Themenseite (nach Deckzahl im Thema) -> Durchschnittsdeck average-decks/<commander>/<bracket>/<thema> (Fallback ohne Bracket) -> Rollen und Pakete über Scryfall-Tags gezählt; Median/Spanne über die Commander",
@@ -11,59 +11,59 @@
      "commander": "Baylen, the Haymaker",
      "thema": "tokens",
      "pfad": "average-decks/baylen-the-haymaker/upgraded/tokens",
-     "decks": 760
+     "decks": 761
     },
     {
      "commander": "Chatterfang, Squirrel General",
      "thema": "tokens",
      "pfad": "average-decks/chatterfang-squirrel-general/upgraded/tokens",
-     "decks": 687
+     "decks": 685
     },
     {
      "commander": "Caesar, Legion's Emperor",
      "thema": "tokens",
      "pfad": "average-decks/caesar-legions-emperor/upgraded/tokens",
-     "decks": 681
+     "decks": 682
     },
     {
      "commander": "Krenko, Mob Boss",
      "thema": "tokens",
      "pfad": "average-decks/krenko-mob-boss/upgraded/tokens",
-     "decks": 488
+     "decks": 492
     },
     {
      "commander": "Edgar Markov",
      "thema": "tokens",
      "pfad": "average-decks/edgar-markov/upgraded/tokens",
-     "decks": 656
+     "decks": 654
     },
     {
-     "commander": "Marneus Calgar",
+     "commander": "Zurgo Stormrender",
      "thema": "tokens",
-     "pfad": "average-decks/marneus-calgar/upgraded/tokens",
-     "decks": 403
+     "pfad": "average-decks/zurgo-stormrender/upgraded/tokens",
+     "decks": 696
     }
    ],
    "rollen": {
     "rolle.counter": {
      "median": 0.0,
      "min": 0,
-     "max": 5
+     "max": 1
     },
     "rolle.gezielt": {
-     "median": 8.5,
+     "median": 8.0,
      "min": 8,
-     "max": 16
+     "max": 15
     },
     "rolle.instant_int": {
      "median": 5.5,
      "min": 4,
-     "max": 10
+     "max": 6
     },
     "rolle.ka": {
-     "median": 10.5,
+     "median": 10.0,
      "min": 8,
-     "max": 12
+     "max": 13
     },
     "rolle.land": {
      "median": 35.0,
@@ -76,7 +76,7 @@
      "max": 4
     },
     "rolle.ramp": {
-     "median": 11.0,
+     "median": 9.0,
      "min": 5,
      "max": 16
     },
@@ -86,7 +86,7 @@
      "max": 1
     },
     "rolle.schutz": {
-     "median": 3.0,
+     "median": 4.0,
      "min": 2,
      "max": 6
     },
@@ -108,24 +108,24 @@
      "max": 2
     },
     "tokens.quelle": {
-     "median": 17.5,
+     "median": 19.5,
      "min": 8,
      "max": 24
     },
     "tokens.verdoppler": {
-     "median": 4.5,
+     "median": 4.0,
      "min": 0,
      "max": 11
     },
     "tokens.wiederholt": {
      "median": 10.0,
      "min": 7,
-     "max": 16
+     "max": 17
     }
    },
    "fremdpakete": {
     "aristokraten.futter": {
-     "median": 21.0,
+     "median": 22.0,
      "min": 9,
      "max": 27
     },
@@ -135,22 +135,22 @@
      "max": 8
     },
     "aristokraten.outlet_frei": {
-     "median": 1.0,
+     "median": 1.5,
      "min": 0,
      "max": 4
     },
     "aristokraten.payoff": {
-     "median": 6.0,
+     "median": 7.5,
      "min": 1,
      "max": 12
     },
     "artefakte.artefakte": {
-     "median": 10.5,
+     "median": 9.5,
      "min": 7,
-     "max": 14
+     "max": 12
     },
     "artefakte.payoff": {
-     "median": 1.0,
+     "median": 1.5,
      "min": 0,
      "max": 3
     },
@@ -161,7 +161,7 @@
     },
     "blink.etb": {
      "median": 4.5,
-     "min": 0,
+     "min": 1,
      "max": 7
     },
     "counters.geber": {
@@ -170,12 +170,12 @@
      "max": 11
     },
     "counters.payoff": {
-     "median": 0.5,
+     "median": 1.0,
      "min": 0,
      "max": 2
     },
     "enchantress.verzauberungen": {
-     "median": 7.5,
+     "median": 9.0,
      "min": 5,
      "max": 11
     },
@@ -187,15 +187,15 @@
     "landfall.fetch": {
      "median": 1.5,
      "min": 0,
-     "max": 3
+     "max": 4
     },
     "landfall.land_ramp": {
-     "median": 1.5,
+     "median": 1.0,
      "min": 0,
-     "max": 7
+     "max": 5
     },
     "lifegain.quelle": {
-     "median": 9.0,
+     "median": 9.5,
      "min": 1,
      "max": 18
     },
@@ -210,7 +210,7 @@
      "max": 2
     },
     "spellslinger.zauber": {
-     "median": 16.0,
+     "median": 15.0,
      "min": 13,
      "max": 20
     },
@@ -220,20 +220,20 @@
      "max": 5
     },
     "voltron.evasion": {
-     "median": 3.0,
+     "median": 2.0,
      "min": 1,
      "max": 4
     },
     "voltron.schutz": {
-     "median": 3.5,
+     "median": 4.5,
      "min": 2,
      "max": 6
     }
    },
    "mv": {
-    "median": 2.9,
+    "median": 3.0,
     "min": 2.62,
-    "max": 2.98
+    "max": 3.08
    },
    "schluesselkarten": [
     {
@@ -244,32 +244,32 @@
     },
     {
      "name": "Impact Tremors",
-     "inclusion": 0.294,
-     "synergy": 0.2,
+     "inclusion": 0.293,
+     "synergy": 0.199,
      "seiten": 1
     },
     {
      "name": "Skullclamp",
      "inclusion": 0.301,
-     "synergy": 0.188,
+     "synergy": 0.187,
      "seiten": 1
     },
     {
      "name": "Doubling Season",
-     "inclusion": 0.276,
-     "synergy": 0.17,
+     "inclusion": 0.275,
+     "synergy": 0.169,
      "seiten": 1
     },
     {
      "name": "Parallel Lives",
-     "inclusion": 0.243,
+     "inclusion": 0.242,
      "synergy": 0.178,
      "seiten": 1
     },
     {
      "name": "Jetmir, Nexus of Revels",
-     "inclusion": 0.222,
-     "synergy": 0.169,
+     "inclusion": 0.221,
+     "synergy": 0.168,
      "seiten": 1
     },
     {
@@ -281,12 +281,12 @@
     {
      "name": "Warleader's Call",
      "inclusion": 0.222,
-     "synergy": 0.154,
+     "synergy": 0.153,
      "seiten": 1
     },
     {
      "name": "Anointed Procession",
-     "inclusion": 0.217,
+     "inclusion": 0.216,
      "synergy": 0.149,
      "seiten": 1
     },
@@ -299,7 +299,7 @@
     {
      "name": "Chatterfang, Squirrel General",
      "inclusion": 0.202,
-     "synergy": 0.148,
+     "synergy": 0.147,
      "seiten": 1
     },
     {
@@ -322,8 +322,8 @@
     },
     {
      "name": "Anim Pakal, Thousandth Moon",
-     "inclusion": 0.187,
-     "synergy": 0.131,
+     "inclusion": 0.186,
+     "synergy": 0.13,
      "seiten": 1
     }
    ]
@@ -335,13 +335,13 @@
      "commander": "Teysa Karlov",
      "thema": "aristocrats",
      "pfad": "average-decks/teysa-karlov/upgraded/aristocrats",
-     "decks": 699
+     "decks": 701
     },
     {
      "commander": "Sephiroth, Fabled SOLDIER",
      "thema": "aristocrats",
      "pfad": "average-decks/sephiroth-fabled-soldier/upgraded/aristocrats",
-     "decks": 904
+     "decks": 905
     },
     {
      "commander": "Meren of Clan Nel Toth",
@@ -353,19 +353,19 @@
      "commander": "Edgar Markov",
      "thema": "aristocrats",
      "pfad": "average-decks/edgar-markov/upgraded/aristocrats",
-     "decks": 497
+     "decks": 499
     },
     {
      "commander": "Chatterfang, Squirrel General",
      "thema": "aristocrats",
      "pfad": "average-decks/chatterfang-squirrel-general/upgraded/aristocrats",
-     "decks": 347
+     "decks": 344
     },
     {
      "commander": "Zurgo Stormrender",
      "thema": "aristocrats",
      "pfad": "average-decks/zurgo-stormrender/upgraded/aristocrats",
-     "decks": 484
+     "decks": 485
     }
    ],
    "rollen": {
@@ -391,13 +391,13 @@
     },
     "rolle.land": {
      "median": 35.0,
-     "min": 32,
+     "min": 33,
      "max": 36
     },
     "rolle.massen": {
      "median": 3.5,
      "min": 2,
-     "max": 5
+     "max": 4
     },
     "rolle.ramp": {
      "median": 11.0,
@@ -508,11 +508,6 @@
      "min": 0,
      "max": 4
     },
-    "landfall.land_ramp": {
-     "median": 1.0,
-     "min": 0,
-     "max": 6
-    },
     "lifegain.quelle": {
      "median": 11.0,
      "min": 6,
@@ -581,38 +576,38 @@
    },
    "mv": {
     "median": 2.8,
-    "min": 2.75,
+    "min": 2.72,
     "max": 2.94
    },
    "schluesselkarten": [
     {
      "name": "Pitiless Plunderer",
      "inclusion": 0.432,
-     "synergy": 0.345,
+     "synergy": 0.344,
      "seiten": 1
     },
     {
      "name": "Ashnod's Altar",
-     "inclusion": 0.412,
+     "inclusion": 0.411,
      "synergy": 0.35,
      "seiten": 1
     },
     {
      "name": "Sakura-Tribe Elder",
-     "inclusion": 0.424,
-     "synergy": 0.27,
+     "inclusion": 0.423,
+     "synergy": 0.269,
      "seiten": 1
     },
     {
      "name": "Bastion of Remembrance",
-     "inclusion": 0.365,
+     "inclusion": 0.364,
      "synergy": 0.297,
      "seiten": 1
     },
     {
      "name": "Goblin Bombardment",
      "inclusion": 0.353,
-     "synergy": 0.299,
+     "synergy": 0.298,
      "seiten": 1
     },
     {
@@ -624,13 +619,13 @@
     {
      "name": "Deadly Dispute",
      "inclusion": 0.375,
-     "synergy": 0.248,
+     "synergy": 0.247,
      "seiten": 1
     },
     {
      "name": "Mayhem Devil",
-     "inclusion": 0.359,
-     "synergy": 0.259,
+     "inclusion": 0.358,
+     "synergy": 0.258,
      "seiten": 1
     },
     {
@@ -648,13 +643,7 @@
     {
      "name": "Warren Soultrader",
      "inclusion": 0.307,
-     "synergy": 0.25,
-     "seiten": 1
-    },
-    {
-     "name": "Talisman of Dominance",
-     "inclusion": 0.481,
-     "synergy": 0.157,
+     "synergy": 0.249,
      "seiten": 1
     },
     {
@@ -664,15 +653,21 @@
      "seiten": 1
     },
     {
+     "name": "Talisman of Dominance",
+     "inclusion": 0.48,
+     "synergy": 0.156,
+     "seiten": 1
+    },
+    {
      "name": "Bojuka Bog",
      "inclusion": 0.455,
      "synergy": 0.155,
      "seiten": 1
     },
     {
-     "name": "Elenda, the Dusk Rose",
-     "inclusion": 0.285,
-     "synergy": 0.234,
+     "name": "Victimize",
+     "inclusion": 0.33,
+     "synergy": 0.201,
      "seiten": 1
     }
    ]
@@ -684,37 +679,37 @@
      "commander": "The Wise Mothman",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/the-wise-mothman/upgraded/plus-1-plus-1-counters",
-     "decks": 957
+     "decks": 962
     },
     {
      "commander": "Ms. Bumbleflower",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/ms-bumbleflower/upgraded/plus-1-plus-1-counters",
-     "decks": 1006
+     "decks": 1009
     },
     {
      "commander": "Hakbal of the Surging Soul",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/hakbal-of-the-surging-soul/upgraded/plus-1-plus-1-counters",
-     "decks": 761
+     "decks": 759
     },
     {
      "commander": "Tidus, Yuna's Guardian",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/tidus-yunas-guardian/upgraded/plus-1-plus-1-counters",
-     "decks": 971
+     "decks": 972
     },
     {
      "commander": "Atraxa, Praetors' Voice",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/atraxa-praetors-voice/upgraded/plus-1-plus-1-counters",
-     "decks": 447
+     "decks": 448
     },
     {
      "commander": "Giada, Font of Hope",
      "thema": "plus-1-plus-1-counters",
      "pfad": "average-decks/giada-font-of-hope/upgraded/plus-1-plus-1-counters",
-     "decks": 674
+     "decks": 677
     }
    ],
    "rollen": {
@@ -734,7 +729,7 @@
      "max": 8
     },
     "rolle.ka": {
-     "median": 12.5,
+     "median": 12.0,
      "min": 8,
      "max": 23
     },
@@ -761,7 +756,7 @@
     "rolle.schutz": {
      "median": 7.0,
      "min": 5,
-     "max": 10
+     "max": 9
     },
     "rolle.tutor": {
      "median": 0.0,
@@ -838,8 +833,8 @@
      "max": 6
     },
     "landfall.land_ramp": {
-     "median": 6.0,
-     "min": 3,
+     "median": 4.5,
+     "min": 2,
      "max": 7
     },
     "landfall.payoff": {
@@ -883,14 +878,14 @@
      "max": 3
     },
     "voltron.evasion": {
-     "median": 3.5,
+     "median": 3.0,
      "min": 1,
      "max": 8
     },
     "voltron.schutz": {
      "median": 7.0,
      "min": 5,
-     "max": 10
+     "max": 9
     }
    },
    "mv": {
@@ -901,25 +896,25 @@
    "schluesselkarten": [
     {
      "name": "Branching Evolution",
-     "inclusion": 0.3,
+     "inclusion": 0.299,
      "synergy": 0.232,
      "seiten": 1
     },
     {
      "name": "Kami of Whispered Hopes",
      "inclusion": 0.296,
-     "synergy": 0.232,
+     "synergy": 0.231,
      "seiten": 1
     },
     {
      "name": "Corpsejack Menace",
      "inclusion": 0.276,
-     "synergy": 0.229,
+     "synergy": 0.228,
      "seiten": 1
     },
     {
      "name": "Forgotten Ancient",
-     "inclusion": 0.267,
+     "inclusion": 0.266,
      "synergy": 0.2,
      "seiten": 1
     },
@@ -949,8 +944,8 @@
     },
     {
      "name": "Gavony Township",
-     "inclusion": 0.226,
-     "synergy": 0.155,
+     "inclusion": 0.225,
+     "synergy": 0.154,
      "seiten": 1
     },
     {
@@ -968,7 +963,7 @@
     {
      "name": "The Ozolith",
      "inclusion": 0.202,
-     "synergy": 0.167,
+     "synergy": 0.166,
      "seiten": 1
     },
     {
@@ -978,14 +973,14 @@
      "seiten": 1
     },
     {
-     "name": "Winding Constrictor",
-     "inclusion": 0.196,
+     "name": "Ripples of Potential",
+     "inclusion": 0.194,
      "synergy": 0.16,
      "seiten": 1
     },
     {
-     "name": "Ripples of Potential",
-     "inclusion": 0.193,
+     "name": "Winding Constrictor",
+     "inclusion": 0.195,
      "synergy": 0.159,
      "seiten": 1
     }
@@ -998,7 +993,7 @@
      "commander": "Breya, Etherium Shaper",
      "thema": "artifacts",
      "pfad": "average-decks/breya-etherium-shaper/upgraded/artifacts",
-     "decks": 567
+     "decks": 570
     },
     {
      "commander": "Urza, Chief Artificer",
@@ -1010,25 +1005,25 @@
      "commander": "Urza, Lord High Artificer",
      "thema": "artifacts",
      "pfad": "average-decks/urza-lord-high-artificer/upgraded/artifacts",
-     "decks": 207
+     "decks": 209
     },
     {
      "commander": "Iron Man, Titan of Innovation",
      "thema": "artifacts",
      "pfad": "average-decks/iron-man-titan-of-innovation/upgraded/artifacts",
-     "decks": 174
+     "decks": 173
     },
     {
      "commander": "Urtet, Remnant of Memnarch",
      "thema": "artifacts",
      "pfad": "average-decks/urtet-remnant-of-memnarch/upgraded/artifacts",
-     "decks": 247
+     "decks": 248
     },
     {
      "commander": "Toph, the First Metalbender",
      "thema": "artifacts",
      "pfad": "average-decks/toph-the-first-metalbender/upgraded/artifacts",
-     "decks": 568
+     "decks": 574
     }
    ],
    "rollen": {
@@ -1038,7 +1033,7 @@
      "max": 7
     },
     "rolle.gezielt": {
-     "median": 8.5,
+     "median": 9.0,
      "min": 5,
      "max": 11
     },
@@ -1048,14 +1043,14 @@
      "max": 10
     },
     "rolle.ka": {
-     "median": 18.0,
+     "median": 17.5,
      "min": 12,
      "max": 21
     },
     "rolle.land": {
      "median": 34.5,
      "min": 33,
-     "max": 35
+     "max": 36
     },
     "rolle.massen": {
      "median": 2.0,
@@ -1063,9 +1058,9 @@
      "max": 3
     },
     "rolle.ramp": {
-     "median": 14.5,
+     "median": 14.0,
      "min": 8,
-     "max": 17
+     "max": 18
     },
     "rolle.rekursion": {
      "median": 3.0,
@@ -1080,12 +1075,12 @@
     "rolle.tutor": {
      "median": 2.5,
      "min": 0,
-     "max": 6
+     "max": 5
     }
    },
    "pakete": {
     "artefakte.artefakte": {
-     "median": 37.0,
+     "median": 37.5,
      "min": 23,
      "max": 48
     },
@@ -1095,14 +1090,14 @@
      "max": 6
     },
     "artefakte.payoff": {
-     "median": 34.0,
+     "median": 34.5,
      "min": 2,
      "max": 44
     },
     "artefakte.token": {
      "median": 7.0,
      "min": 1,
-     "max": 13
+     "max": 14
     }
    },
    "fremdpakete": {
@@ -1122,7 +1117,7 @@
      "max": 6
     },
     "blink.etb": {
-     "median": 6.0,
+     "median": 5.5,
      "min": 2,
      "max": 10
     },
@@ -1152,12 +1147,12 @@
      "max": 5
     },
     "landfall.land_ramp": {
-     "median": 2.5,
-     "min": 1,
-     "max": 8
+     "median": 2.0,
+     "min": 0,
+     "max": 7
     },
     "lifegain.quelle": {
-     "median": 2.5,
+     "median": 2.0,
      "min": 1,
      "max": 4
     },
@@ -1189,7 +1184,7 @@
     "tokens.wiederholt": {
      "median": 6.5,
      "min": 2,
-     "max": 11
+     "max": 12
     },
     "voltron.auren": {
      "median": 1.0,
@@ -1202,7 +1197,7 @@
      "max": 6
     },
     "voltron.evasion": {
-     "median": 2.5,
+     "median": 2.0,
      "min": 0,
      "max": 4
     },
@@ -1218,39 +1213,39 @@
     }
    },
    "mv": {
-    "median": 3.0,
-    "min": 2.68,
+    "median": 3.1,
+    "min": 2.7,
     "max": 3.36
    },
    "schluesselkarten": [
     {
      "name": "Seat of the Synod",
      "inclusion": 0.574,
-     "synergy": 0.502,
+     "synergy": 0.501,
      "seiten": 1
     },
     {
      "name": "Vault of Whispers",
-     "inclusion": 0.465,
-     "synergy": 0.423,
+     "inclusion": 0.464,
+     "synergy": 0.422,
      "seiten": 1
     },
     {
      "name": "Ancient Den",
-     "inclusion": 0.472,
-     "synergy": 0.415,
+     "inclusion": 0.471,
+     "synergy": 0.414,
      "seiten": 1
     },
     {
      "name": "Great Furnace",
-     "inclusion": 0.458,
+     "inclusion": 0.457,
      "synergy": 0.394,
      "seiten": 1
     },
     {
      "name": "Darksteel Citadel",
-     "inclusion": 0.346,
-     "synergy": 0.308,
+     "inclusion": 0.345,
+     "synergy": 0.307,
      "seiten": 1
     },
     {
@@ -1261,43 +1256,43 @@
     },
     {
      "name": "Buried Ruin",
-     "inclusion": 0.332,
-     "synergy": 0.285,
+     "inclusion": 0.331,
+     "synergy": 0.284,
      "seiten": 1
     },
     {
      "name": "Thought Monitor",
-     "inclusion": 0.325,
-     "synergy": 0.287,
+     "inclusion": 0.324,
+     "synergy": 0.286,
      "seiten": 1
     },
     {
      "name": "Sai, Master Thopterist",
-     "inclusion": 0.321,
-     "synergy": 0.287,
+     "inclusion": 0.32,
+     "synergy": 0.286,
      "seiten": 1
     },
     {
      "name": "Inventors' Fair",
-     "inclusion": 0.31,
-     "synergy": 0.271,
+     "inclusion": 0.309,
+     "synergy": 0.27,
      "seiten": 1
     },
     {
      "name": "Padeem, Consul of Innovation",
-     "inclusion": 0.299,
-     "synergy": 0.266,
+     "inclusion": 0.298,
+     "synergy": 0.265,
      "seiten": 1
     },
     {
      "name": "Fabricate",
-     "inclusion": 0.29,
+     "inclusion": 0.289,
      "synergy": 0.235,
      "seiten": 1
     },
     {
      "name": "Thoughtcast",
-     "inclusion": 0.269,
+     "inclusion": 0.268,
      "synergy": 0.236,
      "seiten": 1
     },
@@ -1310,7 +1305,7 @@
     {
      "name": "Urza, Lord High Artificer",
      "inclusion": 0.264,
-     "synergy": 0.233,
+     "synergy": 0.232,
      "seiten": 1
     }
    ]
@@ -1322,37 +1317,37 @@
      "commander": "Vivi Ornitier",
      "thema": "spellslinger",
      "pfad": "average-decks/vivi-ornitier/upgraded/spellslinger",
-     "decks": 569
+     "decks": 571
     },
     {
      "commander": "Storm, Force of Nature",
      "thema": "spellslinger",
      "pfad": "average-decks/storm-force-of-nature/upgraded/spellslinger",
-     "decks": 188
+     "decks": 187
     },
     {
      "commander": "Fire Lord Azula",
      "thema": "spellslinger",
      "pfad": "average-decks/fire-lord-azula/upgraded/spellslinger",
-     "decks": 682
+     "decks": 683
     },
     {
      "commander": "Y'shtola, Night's Blessed",
      "thema": "spellslinger",
      "pfad": "average-decks/yshtola-nights-blessed/upgraded/spellslinger",
-     "decks": 727
+     "decks": 730
     },
     {
      "commander": "Stella Lee, Wild Card",
      "thema": "spellslinger",
      "pfad": "average-decks/stella-lee-wild-card/upgraded/spellslinger",
-     "decks": 174
+     "decks": 175
     },
     {
      "commander": "Kuja, Genome Sorcerer",
      "thema": "spellslinger",
      "pfad": "average-decks/kuja-genome-sorcerer/upgraded/spellslinger",
-     "decks": 495
+     "decks": 497
     }
    ],
    "rollen": {
@@ -1363,12 +1358,12 @@
     },
     "rolle.gezielt": {
      "median": 12.0,
-     "min": 8,
+     "min": 9,
      "max": 20
     },
     "rolle.instant_int": {
      "median": 9.5,
-     "min": 6,
+     "min": 7,
      "max": 15
     },
     "rolle.ka": {
@@ -1379,7 +1374,7 @@
     "rolle.land": {
      "median": 34.0,
      "min": 33,
-     "max": 36
+     "max": 35
     },
     "rolle.massen": {
      "median": 2.0,
@@ -1389,7 +1384,7 @@
     "rolle.ramp": {
      "median": 10.0,
      "min": 8,
-     "max": 16
+     "max": 17
     },
     "rolle.rekursion": {
      "median": 3.5,
@@ -1411,7 +1406,7 @@
     "spellslinger.kopie": {
      "median": 3.0,
      "min": 0,
-     "max": 7
+     "max": 8
     },
     "spellslinger.kostensenker": {
      "median": 2.5,
@@ -1424,7 +1419,7 @@
      "max": 20
     },
     "spellslinger.zauber": {
-     "median": 36.5,
+     "median": 36.0,
      "min": 28,
      "max": 41
     }
@@ -1476,7 +1471,7 @@
      "max": 10
     },
     "landfall.fetch": {
-     "median": 1.5,
+     "median": 1.0,
      "min": 0,
      "max": 3
     },
@@ -1529,14 +1524,8 @@
    "schluesselkarten": [
     {
      "name": "Manamorphose",
-     "inclusion": 0.364,
-     "synergy": 0.332,
-     "seiten": 1
-    },
-    {
-     "name": "Void Rend",
-     "inclusion": 0.424,
-     "synergy": 0.276,
+     "inclusion": 0.361,
+     "synergy": 0.329,
      "seiten": 1
     },
     {
@@ -1547,56 +1536,56 @@
     },
     {
      "name": "Guttersnipe",
-     "inclusion": 0.353,
-     "synergy": 0.294,
+     "inclusion": 0.352,
+     "synergy": 0.293,
      "seiten": 1
     },
     {
      "name": "Opt",
-     "inclusion": 0.369,
-     "synergy": 0.277,
+     "inclusion": 0.368,
+     "synergy": 0.276,
      "seiten": 1
     },
     {
      "name": "Ponder",
-     "inclusion": 0.375,
-     "synergy": 0.258,
+     "inclusion": 0.374,
+     "synergy": 0.257,
      "seiten": 1
     },
     {
      "name": "Growth Spiral",
-     "inclusion": 0.416,
-     "synergy": 0.224,
+     "inclusion": 0.414,
+     "synergy": 0.222,
      "seiten": 1
     },
     {
      "name": "Goblin Electromancer",
-     "inclusion": 0.339,
-     "synergy": 0.255,
+     "inclusion": 0.338,
+     "synergy": 0.254,
      "seiten": 1
     },
     {
      "name": "Preordain",
-     "inclusion": 0.343,
-     "synergy": 0.251,
+     "inclusion": 0.342,
+     "synergy": 0.25,
      "seiten": 1
     },
     {
      "name": "Veyran, Voice of Duality",
-     "inclusion": 0.33,
+     "inclusion": 0.329,
      "synergy": 0.255,
      "seiten": 1
     },
     {
      "name": "Lightning Bolt",
-     "inclusion": 0.351,
-     "synergy": 0.239,
+     "inclusion": 0.35,
+     "synergy": 0.238,
      "seiten": 1
     },
     {
      "name": "Monastery Mentor",
-     "inclusion": 0.283,
-     "synergy": 0.261,
+     "inclusion": 0.282,
+     "synergy": 0.26,
      "seiten": 1
     },
     {
@@ -1606,15 +1595,21 @@
      "seiten": 1
     },
     {
-     "name": "Snap",
-     "inclusion": 0.302,
-     "synergy": 0.224,
+     "name": "Stormcatch Mentor",
+     "inclusion": 0.294,
+     "synergy": 0.229,
      "seiten": 1
     },
     {
-     "name": "Stormcatch Mentor",
-     "inclusion": 0.295,
-     "synergy": 0.229,
+     "name": "Izzet Signet",
+     "inclusion": 0.391,
+     "synergy": 0.172,
+     "seiten": 1
+    },
+    {
+     "name": "Snap",
+     "inclusion": 0.301,
+     "synergy": 0.223,
      "seiten": 1
     }
    ]
@@ -1626,37 +1621,37 @@
      "commander": "Teval, the Balanced Scale",
      "thema": "reanimator",
      "pfad": "average-decks/teval-the-balanced-scale/upgraded/reanimator",
-     "decks": 1188
+     "decks": 1196
     },
     {
      "commander": "Terra, Herald of Hope",
      "thema": "reanimator",
      "pfad": "average-decks/terra-herald-of-hope/upgraded/reanimator",
-     "decks": 766
+     "decks": 769
     },
     {
      "commander": "Meren of Clan Nel Toth",
      "thema": "reanimator",
      "pfad": "average-decks/meren-of-clan-nel-toth/upgraded/reanimator",
-     "decks": 570
+     "decks": 569
     },
     {
      "commander": "Muldrotha, the Gravetide",
      "thema": "reanimator",
      "pfad": "average-decks/muldrotha-the-gravetide/upgraded/reanimator",
-     "decks": 414
+     "decks": 412
     },
     {
      "commander": "Hashaton, Scarab's Fist",
      "thema": "reanimator",
      "pfad": "average-decks/hashaton-scarabs-fist/upgraded/reanimator",
-     "decks": 426
+     "decks": 428
     },
     {
      "commander": "Betor, Ancestor's Voice",
      "thema": "reanimator",
      "pfad": "average-decks/betor-ancestors-voice/upgraded/reanimator",
-     "decks": 530
+     "decks": 532
     }
    ],
    "rollen": {
@@ -1668,7 +1663,7 @@
     "rolle.gezielt": {
      "median": 10.0,
      "min": 7,
-     "max": 15
+     "max": 16
     },
     "rolle.instant_int": {
      "median": 5.0,
@@ -1676,24 +1671,24 @@
      "max": 8
     },
     "rolle.ka": {
-     "median": 16.5,
+     "median": 17.0,
      "min": 12,
-     "max": 27
+     "max": 26
     },
     "rolle.land": {
      "median": 35.0,
-     "min": 35,
+     "min": 34,
      "max": 37
     },
     "rolle.massen": {
      "median": 2.0,
      "min": 1,
-     "max": 5
+     "max": 6
     },
     "rolle.ramp": {
-     "median": 13.0,
+     "median": 14.0,
      "min": 10,
-     "max": 15
+     "max": 16
     },
     "rolle.rekursion": {
      "median": 16.0,
@@ -1713,7 +1708,7 @@
    },
    "pakete": {
     "reanimator.fuellen": {
-     "median": 22.5,
+     "median": 22.0,
      "min": 9,
      "max": 29
     },
@@ -1732,7 +1727,7 @@
     "aristokraten.futter": {
      "median": 5.5,
      "min": 4,
-     "max": 8
+     "max": 7
     },
     "aristokraten.outlet": {
      "median": 3.0,
@@ -1790,14 +1785,14 @@
      "max": 5
     },
     "landfall.land_ramp": {
-     "median": 6.0,
-     "min": 2,
-     "max": 12
+     "median": 5.0,
+     "min": 1,
+     "max": 9
     },
     "landfall.payoff": {
      "median": 0.5,
      "min": 0,
-     "max": 7
+     "max": 6
     },
     "lifegain.quelle": {
      "median": 4.0,
@@ -1827,12 +1822,12 @@
     "tokens.quelle": {
      "median": 3.5,
      "min": 2,
-     "max": 7
+     "max": 6
     },
     "tokens.wiederholt": {
      "median": 3.0,
      "min": 2,
-     "max": 6
+     "max": 5
     },
     "voltron.auren": {
      "median": 1.0,
@@ -1858,12 +1853,12 @@
    "mv": {
     "median": 3.1,
     "min": 2.72,
-    "max": 3.25
+    "max": 3.26
    },
    "schluesselkarten": [
     {
      "name": "Anger",
-     "inclusion": 0.332,
+     "inclusion": 0.333,
      "synergy": 0.266,
      "seiten": 1
     },
@@ -1898,15 +1893,15 @@
      "seiten": 1
     },
     {
-     "name": "Kheru Goldkeeper",
-     "inclusion": 0.247,
-     "synergy": 0.209,
+     "name": "Ruinous Ultimatum",
+     "inclusion": 0.334,
+     "synergy": 0.156,
      "seiten": 1
     },
     {
-     "name": "Ruinous Ultimatum",
-     "inclusion": 0.333,
-     "synergy": 0.155,
+     "name": "Kheru Goldkeeper",
+     "inclusion": 0.248,
+     "synergy": 0.21,
      "seiten": 1
     },
     {
@@ -1924,7 +1919,7 @@
     {
      "name": "Six",
      "inclusion": 0.237,
-     "synergy": 0.189,
+     "synergy": 0.188,
      "seiten": 1
     },
     {
@@ -1936,7 +1931,7 @@
     {
      "name": "Icetill Explorer",
      "inclusion": 0.241,
-     "synergy": 0.177,
+     "synergy": 0.176,
      "seiten": 1
     },
     {
@@ -1960,13 +1955,13 @@
      "commander": "Frodo, Adventurous Hobbit // Sam, Loyal Attendant",
      "thema": "lifegain",
      "pfad": "average-decks/frodo-adventurous-hobbit-sam-loyal-attendant/upgraded/lifegain",
-     "decks": 748
+     "decks": 749
     },
     {
      "commander": "Giada, Font of Hope",
      "thema": "lifegain",
      "pfad": "average-decks/giada-font-of-hope/upgraded/lifegain",
-     "decks": 622
+     "decks": 624
     },
     {
      "commander": "Edgar Markov",
@@ -1978,19 +1973,19 @@
      "commander": "Oloro, Ageless Ascetic",
      "thema": "lifegain",
      "pfad": "average-decks/oloro-ageless-ascetic/upgraded/lifegain",
-     "decks": 385
+     "decks": 386
     },
     {
      "commander": "Betor, Ancestor's Voice",
      "thema": "lifegain",
      "pfad": "average-decks/betor-ancestors-voice/upgraded/lifegain",
-     "decks": 711
+     "decks": 712
     },
     {
      "commander": "Liesa, Shroud of Dusk",
      "thema": "lifegain",
      "pfad": "average-decks/liesa-shroud-of-dusk/upgraded/lifegain",
-     "decks": 375
+     "decks": 371
     }
    ],
    "rollen": {
@@ -2015,7 +2010,7 @@
      "max": 15
     },
     "rolle.land": {
-     "median": 35.5,
+     "median": 35.0,
      "min": 34,
      "max": 36
     },
@@ -2032,7 +2027,7 @@
     "rolle.rekursion": {
      "median": 3.0,
      "min": 0,
-     "max": 7
+     "max": 8
     },
     "rolle.schutz": {
      "median": 2.5,
@@ -2047,20 +2042,20 @@
    },
    "pakete": {
     "lifegain.payoff": {
-     "median": 14.5,
+     "median": 14.0,
      "min": 4,
      "max": 31
     },
     "lifegain.quelle": {
-     "median": 19.0,
+     "median": 18.5,
      "min": 17,
-     "max": 26
+     "max": 27
     }
    },
    "fremdpakete": {
     "aristokraten.futter": {
      "median": 5.5,
-     "min": 3,
+     "min": 4,
      "max": 10
     },
     "aristokraten.outlet": {
@@ -2076,7 +2071,7 @@
     "aristokraten.rekursion": {
      "median": 0.5,
      "min": 0,
-     "max": 6
+     "max": 7
     },
     "artefakte.artefakte": {
      "median": 9.5,
@@ -2099,7 +2094,7 @@
      "max": 5
     },
     "counters.geber": {
-     "median": 6.0,
+     "median": 5.5,
      "min": 2,
      "max": 11
     },
@@ -2109,7 +2104,7 @@
      "max": 4
     },
     "enchantress.verzauberungen": {
-     "median": 8.0,
+     "median": 7.5,
      "min": 6,
      "max": 12
     },
@@ -2124,19 +2119,19 @@
      "max": 3
     },
     "landfall.land_ramp": {
-     "median": 2.0,
-     "min": 1,
-     "max": 6
+     "median": 1.0,
+     "min": 0,
+     "max": 4
     },
     "reanimator.fuellen": {
      "median": 0.5,
      "min": 0,
-     "max": 4
+     "max": 5
     },
     "reanimator.reanimation": {
      "median": 0.5,
      "min": 0,
-     "max": 6
+     "max": 7
     },
     "reanimator.ziele": {
      "median": 3.0,
@@ -2155,11 +2150,11 @@
     },
     "tokens.quelle": {
      "median": 4.5,
-     "min": 2,
+     "min": 3,
      "max": 10
     },
     "tokens.wiederholt": {
-     "median": 2.5,
+     "median": 3.0,
      "min": 2,
      "max": 10
     },
@@ -2180,26 +2175,26 @@
     }
    },
    "mv": {
-    "median": 2.9,
+    "median": 3.0,
     "min": 2.75,
     "max": 3.61
    },
    "schluesselkarten": [
     {
      "name": "Stromkirk Captain",
-     "inclusion": 0.35,
-     "synergy": 0.328,
+     "inclusion": 0.348,
+     "synergy": 0.326,
      "seiten": 1
     },
     {
      "name": "Exquisite Blood",
-     "inclusion": 0.34,
+     "inclusion": 0.339,
      "synergy": 0.29,
      "seiten": 1
     },
     {
      "name": "Authority of the Consuls",
-     "inclusion": 0.343,
+     "inclusion": 0.344,
      "synergy": 0.267,
      "seiten": 1
     },
@@ -2212,7 +2207,7 @@
     {
      "name": "Enduring Tenacity",
      "inclusion": 0.3,
-     "synergy": 0.264,
+     "synergy": 0.265,
      "seiten": 1
     },
     {
@@ -2223,38 +2218,38 @@
     },
     {
      "name": "Blood Artist",
-     "inclusion": 0.322,
-     "synergy": 0.208,
+     "inclusion": 0.321,
+     "synergy": 0.207,
      "seiten": 1
     },
     {
      "name": "Mortality Spear",
-     "inclusion": 0.269,
-     "synergy": 0.246,
+     "inclusion": 0.268,
+     "synergy": 0.245,
      "seiten": 1
     },
     {
      "name": "Marauding Blight-Priest",
      "inclusion": 0.27,
-     "synergy": 0.243,
+     "synergy": 0.242,
      "seiten": 1
     },
     {
      "name": "Beledros Witherbloom",
-     "inclusion": 0.276,
-     "synergy": 0.227,
-     "seiten": 1
-    },
-    {
-     "name": "Prosperous Innkeeper",
-     "inclusion": 0.257,
-     "synergy": 0.234,
+     "inclusion": 0.277,
+     "synergy": 0.228,
      "seiten": 1
     },
     {
      "name": "Lathiel, the Bounteous Dawn",
      "inclusion": 0.255,
-     "synergy": 0.234,
+     "synergy": 0.235,
+     "seiten": 1
+    },
+    {
+     "name": "Prosperous Innkeeper",
+     "inclusion": 0.257,
+     "synergy": 0.233,
      "seiten": 1
     },
     {
@@ -2284,19 +2279,19 @@
      "commander": "Hearthhull, the Worldseed",
      "thema": "lands-matter",
      "pfad": "average-decks/hearthhull-the-worldseed/upgraded/lands-matter",
-     "decks": 1308
+     "decks": 1316
     },
     {
      "commander": "The Necrobloom",
      "thema": "lands-matter",
      "pfad": "average-decks/the-necrobloom/upgraded/lands-matter",
-     "decks": 590
+     "decks": 592
     },
     {
      "commander": "Toph, the First Metalbender",
      "thema": "lands-matter",
      "pfad": "average-decks/toph-the-first-metalbender/upgraded/lands-matter",
-     "decks": 634
+     "decks": 640
     },
     {
      "commander": "Omnath, Locus of Creation",
@@ -2349,19 +2344,19 @@
      "max": 3
     },
     "rolle.ramp": {
-     "median": 16.5,
-     "min": 15,
-     "max": 25
+     "median": 23.0,
+     "min": 16,
+     "max": 33
     },
     "rolle.rekursion": {
-     "median": 5.5,
+     "median": 6.0,
      "min": 1,
      "max": 18
     },
     "rolle.schutz": {
      "median": 2.0,
      "min": 1,
-     "max": 9
+     "max": 8
     },
     "rolle.tutor": {
      "median": 0.0,
@@ -2381,9 +2376,9 @@
      "max": 12
     },
     "landfall.land_ramp": {
-     "median": 23.0,
-     "min": 7,
-     "max": 29
+     "median": 19.0,
+     "min": 6,
+     "max": 28
     },
     "landfall.payoff": {
      "median": 14.0,
@@ -2391,7 +2386,7 @@
      "max": 25
     },
     "landfall.rekursion": {
-     "median": 4.5,
+     "median": 5.0,
      "min": 0,
      "max": 12
     }
@@ -2416,6 +2411,11 @@
      "median": 1.5,
      "min": 0,
      "max": 10
+    },
+    "aristokraten.rekursion": {
+     "median": 0.5,
+     "min": 0,
+     "max": 7
     },
     "artefakte.artefakte": {
      "median": 5.5,
@@ -2477,6 +2477,11 @@
      "min": 1,
      "max": 13
     },
+    "reanimator.reanimation": {
+     "median": 0.5,
+     "min": 0,
+     "max": 7
+    },
     "reanimator.ziele": {
      "median": 5.0,
      "min": 2,
@@ -2500,7 +2505,7 @@
     "voltron.ausruestung": {
      "median": 1.0,
      "min": 0,
-     "max": 7
+     "max": 6
     },
     "voltron.evasion": {
      "median": 1.0,
@@ -2510,67 +2515,67 @@
     "voltron.schutz": {
      "median": 2.0,
      "min": 1,
-     "max": 9
+     "max": 8
     }
    },
    "mv": {
     "median": 3.3,
-    "min": 2.53,
+    "min": 2.55,
     "max": 3.52
    },
    "schluesselkarten": [
     {
      "name": "Azusa, Lost but Seeking",
      "inclusion": 0.488,
-     "synergy": 0.416,
+     "synergy": 0.415,
      "seiten": 1
     },
     {
      "name": "Tannuk, Memorial Ensign",
      "inclusion": 0.431,
-     "synergy": 0.382,
+     "synergy": 0.381,
      "seiten": 2
     },
     {
      "name": "Avenger of Zendikar",
-     "inclusion": 0.445,
-     "synergy": 0.367,
+     "inclusion": 0.444,
+     "synergy": 0.365,
      "seiten": 2
     },
     {
      "name": "Felidar Retreat",
      "inclusion": 0.428,
-     "synergy": 0.375,
+     "synergy": 0.374,
      "seiten": 1
     },
     {
      "name": "Aesi, Tyrant of Gyre Strait",
-     "inclusion": 0.431,
-     "synergy": 0.363,
+     "inclusion": 0.43,
+     "synergy": 0.362,
      "seiten": 2
     },
     {
      "name": "Omnath, Locus of Rage",
-     "inclusion": 0.422,
+     "inclusion": 0.423,
      "synergy": 0.354,
      "seiten": 1
     },
     {
      "name": "Ancient Greenwarden",
      "inclusion": 0.398,
-     "synergy": 0.356,
+     "synergy": 0.355,
      "seiten": 2
     },
     {
      "name": "Korvold, Fae-Cursed King",
      "inclusion": 0.405,
-     "synergy": 0.337,
+     "synergy": 0.338,
      "seiten": 2
     },
     {
      "name": "Ramunap Excavator",
-     "inclusion": 0.394,
-     "synergy": 0.338,
+     "inclusion": 0.392,
+     "synergy": 0.337,
      "seiten": 2
     },
     {
@@ -2587,7 +2592,7 @@
     },
     {
      "name": "Szarel, Genesis Shepherd",
-     "inclusion": 0.356,
+     "inclusion": 0.355,
      "synergy": 0.316,
      "seiten": 2
     },
@@ -2605,7 +2610,7 @@
     },
     {
      "name": "Ob Nixilis, the Fallen",
-     "inclusion": 0.332,
+     "inclusion": 0.331,
      "synergy": 0.315,
      "seiten": 2
     }
@@ -2618,37 +2623,37 @@
      "commander": "Cloud, Ex-SOLDIER",
      "thema": "voltron",
      "pfad": "average-decks/cloud-ex-soldier/upgraded/voltron",
-     "decks": 748
+     "decks": 752
     },
     {
      "commander": "Kotis, the Fangkeeper",
      "thema": "voltron",
      "pfad": "average-decks/kotis-the-fangkeeper/upgraded/voltron",
-     "decks": 312
+     "decks": 313
     },
     {
      "commander": "Light-Paws, Emperor's Voice",
      "thema": "voltron",
      "pfad": "average-decks/light-paws-emperors-voice/upgraded/voltron",
-     "decks": 315
+     "decks": 314
     },
     {
      "commander": "Captain America, First Avenger",
      "thema": "voltron",
      "pfad": "average-decks/captain-america-first-avenger/upgraded/voltron",
-     "decks": 319
+     "decks": 320
     },
     {
      "commander": "Lightning, Army of One",
      "thema": "voltron",
      "pfad": "average-decks/lightning-army-of-one/upgraded/voltron",
-     "decks": 285
+     "decks": 289
     },
     {
      "commander": "Tifa Lockhart",
      "thema": "voltron",
      "pfad": "average-decks/tifa-lockhart/upgraded/voltron",
-     "decks": 256
+     "decks": 259
     }
    ],
    "rollen": {
@@ -2660,7 +2665,7 @@
     "rolle.gezielt": {
      "median": 7.5,
      "min": 2,
-     "max": 11
+     "max": 10
     },
     "rolle.instant_int": {
      "median": 5.0,
@@ -2674,7 +2679,7 @@
     },
     "rolle.land": {
      "median": 35.5,
-     "min": 35,
+     "min": 34,
      "max": 37
     },
     "rolle.massen": {
@@ -2685,7 +2690,7 @@
     "rolle.ramp": {
      "median": 11.0,
      "min": 2,
-     "max": 17
+     "max": 22
     },
     "rolle.rekursion": {
      "median": 3.0,
@@ -2698,7 +2703,7 @@
      "max": 20
     },
     "rolle.tutor": {
-     "median": 5.0,
+     "median": 5.5,
      "min": 0,
      "max": 10
     }
@@ -2809,11 +2814,11 @@
     "landfall.fetch": {
      "median": 2.0,
      "min": 0,
-     "max": 13
+     "max": 12
     },
     "landfall.land_ramp": {
-     "median": 3.5,
-     "min": 1,
+     "median": 2.5,
+     "min": 0,
      "max": 19
     },
     "lifegain.quelle": {
@@ -2828,7 +2833,7 @@
     },
     "spellslinger.zauber": {
      "median": 16.5,
-     "min": 11,
+     "min": 12,
      "max": 25
     },
     "tokens.quelle": {
@@ -2844,8 +2849,8 @@
    },
    "mv": {
     "median": 2.6,
-    "min": 2.12,
-    "max": 2.8
+    "min": 2.14,
+    "max": 2.77
    },
    "schluesselkarten": [
     {
@@ -2874,14 +2879,14 @@
     },
     {
      "name": "All That Glitters",
-     "inclusion": 0.3,
-     "synergy": 0.256,
+     "inclusion": 0.299,
+     "synergy": 0.255,
      "seiten": 1
     },
     {
      "name": "Akiri, Fearless Voyager",
      "inclusion": 0.287,
-     "synergy": 0.254,
+     "synergy": 0.255,
      "seiten": 1
     },
     {
@@ -2893,13 +2898,13 @@
     {
      "name": "Steelshaper's Gift",
      "inclusion": 0.27,
-     "synergy": 0.238,
+     "synergy": 0.239,
      "seiten": 1
     },
     {
      "name": "Fighter Class",
      "inclusion": 0.264,
-     "synergy": 0.234,
+     "synergy": 0.235,
      "seiten": 1
     },
     {
@@ -2928,7 +2933,7 @@
     },
     {
      "name": "Slayers' Stronghold",
-     "inclusion": 0.252,
+     "inclusion": 0.253,
      "synergy": 0.2,
      "seiten": 1
     },
@@ -2953,7 +2958,7 @@
      "commander": "Anikthea, Hand of Erebos",
      "thema": "enchantress",
      "pfad": "average-decks/anikthea-hand-of-erebos/upgraded/enchantress",
-     "decks": 584
+     "decks": 585
     },
     {
      "commander": "Marina Vendrell",
@@ -2965,19 +2970,19 @@
      "commander": "Sythis, Harvest's Hand",
      "thema": "enchantress",
      "pfad": "average-decks/sythis-harvests-hand/upgraded/enchantress",
-     "decks": 400
+     "decks": 403
     },
     {
      "commander": "Bello, Bard of the Brambles",
      "thema": "enchantress",
      "pfad": "average-decks/bello-bard-of-the-brambles/upgraded/enchantress",
-     "decks": 624
+     "decks": 626
     },
     {
      "commander": "Aminatou, Veil Piercer",
      "thema": "enchantress",
      "pfad": "average-decks/aminatou-veil-piercer/upgraded/enchantress",
-     "decks": 390
+     "decks": 388
     }
    ],
    "rollen": {
@@ -3012,9 +3017,9 @@
      "max": 4
     },
     "rolle.ramp": {
-     "median": 10.0,
+     "median": 11.5,
      "min": 7,
-     "max": 21
+     "max": 22
     },
     "rolle.rekursion": {
      "median": 4.5,
@@ -3101,9 +3106,9 @@
      "max": 5
     },
     "landfall.land_ramp": {
-     "median": 5.5,
-     "min": 1,
-     "max": 11
+     "median": 4.0,
+     "min": 0,
+     "max": 8
     },
     "lifegain.quelle": {
      "median": 5.0,
@@ -3174,32 +3179,32 @@
    "schluesselkarten": [
     {
      "name": "Hall of Heliod's Generosity",
-     "inclusion": 0.486,
-     "synergy": 0.426,
+     "inclusion": 0.485,
+     "synergy": 0.425,
      "seiten": 1
     },
     {
      "name": "Sphere of Safety",
-     "inclusion": 0.402,
-     "synergy": 0.36,
+     "inclusion": 0.401,
+     "synergy": 0.359,
      "seiten": 1
     },
     {
      "name": "Doomwake Giant",
-     "inclusion": 0.36,
-     "synergy": 0.344,
+     "inclusion": 0.359,
+     "synergy": 0.343,
      "seiten": 1
     },
     {
      "name": "Satyr Enchanter",
-     "inclusion": 0.353,
+     "inclusion": 0.352,
      "synergy": 0.32,
      "seiten": 1
     },
     {
      "name": "Inquisitive Glimmer",
-     "inclusion": 0.342,
-     "synergy": 0.317,
+     "inclusion": 0.34,
+     "synergy": 0.315,
      "seiten": 1
     },
     {
@@ -3210,44 +3215,38 @@
     },
     {
      "name": "Entity Tracker",
-     "inclusion": 0.322,
-     "synergy": 0.307,
+     "inclusion": 0.32,
+     "synergy": 0.306,
      "seiten": 1
     },
     {
      "name": "Herald of the Pantheon",
-     "inclusion": 0.321,
-     "synergy": 0.303,
+     "inclusion": 0.32,
+     "synergy": 0.302,
      "seiten": 1
     },
     {
      "name": "Sanctum of All",
-     "inclusion": 0.327,
-     "synergy": 0.285,
+     "inclusion": 0.328,
+     "synergy": 0.286,
      "seiten": 1
     },
     {
      "name": "Starfield Mystic",
-     "inclusion": 0.319,
+     "inclusion": 0.318,
      "synergy": 0.292,
      "seiten": 1
     },
     {
      "name": "Sigil of the Empty Throne",
-     "inclusion": 0.308,
+     "inclusion": 0.307,
      "synergy": 0.284,
      "seiten": 1
     },
     {
      "name": "Fertile Ground",
-     "inclusion": 0.308,
+     "inclusion": 0.307,
      "synergy": 0.277,
-     "seiten": 1
-    },
-    {
-     "name": "Archon of Sun's Grace",
-     "inclusion": 0.3,
-     "synergy": 0.274,
      "seiten": 1
     },
     {
@@ -3257,9 +3256,15 @@
      "seiten": 1
     },
     {
+     "name": "Archon of Sun's Grace",
+     "inclusion": 0.3,
+     "synergy": 0.273,
+     "seiten": 1
+    },
+    {
      "name": "Weaver of Harmony",
      "inclusion": 0.289,
-     "synergy": 0.273,
+     "synergy": 0.272,
      "seiten": 1
     }
    ]
@@ -3277,52 +3282,52 @@
      "commander": "Niko, Light of Hope",
      "thema": "blink",
      "pfad": "average-decks/niko-light-of-hope/upgraded/blink",
-     "decks": 306
+     "decks": 305
     },
     {
      "commander": "Atraxa, Grand Unifier",
      "thema": "blink",
      "pfad": "average-decks/atraxa-grand-unifier/upgraded/blink",
-     "decks": 210
+     "decks": 208
     },
     {
      "commander": "Pantlaza, Sun-Favored",
      "thema": "blink",
      "pfad": "average-decks/pantlaza-sun-favored/upgraded/blink",
-     "decks": 314
-    },
-    {
-     "commander": "Abdel Adrian, Gorion's Ward // Candlekeep Sage",
-     "thema": "blink",
-     "pfad": "average-decks/abdel-adrian-gorions-ward-candlekeep-sage/upgraded/blink",
-     "decks": 173
+     "decks": 315
     },
     {
      "commander": "Aminatou, the Fateshifter",
      "thema": "blink",
      "pfad": "average-decks/aminatou-the-fateshifter/upgraded/blink",
      "decks": 160
+    },
+    {
+     "commander": "Abdel Adrian, Gorion's Ward // Candlekeep Sage",
+     "thema": "blink",
+     "pfad": "average-decks/abdel-adrian-gorions-ward-candlekeep-sage/upgraded/blink",
+     "decks": 174
     }
    ],
    "rollen": {
     "rolle.counter": {
-     "median": 3.0,
+     "median": 3.5,
      "min": 0,
      "max": 6
     },
     "rolle.gezielt": {
-     "median": 13.5,
-     "min": 10,
+     "median": 14.0,
+     "min": 11,
      "max": 19
     },
     "rolle.instant_int": {
      "median": 7.0,
      "min": 3,
-     "max": 8
+     "max": 9
     },
     "rolle.ka": {
      "median": 17.0,
-     "min": 10,
+     "min": 9,
      "max": 17
     },
     "rolle.land": {
@@ -3382,7 +3387,7 @@
     "artefakte.artefakte": {
      "median": 12.0,
      "min": 5,
-     "max": 15
+     "max": 14
     },
     "artefakte.payoff": {
      "median": 4.0,
@@ -3415,9 +3420,9 @@
      "max": 6
     },
     "landfall.land_ramp": {
-     "median": 3.5,
-     "min": 3,
-     "max": 12
+     "median": 1.0,
+     "min": 1,
+     "max": 10
     },
     "lifegain.quelle": {
      "median": 1.5,
@@ -3430,12 +3435,12 @@
      "max": 2
     },
     "reanimator.ziele": {
-     "median": 3.0,
+     "median": 2.5,
      "min": 2,
      "max": 16
     },
     "spellslinger.zauber": {
-     "median": 18.0,
+     "median": 18.5,
      "min": 15,
      "max": 20
     },
@@ -3468,14 +3473,14 @@
    "schluesselkarten": [
     {
      "name": "Panharmonicon",
-     "inclusion": 0.386,
-     "synergy": 0.347,
+     "inclusion": 0.385,
+     "synergy": 0.346,
      "seiten": 1
     },
     {
      "name": "Eerie Interlude",
      "inclusion": 0.379,
-     "synergy": 0.347,
+     "synergy": 0.346,
      "seiten": 1
     },
     {
@@ -3486,44 +3491,44 @@
     },
     {
      "name": "Momentary Blink",
-     "inclusion": 0.356,
-     "synergy": 0.331,
+     "inclusion": 0.355,
+     "synergy": 0.33,
      "seiten": 1
     },
     {
      "name": "Conjurer's Closet",
      "inclusion": 0.351,
-     "synergy": 0.324,
+     "synergy": 0.323,
      "seiten": 1
     },
     {
      "name": "Restoration Angel",
-     "inclusion": 0.327,
-     "synergy": 0.302,
+     "inclusion": 0.326,
+     "synergy": 0.301,
      "seiten": 1
     },
     {
      "name": "Charming Prince",
-     "inclusion": 0.309,
+     "inclusion": 0.308,
      "synergy": 0.289,
      "seiten": 1
     },
     {
      "name": "Peregrine Drake",
-     "inclusion": 0.307,
-     "synergy": 0.275,
-     "seiten": 1
-    },
-    {
-     "name": "Dour Port-Mage",
-     "inclusion": 0.295,
+     "inclusion": 0.306,
      "synergy": 0.274,
      "seiten": 1
     },
     {
+     "name": "Dour Port-Mage",
+     "inclusion": 0.294,
+     "synergy": 0.273,
+     "seiten": 1
+    },
+    {
      "name": "Baleful Strix",
-     "inclusion": 0.354,
-     "synergy": 0.227,
+     "inclusion": 0.353,
+     "synergy": 0.226,
      "seiten": 1
     },
     {
@@ -3540,13 +3545,13 @@
     },
     {
      "name": "Felidar Guardian",
-     "inclusion": 0.281,
-     "synergy": 0.26,
+     "inclusion": 0.28,
+     "synergy": 0.259,
      "seiten": 1
     },
     {
      "name": "Coiling Oracle",
-     "inclusion": 0.295,
+     "inclusion": 0.294,
      "synergy": 0.244,
      "seiten": 1
     },
@@ -3565,13 +3570,13 @@
      "commander": "Lathril, Blade of the Elves",
      "thema": "elves",
      "pfad": "average-decks/lathril-blade-of-the-elves/upgraded/elves",
-     "decks": 317
+     "decks": 318
     },
     {
      "commander": "Wilhelt, the Rotcleaver",
      "thema": "zombies",
      "pfad": "average-decks/wilhelt-the-rotcleaver/upgraded/zombies",
-     "decks": 250
+     "decks": 251
     },
     {
      "commander": "The Ur-Dragon",
@@ -3583,13 +3588,13 @@
      "commander": "Giada, Font of Hope",
      "thema": "angels",
      "pfad": "average-decks/giada-font-of-hope/upgraded/angels",
-     "decks": 407
+     "decks": 410
     },
     {
      "commander": "Krenko, Mob Boss",
      "thema": "goblins",
      "pfad": "average-decks/krenko-mob-boss/upgraded/goblins",
-     "decks": 240
+     "decks": 242
     },
     {
      "commander": "Edgar Markov",
@@ -3607,7 +3612,7 @@
      "commander": "Pantlaza, Sun-Favored",
      "thema": "dinosaurs",
      "pfad": "average-decks/pantlaza-sun-favored/upgraded/dinosaurs",
-     "decks": 453
+     "decks": 455
     }
    ],
    "rollen": {
@@ -3642,7 +3647,7 @@
      "max": 5
     },
     "rolle.ramp": {
-     "median": 8.5,
+     "median": 9.0,
      "min": 5,
      "max": 22
     },
@@ -3657,7 +3662,7 @@
      "max": 9
     },
     "rolle.tutor": {
-     "median": 1.0,
+     "median": 1.5,
      "min": 0,
      "max": 3
     }
@@ -3736,9 +3741,9 @@
      "max": 7
     },
     "landfall.land_ramp": {
-     "median": 3.0,
+     "median": 2.5,
      "min": 0,
-     "max": 9
+     "max": 8
     },
     "lifegain.quelle": {
      "median": 3.0,
@@ -3798,19 +3803,19 @@
    },
    "mv": {
     "median": 3.1,
-    "min": 2.62,
+    "min": 2.6,
     "max": 4.57
    },
    "schluesselkarten": [
     {
      "name": "Relic of Sauron",
-     "inclusion": 0.375,
-     "synergy": 0.3,
+     "inclusion": 0.376,
+     "synergy": 0.301,
      "seiten": 3
     },
     {
      "name": "Inspiring Call",
-     "inclusion": 0.297,
+     "inclusion": 0.298,
      "synergy": 0.214,
      "seiten": 3
     },
@@ -3822,13 +3827,13 @@
     },
     {
      "name": "Urza's Incubator",
-     "inclusion": 0.247,
-     "synergy": 0.211,
+     "inclusion": 0.246,
+     "synergy": 0.21,
      "seiten": 4
     },
     {
      "name": "Kindred Discovery",
-     "inclusion": 0.24,
+     "inclusion": 0.241,
      "synergy": 0.173,
      "seiten": 8
     },
@@ -3864,15 +3869,9 @@
     },
     {
      "name": "Elemental Bond",
-     "inclusion": 0.218,
-     "synergy": 0.165,
+     "inclusion": 0.219,
+     "synergy": 0.166,
      "seiten": 3
-    },
-    {
-     "name": "Akroma's Will",
-     "inclusion": 0.249,
-     "synergy": 0.144,
-     "seiten": 5
     },
     {
      "name": "Branching Evolution",
@@ -3882,8 +3881,8 @@
     },
     {
      "name": "Herald's Horn",
-     "inclusion": 0.206,
-     "synergy": 0.149,
+     "inclusion": 0.205,
+     "synergy": 0.148,
      "seiten": 8
     },
     {
@@ -3891,6 +3890,12 @@
      "inclusion": 0.234,
      "synergy": 0.128,
      "seiten": 4
+    },
+    {
+     "name": "Anointed Procession",
+     "inclusion": 0.207,
+     "synergy": 0.139,
+     "seiten": 3
     }
    ]
   },
@@ -3901,19 +3906,19 @@
      "commander": "The Wise Mothman",
      "thema": "mill",
      "pfad": "average-decks/the-wise-mothman/upgraded/mill",
-     "decks": 1003
+     "decks": 1008
     },
     {
      "commander": "Captain N'ghathrod",
      "thema": "mill",
      "pfad": "average-decks/captain-nghathrod/upgraded/mill",
-     "decks": 422
+     "decks": 423
     },
     {
      "commander": "Hope Estheim",
      "thema": "mill",
      "pfad": "average-decks/hope-estheim/upgraded/mill",
-     "decks": 456
+     "decks": 457
     },
     {
      "commander": "Teval, the Balanced Scale",
@@ -3925,19 +3930,19 @@
      "commander": "The Mindskinner",
      "thema": "mill",
      "pfad": "average-decks/the-mindskinner/upgraded/mill",
-     "decks": 214
+     "decks": 215
     },
     {
      "commander": "Phenax, God of Deception",
      "thema": "mill",
      "pfad": "average-decks/phenax-god-of-deception/upgraded/mill",
-     "decks": 219
+     "decks": 220
     }
    ],
    "rollen": {
     "rolle.counter": {
      "median": 5.0,
-     "min": 2,
+     "min": 1,
      "max": 7
     },
     "rolle.gezielt": {
@@ -3968,7 +3973,7 @@
     "rolle.ramp": {
      "median": 6.5,
      "min": 5,
-     "max": 14
+     "max": 16
     },
     "rolle.rekursion": {
      "median": 5.0,
@@ -3984,7 +3989,7 @@
    "pakete": {
     "mill.mill": {
      "median": 23.5,
-     "min": 3,
+     "min": 4,
      "max": 32
     },
     "mill.payoff": {
@@ -4002,7 +4007,7 @@
     "aristokraten.outlet": {
      "median": 0.5,
      "min": 0,
-     "max": 5
+     "max": 6
     },
     "aristokraten.payoff": {
      "median": 1.0,
@@ -4016,7 +4021,7 @@
     },
     "artefakte.artefakte": {
      "median": 13.0,
-     "min": 5,
+     "min": 6,
      "max": 22
     },
     "artefakte.payoff": {
@@ -4040,7 +4045,7 @@
      "max": 20
     },
     "enchantress.verzauberungen": {
-     "median": 9.0,
+     "median": 8.5,
      "min": 6,
      "max": 10
     },
@@ -4050,9 +4055,9 @@
      "max": 4
     },
     "landfall.land_ramp": {
-     "median": 1.0,
+     "median": 0.5,
      "min": 0,
-     "max": 12
+     "max": 9
     },
     "landfall.payoff": {
      "median": 2.5,
@@ -4067,7 +4072,7 @@
     "reanimator.fuellen": {
      "median": 16.0,
      "min": 2,
-     "max": 23
+     "max": 24
     },
     "reanimator.reanimation": {
      "median": 2.0,
@@ -4080,7 +4085,7 @@
      "max": 4
     },
     "spellslinger.zauber": {
-     "median": 20.0,
+     "median": 19.5,
      "min": 18,
      "max": 23
     },
@@ -4117,7 +4122,7 @@
    },
    "mv": {
     "median": 3.0,
-    "min": 2.79,
+    "min": 2.76,
     "max": 3.32
    },
    "schluesselkarten": [
@@ -4129,7 +4134,7 @@
     },
     {
      "name": "Maddening Cacophony",
-     "inclusion": 0.348,
+     "inclusion": 0.347,
      "synergy": 0.328,
      "seiten": 1
     },
@@ -4141,20 +4146,14 @@
     },
     {
      "name": "Six",
-     "inclusion": 0.343,
-     "synergy": 0.294,
+     "inclusion": 0.341,
+     "synergy": 0.293,
      "seiten": 1
     },
     {
      "name": "Anger",
-     "inclusion": 0.336,
-     "synergy": 0.269,
-     "seiten": 1
-    },
-    {
-     "name": "Hedge Shredder",
-     "inclusion": 0.307,
-     "synergy": 0.281,
+     "inclusion": 0.334,
+     "synergy": 0.268,
      "seiten": 1
     },
     {
@@ -4164,39 +4163,45 @@
      "seiten": 1
     },
     {
+     "name": "Hedge Shredder",
+     "inclusion": 0.307,
+     "synergy": 0.28,
+     "seiten": 1
+    },
+    {
      "name": "Aftermath Analyst",
-     "inclusion": 0.315,
-     "synergy": 0.269,
+     "inclusion": 0.314,
+     "synergy": 0.268,
      "seiten": 1
     },
     {
      "name": "Drown in the Loch",
-     "inclusion": 0.307,
+     "inclusion": 0.306,
      "synergy": 0.263,
-     "seiten": 1
-    },
-    {
-     "name": "Fractured Sanity",
-     "inclusion": 0.29,
-     "synergy": 0.274,
      "seiten": 1
     },
     {
      "name": "Singularity Rupture",
-     "inclusion": 0.302,
-     "synergy": 0.263,
+     "inclusion": 0.303,
+     "synergy": 0.264,
      "seiten": 1
     },
     {
-     "name": "Mindcrank",
+     "name": "Fractured Sanity",
      "inclusion": 0.289,
      "synergy": 0.273,
      "seiten": 1
     },
     {
+     "name": "Mindcrank",
+     "inclusion": 0.288,
+     "synergy": 0.273,
+     "seiten": 1
+    },
+    {
      "name": "Skull Prophet",
-     "inclusion": 0.304,
-     "synergy": 0.252,
+     "inclusion": 0.302,
+     "synergy": 0.25,
      "seiten": 1
     },
     {
@@ -4208,7 +4213,7 @@
     {
      "name": "Life from the Loam",
      "inclusion": 0.282,
-     "synergy": 0.241,
+     "synergy": 0.24,
      "seiten": 1
     }
    ]
@@ -4306,7 +4311,7 @@
    "max": 30
   },
   "enchantress.verzauberungen": {
-   "median": 7.5,
+   "median": 8.0,
    "min": 3,
    "max": 43
   },
@@ -4331,14 +4336,14 @@
    "max": 15
   },
   "landfall.fetch": {
-   "median": 2.0,
+   "median": 1.5,
    "min": 0,
-   "max": 13
+   "max": 12
   },
   "landfall.land_ramp": {
-   "median": 3.0,
+   "median": 2.0,
    "min": 0,
-   "max": 29
+   "max": 28
   },
   "landfall.payoff": {
    "median": 0.0,
@@ -4358,7 +4363,7 @@
   "lifegain.quelle": {
    "median": 3.0,
    "min": 0,
-   "max": 26
+   "max": 27
   },
   "mill.mill": {
    "median": 0.0,
@@ -4372,7 +4377,7 @@
   },
   "mv": {
    "median": 2.9,
-   "min": 2.12,
+   "min": 2.14,
    "max": 4.8
   },
   "reanimator.fuellen": {
@@ -4408,11 +4413,11 @@
   "rolle.ka": {
    "median": 12.0,
    "min": 7,
-   "max": 27
+   "max": 26
   },
   "rolle.land": {
    "median": 35.0,
-   "min": 32,
+   "min": 33,
    "max": 40
   },
   "rolle.massen": {
@@ -4421,9 +4426,9 @@
    "max": 6
   },
   "rolle.ramp": {
-   "median": 11.5,
+   "median": 12.0,
    "min": 2,
-   "max": 25
+   "max": 33
   },
   "rolle.rekursion": {
    "median": 3.0,
@@ -4443,7 +4448,7 @@
   "spellslinger.kopie": {
    "median": 0.0,
    "min": 0,
-   "max": 7
+   "max": 8
   },
   "spellslinger.kostensenker": {
    "median": 0.0,
