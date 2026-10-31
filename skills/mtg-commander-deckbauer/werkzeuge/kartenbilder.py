@@ -4,8 +4,11 @@
 Befehle
   tausch  Tauschübersicht (Pickliste) für eine Deckänderung, geordnet nach der Box-Ablage
           des Nutzers: Farbe = erstes farbiges Manasymbol von links (Mehrfarbige also bei
-          ihrer ersten Farbe), darin eine Box je Kartentyp; Länder und Standardländer haben
-          eigene Boxen.
+          ihrer ersten Farbe), darin eine Box je Kartentyp (Kreaturen inkl. Planeswalker und
+          Schlachten, Spontanzauber, Hexereien, Artefakte, Verzauberungen; Mischtypen: Kreatur
+          zuerst); Länder und Standardländer haben je eine gemeinsame Box. Rares und Mythics
+          (Seltenheit des eigenen Drucks, alle Typen außer Standardländern) liegen unsortiert in
+          einer eigenen Box „Rare & Mythic“ – rotes Etikett, je Abschnitt vorne.
   verkauf Verkaufs-PDF aus der Verkaufsliste von deckbau.py verkauf: Abschnitte Kat. 1 (ohne Bedenken) und
           Kat. 2 (mit Hinweis) mit Anzahl und Summe, je Karte Box-Etikett, Druck, Sprache, Preis und voller
           Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
@@ -130,9 +133,10 @@ def schriften_laden(ordner):
 # ---------------------------------------------------------------- Farben und Begriffe
 PAPIER, PAPIER2, TINTE, GOLD, GOLD_H, NACHT, GRAU = (HexColor(x) for x in (
     "#F6F0E3", "#ECE2CC", "#2A2420", "#A6823A", "#DDBB63", "#1F1B18", "#6E655B"))
+RM_FARBE = HexColor("#7A1F2B")
 PIP = {"W": "#F7F1D3", "U": "#AFD3EC", "B": "#C7BEBA", "R": "#F0A487", "G": "#A3D1B2", "C": "#D4CDC8"}
-FARBEN = ["W", "U", "B", "R", "G", "Farblos", "Land", "Standardland"]
-FARBNAME = {"W": "Weiß", "U": "Blau", "B": "Schwarz", "R": "Rot", "G": "Grün", "Farblos": "Farblos",
+FARBEN = ["RM", "W", "U", "B", "R", "G", "Farblos", "Land", "Standardland"]  # RM = eigene Box Rare & Mythic (31.10.2026)
+FARBNAME = {"RM": "Rare & Mythic", "W": "Weiß", "U": "Blau", "B": "Schwarz", "R": "Rot", "G": "Grün", "Farblos": "Farblos",
             "Land": "Länder", "Standardland": "Standardländer"}
 TYPEN = ["Kreatur", "Planeswalker", "Schlacht", "Spontanzauber", "Hexerei", "Artefakt", "Verzauberung", "Sonstige"]
 TYP_EN = [("Creature", "Kreatur"), ("Planeswalker", "Planeswalker"), ("Battle", "Schlacht"),
@@ -143,6 +147,9 @@ KATEGORIEN = [("Kreatur", "Kreaturen"), ("Planeswalker", "Planeswalker"), ("Schl
               ("Verzauberung", "Verzauberungen"), ("Sonstige", "Sonstige"), ("Land", "Länder"),
               ("Standardland", "Standardländer")]
 TYP_PLURAL = dict(KATEGORIEN)
+BOX_RARE_MYTHIC = ("rare", "mythic")             # Seltenheit des eigenen Drucks → Box „Rare & Mythic“ (alle Typen außer Standardländern)
+BOX_ZU_KREATUR = ("Planeswalker", "Schlacht")          # Box-Ablage: diese Typen liegen in der Kreaturen-Box
+BOX_NAME = dict(TYP_PLURAL)  # Etikett der Box; „Kreaturen“ enthält auch Planeswalker und Schlachten
 ABSCHNITTE = [  # Schlüssel, Überschrift, Farbe
     ("holen", "Aus der Sammlung holen", HexColor("#2E6B3F")),
     ("deck", "Aus anderem Deck nehmen", HexColor("#9A6A12")),
@@ -399,8 +406,10 @@ def finde(k, sn, ns, nn, bevorzugt):
 
 def vorderseite(c):
     faces = c.get("card_faces") or []
-    if faces and (c.get("layout") in ("transform", "modal_dfc", "split", "adventure", "flip", "prototype")
-                  or not c.get("mana_cost") and faces[0].get("mana_cost")):
+    if faces and (c.get("layout") in ("transform", "modal_dfc", "split", "adventure", "flip", "prototype",
+                                      "reversible_card")
+                  or not c.get("mana_cost") and faces[0].get("mana_cost")
+                  or not c.get("type_line")):  # Wendedrucke (reversible_card) haben oben keine Typzeile
         f = faces[0]
         return f.get("type_line", c.get("type_line", "")), f.get("mana_cost", ""), f
     return c.get("type_line", ""), c.get("mana_cost", ""), c
@@ -431,8 +440,14 @@ def box(c, name=""):
         return ("Standardland", "Standardland") if ist_basic(name) else ("Farblos", "Sonstige")
     typzeile, mana, _ = vorderseite(c)
     typ = typ_von(typzeile)
-    if typ in ("Land", "Standardland"):
+    if typ == "Standardland":
         return typ, typ
+    if (c.get("rarity") or "") in BOX_RARE_MYTHIC:  # Ablage 31.10.2026: Rares und Mythics liegen unsortiert in einer eigenen Box
+        return "RM", "RM"
+    if typ == "Land":
+        return typ, typ
+    if typ in BOX_ZU_KREATUR:  # Ablage 31.10.2026: Planeswalker und Schlachten liegen bei den Kreaturen
+        typ = "Kreatur"
     return erste_farbe(mana), typ
 
 
@@ -837,14 +852,23 @@ def tausch_pdf(kopf, karten, ziel, bilder):
 def etikett(c, x, y, breite, k, key):
     """Kleines Etikett unter der Karte: wohin greifen bzw. zurücklegen."""
     b = box(k.get("scry"), k["name"])
+    rm = b[0] == "RM" and key != "deck"
     if key == "deck":
         text, sym = "aus " + k["quelle"].split(":", 1)[-1].strip(), None
+    elif rm:
+        text, sym = "★ Box Rare & Mythic", None
     elif b[0] in ("Land", "Standardland"):
         text, sym = "Box " + FARBNAME[b[0]], None
     else:
-        text, sym = f"Box {FARBNAME[b[0]]} · {TYP_PLURAL.get(b[1], b[1])}", (b[0] if b[0] in "WUBRG" else "C")
+        text, sym = f"Box {FARBNAME[b[0]]} · {BOX_NAME.get(b[1], b[1])}", (b[0] if b[0] in "WUBRG" else "C")
     if key == "kauf":
         text = "später: " + text
+    if rm:  # deutlich abgesetzt: dunkelrot mit Goldrand und heller Schrift
+        c.setFillColor(RM_FARBE); c.setStrokeColor(GOLD_H); c.setLineWidth(0.8)
+        c.roundRect(x, y - 1.3 * mm, breite, 4.4 * mm, 1.2 * mm, fill=1, stroke=1)
+        c.setFillColor(PAPIER)
+        schreibe(c, x + 1.6 * mm, y + 0.1 * mm, kuerzen(text, "TextB", 8.4, breite - 2.6 * mm), "TextB", 8.4)
+        return
     c.setFillColor(PAPIER2); c.setStrokeColor(GOLD); c.setLineWidth(0.4)
     c.roundRect(x, y - 1.3 * mm, breite, 4.4 * mm, 1.2 * mm, fill=1, stroke=1)
     tx = x + 1.6 * mm
@@ -959,6 +983,18 @@ def verkauf_pdf(kopf, karten, ziel, bilder):
     stempel(c, kopf.get("stempel"), W - RAND - 32 * mm, y - 18 * mm, 4)
     zierlinie(c, RAND, W - RAND, y - 22.5 * mm)
     start = y - 28 * mm
+    rm = [k for k in karten if box(k.get("scry"), k["name"])[0] == "RM"]
+    if rm:  # Hinweisband: Rares und Mythics liegen unsortiert in einer eigenen Box (Ablage 31.10.2026)
+        je = " · ".join(f"Kat. {s}: {anzahl([k for k in rm if k['kat'] == s])}" for s, _, _ in VERKAUF_KAT
+                        if any(k["kat"] == s for k in rm))
+        c.setFillColor(RM_FARBE); c.setStrokeColor(GOLD_H); c.setLineWidth(0.8)
+        c.roundRect(RAND, start - 9 * mm, W - 2 * RAND, 9 * mm, 1.6 * mm, fill=1, stroke=1)
+        c.setFillColor(PAPIER)
+        txt = (f"★ {anzahl(rm)} Karten liegen in der Box Rare & Mythic (unsortiert) – {je}. "
+               f"Sie stehen je Kategorie vorne und tragen das rote Etikett.")
+        g, t = passend(txt, "TextB", 10, 7, W - 2 * RAND - 6 * mm)
+        schreibe(c, RAND + 3 * mm, start - 5.9 * mm, t, "TextB", g)
+        start -= 14 * mm
     if kopf.get("bedenken"):
         start = bedenken_kasten(c, kopf["bedenken"], start) - 5 * mm
     r = Raster(c, 4, 5 * mm, 15 * mm, kopf_folgeseite, fuss, start)

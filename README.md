@@ -444,7 +444,7 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | **Soll-Stand** | die maßgebliche Deckliste bei Claude – nicht die in deiner externen Datenbank |
 | **externe Datenbank** | dein Programm außerhalb von Claude (bei mir Moxfield); bekommt Änderungen als Import-Liste |
 | **Einfügeblock · Import-Liste** | Deckliste `1 Kartenname` je Zeile, alphabetisch, Commander nach einer Leerzeile am Ende, ohne Überschriften |
-| **Ablage · Box-Etikett** | wo eine Karte physisch liegt (Standard: nach Farbe, darin eine Box je Kartentyp) |
+| **Ablage · Box-Etikett** | wo eine Karte physisch liegt (Standard: nach Farbe, darin eine Box je Kartentyp – Kreaturen mit Planeswalkern, Spontanzauber, Hexereien, Artefakte, Verzauberungen; dazu je eine Box Länder und Standardländer; Rares und Mythics liegen in einer eigenen Box „Rare & Mythic“ mit rotem Etikett) |
 | **⚑** | freie Karte, die zur selben Zeit wie ein Deck gescannt wurde – liegt vielleicht beim Deck; vor Einbau oder Verkauf nachsehen |
 
 **Deckbau**
