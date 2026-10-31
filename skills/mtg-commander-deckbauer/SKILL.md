@@ -65,7 +65,7 @@ Will der Nutzer Rollen (Admin/User/Gast) und einen dauerhaften Bestand, bereite 
 
 ## Verkaufsliste
 
-`deckbau.py verkauf [--min-preis 1]` prüft freie Exemplare gegen alle Decks (Behalten · Kat. 2 mit Hinweis · Kat. 1 ohne Bedenken), PDF mit `kartenbilder.py verkauf <liste> --out out/verkauf --mobil` (PDF nur nach Ja/Nein-Frage).
+`deckbau.py verkauf [--min-preis 1]` prüft alle Sammlungs-Exemplare (frei und vorgemerkt) gegen alle Decks (Kat. 1 ohne Bedenken · Kat. 2 mit Bedenken, vorgemerkte immer mindestens hier · Kat. 3 nicht verkaufen, Begründung in Klartext), PDF mit `kartenbilder.py verkauf <liste> --out out/verkauf --mobil` (PDF nur nach Ja/Nein-Frage).
 
 ## Einfügeblock (Moxfield-Textformat; mit anderen Deck-Programmen nicht getestet)
 

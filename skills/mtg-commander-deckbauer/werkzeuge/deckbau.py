@@ -26,7 +26,7 @@ Befehle (Details: python3 deckbau.py <befehl> --help)
   erklaerung <entwurf>           Datenbasis je Karte für die Kartenerklärungen
   oracle <Karte …> | --alt --neu Oracle-Text – Pflicht vor jedem Vorschlag
   alternativen <Karte>           günstigere Karten mit gleicher Rolle (frei zuerst)
-  verkauf                        Verkaufsprüfung der freien Karten (Kat. 1, Kat. 2, Behalten)
+  verkauf                        Verkaufsprüfung der Sammlung (Kat. 1, Kat. 2, Kat. 3 nicht verkaufen)
 
 --ersetzt <deck>: Karten dieses Decks gelten für den Entwurf als vorhanden (Upgrade eines bestehenden Decks).
 --idee I-nnn: Vormerkungen dieser Idee (claude/sammlung/vormerkungen.csv) gelten für den Entwurf als frei.
@@ -2180,37 +2180,130 @@ def cmd_gegentest(con, a):
 
 
 # ----------------------------------------------------------------- verkauf
-NOT_SCHWELLE = 0.10    # EDHREC-Wert, ab dem eine freie Karte als Upgrade-Kandidat eines Decks gilt
+NOT_SCHWELLE = 0.10      # EDHREC-Anteil, ab dem eine Karte als passend für ein Deck gilt (Kat. 2)
+STARK_ANTEIL = 0.33      # Kat. 3: in mindestens jedem dritten Deck des Commanders gespielt …
+STARK_SYNERGIE = 0.10    # … und deutlich häufiger als im Farbschnitt (EDHREC-Synergie)
+STARK_BEZUG = 0.8        # Kat. 3 ohne EDHREC-Beleg: Oracle-Text bedient den Plan direkt (mehr als ein volles Thema)
+
+BEZUG_SATZ = {           # Kurzwörter der Bewertung → verständlicher Halbsatz
+    "Token-Quelle": "erzeugt Spielsteine", "Token-Payoff": "belohnt viele Spielsteine",
+    "Opfer-Outlet": "kann eigene Kreaturen opfern", "Tod-Payoff": "bringt Vorteil, wenn Kreaturen sterben",
+    "Angriff ermöglichen": "hilft beim Angreifen", "Angriffs-Trigger": "löst beim Angriff aus",
+    "Evasion": "macht Kreaturen schwer blockbar", "Kampfschaden-Trigger": "löst bei Kampfschaden aus",
+    "Counter-Quelle": "verteilt +1/+1-Marken", "Counter-Payoff": "belohnt +1/+1-Marken",
+    "Lebens-Quelle": "bringt Lebenspunkte", "Lifegain-Payoff": "belohnt Lebensgewinn",
+    "Land-Ramp/Extra-Land": "bringt zusätzliche Länder ins Spiel", "Landfall": "löst bei Landfall aus",
+    "Artefakt": "ist ein Artefakt für den Artefakt-Plan", "Artefakt-Payoff": "belohnt Artefakte",
+    "Verzauberung": "ist eine Verzauberung für den Verzauberungs-Plan", "Verzauberungs-Payoff": "belohnt Verzauberungen",
+    "Zauber": "ist ein Spruch für den Zauber-Plan", "Zauber-Payoff": "belohnt Spontanzauber und Hexereien",
+    "Friedhof füllen": "füllt den Friedhof", "Friedhof nutzen": "nutzt den Friedhof",
+    "Blink": "lässt Kreaturen neu eintreten", "Eintritts-Wert": "bringt Vorteil beim Eintreten",
+    "Kreatur": "ist eine Kreatur für den Kreaturen-Plan", "Kreaturen-Payoff": "belohnt das Wirken von Kreaturen",
+    "Ausrüstung/Aura": "ist Ausrüstung oder Aura", "Voltron-Payoff": "belohnt Ausrüstung und Auren",
+    "legendär": "ist legendär", "Legendär-Payoff": "belohnt legendäre Karten",
+    "Treasure-Quelle": "erzeugt Schätze, Nahrung oder Hinweise", "Artefakt opfern": "opfert Artefakt-Spielsteine",
+    "Flieger": "fliegt", "Flieger-Payoff": "belohnt Flieger",
+}
+
+
+def anteil_satz(p):
+    """0,17 → „etwa jedem sechsten“ – Anteil als Wort statt Prozentzahl."""
+    if p is None:
+        return ""
+    if p >= 0.75:
+        return "fast jedem"
+    if p >= 0.55:
+        return "mehr als jedem zweiten"
+    if p >= 0.45:
+        return "etwa jedem zweiten"
+    n = max(2, round(1 / max(p, 0.01)))
+    wort = {2: "zweiten", 3: "dritten", 4: "vierten", 5: "fünften", 6: "sechsten", 7: "siebten", 8: "achten",
+            9: "neunten", 10: "zehnten"}.get(n)
+    return f"etwa jedem {wort}" if wort else "nur wenigen"
+
+
+def synergie_satz(s):
+    if s is None:
+        return ""
+    if s >= 0.20:
+        return "dort viel häufiger als in anderen Decks dieser Farben – echter Commander-Bezug"
+    if s >= 0.10:
+        return "dort deutlich häufiger als im Farbschnitt"
+    if s >= 0:
+        return "dort etwa so oft wie im Farbschnitt – ein Allrounder, kein Muss"
+    return "dort seltener als im Farbschnitt"
+
+
+def bezug_satz(gruende):
+    teile = []
+    for g in gruende:
+        if g.endswith("-Bezug"):
+            t = f"nennt {g[:-6]} im Kartentext"
+        elif g.startswith("ist ") and g[4:5].isupper():
+            t = f"ist selbst {g[4:]}"
+        else:
+            t = BEZUG_SATZ.get(g, g)
+        if t not in teile:
+            teile.append(t)
+    if not teile:
+        return ""
+    return ", ".join(teile[:-1]) + (" und " if len(teile) > 1 else "") + teile[-1]
+
+
+def passung_satz(b, deck, stark):
+    """Ein Satz, warum die Karte zu einem Deck passt – ohne Indexwerte."""
+    v = b["v"] or {}
+    plan = bezug_satz(b["gruende"][:3]) if b["bezug"] >= B.BEZUG_SPERRE else ""
+    edh = ""
+    if b["edh"] is not None and v.get("inclusion") is not None:
+        edh = (f"auf EDHREC in {anteil_satz(v['inclusion'])} {deck.replace(' ', '-')}-Deck gespielt, "
+               f"{synergie_satz(v.get('synergy'))}")
+    oracle_traegt = stark and b["bezug"] >= STARK_BEZUG
+    if oracle_traegt or (plan and not edh):
+        s = (f"Passt genau zum Plan von {deck}: {plan}." if stark
+             else f"Passt zum Plan von {deck}: {plan}.")
+        return s + (f" Zusätzlich {edh}." if edh else (" Auf EDHREC nicht geführt, also nur am Kartentext geprüft."
+                                                         if not stark else ""))
+    s = f"Wird {edh}"
+    if plan:
+        s += f"; {plan}"
+    return s + "."
 
 
 def cmd_verkauf(con, a):
-    """Verkaufsprüfung: freie Exemplare ab --min-preis gegen alle Decks prüfen.
-    Behalten: Upgrade-Kandidat eines Commander-Decks (EDHREC-Wert ≥ 0,10 oder Oracle-Bezug ≥ 0,5; je Deck ein Exemplar).
-    Kat. 2 (Verkauf möglich, mit Hinweis): füllt eine Rolle unter Minimum (Kompromiss) · Game Changer · Playset-Ergänzung
-    eines 60-Karten-Decks · ⚑ zusammen mit einem Deck erfasst. Kat. 1: alles andere."""
+    """Verkaufsprüfung aller Sammlungs-Exemplare ab --min-preis (frei und vorgemerkt) gegen alle Decks.
+    Kat. 3 (nicht verkaufen): passt exakt zu einem Commander-Deck – auf EDHREC in mindestens jedem dritten Deck
+    und deutlich über dem Farbschnitt, oder der Oracle-Text bedient den Plan direkt (je Deck ein Exemplar).
+    Kat. 2 (Bedenken): passt zu einem Deck, ist aber kein Muss · füllt eine Rolle unter Minimum · Game Changer ·
+    Playset-Ergänzung · ⚑ zusammen mit einem Deck erfasst · vorgemerkt für eine Idee. Kat. 1: alles andere."""
     stand = dict(con.execute("SELECT key, value FROM meta").fetchall()).get("bulk_default_cards", "")[:10]
     cdecks, kdecks = verkauf_decks(con, a)
     flags = {d["flag"]: d["kurz"] for d in cdecks + kdecks if d["flag"]}
     limit = GC_LIMIT.get(a.bracket, 3)
+    ideen = {}
+    pf = os.path.join("data", "vormerkungen.csv")
+    if os.path.exists(pf):
+        for z in csv.DictReader(open(pf, encoding="utf-8")):
+            ideen.setdefault(z.get("Idee", ""), (z.get("Hinweis") or "").split(" (")[0])
     ex = con.execute("""SELECT e.oracle_id, e.name, UPPER(e.set_code), e.cn, e.finish, e.lang, e.modified,
         COALESCE(e.verkauf, ''), CASE e.finish WHEN 'foil' THEN COALESCE(p.eur_foil, p.eur)
-        WHEN 'etched' THEN COALESCE(p.eur_etched, p.eur) ELSE COALESCE(p.eur, p.eur_foil) END
+        WHEN 'etched' THEN COALESCE(p.eur_etched, p.eur) ELSE COALESCE(p.eur, p.eur_foil) END, COALESCE(e.idee, '')
         FROM exemplare e LEFT JOIN prints p ON p.set_code=e.set_code AND p.cn=e.cn AND p.oracle_id=e.oracle_id
-        AND p.lang='en' WHERE e.deck_id IS NULL AND e.idee IS NULL ORDER BY e.name, e.nr""").fetchall()
+        AND p.lang='en' WHERE e.deck_id IS NULL ORDER BY e.name, e.nr""").fetchall()
     je = defaultdict(list)
     for r in ex:
         je[r[0]].append(r)
-    kat1, kat2, halten = [], [], []
+    kat1, kat2, kat3 = [], [], []
     for oid, kopien in je.items():
         c = card(con, oid)
         if not c or basic(c):
             continue
         preis = lambda r: r[8] if r[8] is not None else (c["eur"] or 0)
-        kopien = sorted(kopien, key=lambda r: -preis(r))
-        if preis(kopien[0]) < a.min_preis:
+        kopien = sorted(kopien, key=lambda r: (not r[9], -preis(r)))      # vorgemerkte zuerst, dann teuerste
+        if max(preis(r) for r in kopien) < a.min_preis:
             continue
-        verkauf_einordnen(con, c, oid, kopien, preis, cdecks, kdecks, flags, limit, kat1, kat2, halten)
-    verkauf_ausgabe(kat1, kat2, halten, stand, a)
+        verkauf_einordnen(con, c, oid, kopien, preis, cdecks, kdecks, flags, limit, ideen, kat1, kat2, kat3)
+    verkauf_ausgabe(kat1, kat2, kat3, stand, a)
 
 
 def verkauf_decks(con, a):
@@ -2226,7 +2319,7 @@ def verkauf_decks(con, a):
             data, _ = edhrec_commander(cname_von(cmdr), a.bracket)
             ak = archetyp_kontext(con, cmdr, main, did)
             zaehl, _ = zaehle_rollen(con, main, ak["ziel"])
-            unter = {r for r in KERN if zaehl[r] < ak["soll"][r][0]}
+            unter = {r: (zaehl[r], ak["soll"][r][0]) for r in KERN if zaehl[r] < ak["soll"][r][0]}
             cdecks.append(dict(did=did, kurz=kurz, ci=set("".join(c["ci"] for _, c in cmdr)), edh=edh_karten(data),
                                prof=profil_fuer(con, [c for _, c in cmdr], data), unter=unter,
                                gc=sum(1 for _, c in cmdr + main if c["gc"]), flag=flag, ziel=ak["ziel"]))
@@ -2239,80 +2332,102 @@ def verkauf_decks(con, a):
     return cdecks, kdecks
 
 
-def verkauf_einordnen(con, c, oid, kopien, preis, cdecks, kdecks, flags, limit, kat1, kat2, halten):
+def ist_stark(b):
+    v = b["v"] or {}
+    if b["edh"] is not None and v.get("inclusion") is not None:
+        return (v["inclusion"] >= STARK_ANTEIL and (v.get("synergy") or 0) >= STARK_SYNERGIE) \
+            or b["bezug"] >= STARK_BEZUG
+    return b["bezug"] >= STARK_BEZUG
+
+
+def verkauf_einordnen(con, c, oid, kopien, preis, cdecks, kdecks, flags, limit, ideen, kat1, kat2, kat3):
     r_c = rollen(con, c)
-    behalten, notl = [], defaultdict(list)
+    stark, schwach, luecke = [], [], []
     for d in cdecks:
         if c["legal"] != "legal" or not set(c["ci"]) <= d["ci"]:
             continue
         b = bewerte(con, d["prof"], d["edh"], c)
         if B.zerstoert_plan(b["sicht"], d["ziel"]):
             continue
-        if (b["edh"] or 0) >= NOT_SCHWELLE or b["bezug"] >= B.BEZUG_SPERRE:
-            behalten.append(f"Upgrade-Kandidat {d['kurz']} ("
-                            + (f"{pct(b['v'].get('inclusion'))}, Synergie {(b['v'].get('synergy') or 0) * 100:+.0f} %"
-                               if b["edh"] is not None else f"Bezug {de(b['bezug'])}: {', '.join(b['gruende'][:2])}") + ")")
-        elif d["unter"] & set(r_c):
-            for x in r_c:
-                if x in d["unter"]:
-                    notl[ROLLE_NAME[x]].append(d["kurz"])
+        if ist_stark(b):
+            stark.append(passung_satz(b, d["kurz"], True))
+        elif (b["edh"] or 0) >= NOT_SCHWELLE or b["bezug"] >= B.BEZUG_SPERRE:
+            schwach.append(passung_satz(b, d["kurz"], False))
+        for x in r_c:
+            if x in d["unter"]:
+                ist, mind = d["unter"][x]
+                luecke.append(f"{d['kurz']} hat zu wenig {ROLLE_NAME[x]} ({ist} statt mindestens {mind}) – "
+                              f"die Karte könnte die Lücke füllen.")
     playset = []
     for d in kdecks:
         n = d["q"].get(oid, 0)
         legal = con.execute(f"SELECT legal_{d['fmt']} FROM cards WHERE oracle_id=?", (oid,)).fetchone() \
             if d["fmt"] in ("standard", "pioneer", "modern", "legacy", "vintage", "pauper") else None
         if 0 < n < 4 and legal and legal[0] == "legal":
-            playset += [f"Playset-Ergänzung {d['kurz']} (im Deck {n}×)"] * (4 - n)
+            playset += [f"{d['kurz']} spielt sie {n}× – mit diesem Exemplar wären es {n + 1} von 4."] * (4 - n)
     gc_txt = ""
     if c["gc"]:
         platz = [d["kurz"] for d in cdecks if set(c["ci"]) <= d["ci"] and d["gc"] < limit]
-        gc_txt = "Game Changer" + (f" – Platz in {', '.join(platz)}" if platz else "")
+        gc_txt = (f"Game Changer – je Deck sind nur {limit} erlaubt; " if limit else "Game Changer; ") + \
+            (f"noch Platz in {', '.join(platz)}." if platz else "derzeit in keinem passenden Deck Platz.")
     for i, r in enumerate(kopien):
         sprache = {"de": "DE", "en": "EN"}.get(r[5], (r[5] or "").upper()) + (" Foil" if r[4] == "foil" else "")
         z = dict(name=r[1], druck=f"{r[2]} {r[3]}", set=r[2], cn=r[3], sprache=sprache, preis=preis(r),
-                 verkauf=r[7], grund="")
-        if i < len(behalten):
-            z["grund"] = behalten[i] + (f" · trotzdem Verkauf geplant ({r[7]}) – mit dem Nutzer klären" if r[7] else "")
-            halten.append(z)
+                 verkauf=r[7], idee=r[9], grund="")
+        marke = []
+        if r[9]:
+            marke.append(f"Vorgemerkt für {r[9]}" + (f" ({ideen[r[9]]})" if ideen.get(r[9]) else "") + ".")
+        if r[7]:
+            marke.append(f"Verkauf geplant ({r[7]}).")
+        if i < len(stark):
+            z["grund"] = " ".join(marke + [stark[i], f"Nachkaufen kostet heute ab {eur_txt(c['eur'] or preis(r))} (günstigster Druck)."])
+            if r[7]:
+                z["grund"] += " Trotz geplantem Verkauf behalten – bitte klären."
+            kat3.append(z)
             continue
-        j = i - len(behalten)
+        j = i - len(stark)
         hin = []
+        if j < len(schwach):
+            hin.append(schwach[j])
         if j < len(playset):
             hin.append(playset[j])
-        if r[6] in flags:
-            hin.insert(0, f"⚑ mit {flags[r[6]]} erfasst")
         if gc_txt:
             hin.append(gc_txt)
-        hin += [f"Kompromiss für {rolle} ({', '.join(ds)})" for rolle, ds in notl.items()]
-        if r[7]:
-            hin.append(f"Verkauf geplant ({r[7]})")
-        z["grund"] = " · ".join(hin)
-        (kat2 if any(not h.startswith("Verkauf geplant") for h in hin) else kat1).append(z)
+        hin += luecke
+        if r[6] in flags:
+            hin.append(f"Zur selben Zeit wie {flags[r[6]]} erfasst – liegt vielleicht beim Deck, vor dem Verkauf "
+                       f"nachsehen (⚑).")
+        if r[9]:
+            hin.append("Die Idee braucht diese Karte – Verkauf heißt, die Idee neu zu planen.")
+        z["grund"] = " ".join(marke + hin)
+        (kat2 if hin else kat1).append(z)
 
 
-def verkauf_ausgabe(kat1, kat2, halten, stand, a):
+def eur_txt(x):
+    return f"{x:.2f}".replace(".", ",") + " €"
+
+
+def verkauf_ausgabe(kat1, kat2, kat3, stand, a):
     summe = lambda l: sum(z["preis"] for z in l)
-    eur = lambda x: f"{x:.2f}".replace(".", ",") + " €"
-    for titel, l in (("Kat. 1 – ohne Bedenken verkaufen", kat1), ("Kat. 2 – Verkauf möglich, mit Hinweis", kat2),
-                     ("Behalten – wird gebraucht", halten)):
-        print(f"\n{titel}: {len(l)} Karten · {eur(summe(l))}")
+    for titel, l in (("Kat. 1 – ohne Bedenken verkaufen", kat1), ("Kat. 2 – Verkauf möglich, mit Bedenken", kat2),
+                     ("Kat. 3 – nicht verkaufen", kat3)):
+        print(f"\n{titel}: {len(l)} Karten · {eur_txt(summe(l))}")
         if l:
-            M.table([(z["name"], z["druck"], z["sprache"], eur(z["preis"]), z["grund"])
-                     for z in sorted(l, key=lambda z: -z["preis"])], ["Karte", "Druck", "Sprache", "Preis", "Hinweis"])
+            M.table([(z["name"], z["druck"], z["sprache"], eur_txt(z["preis"]), z["grund"])
+                     for z in sorted(l, key=lambda z: -z["preis"])], ["Karte", "Druck", "Sprache", "Preis", "Begründung"])
     print(f"\nPreise: eigener Druck, Scryfall-EUR (Quelle Cardmarket), Stand {stand} · deutsche Exemplare zum Preis "
           f"der englischen Version – auf Cardmarket meist etwas darunter; Gebühren und Versand gehen ab.")
-    print("Kompromiss = Rolle im Deck unter Minimum, Karte füllt sie (Rückfall vor Kauf, 08 Grundsatz 14) · "
-          "⚑ = zur selben Zeit wie das Deck erfasst, liegt vielleicht beim Deck – vor dem Verkauf nachsehen.")
-    print("Kat. 2 und Behalten sind Datenbasis – jede Karte vor dem Vorschlag am Oracle-Text und Spielplan prüfen.")
+    print("Vorgemerkte Karten stehen immer mindestens in Kat. 2 · ⚑ = zur selben Zeit wie ein Deck erfasst.")
+    print("Kat. 2 und 3 sind Datenbasis – jede Karte vor dem Vorschlag am Oracle-Text und Spielplan prüfen.")
     out = a.out or "out/verkauf.txt"
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "w", encoding="utf-8") as fh:
-        fh.write(f"# titel: Verkaufsliste Cardmarket\n# deck: Freie Karten ab {eur(a.min_preis)}\n"
+        fh.write(f"# titel: Verkaufsliste Cardmarket\n# deck: Sammlung ab {eur_txt(a.min_preis)}\n"
                  f"# datum: {time.strftime('%d.%m.%Y')}\n# preise: Cardmarket über Scryfall, Stand {stand}\n")
-        for k, l in (("K1", kat1), ("K2", kat2)):
+        for k, l in (("K1", kat1), ("K2", kat2), ("K3", kat3)):
             for z in sorted(l, key=lambda z: z["name"]):
-                fh.write(f"{k} 1 {z['name']} ({z['set']}) {z['cn']} | {eur(z['preis'])} | {z['sprache']} | "
-                         f"{z['grund']}\n")
+                fh.write(f"{k} 1 {z['name']} ({z['set']}) {z['cn']} | {eur_txt(z['preis'])} | {z['sprache']} | "
+                         f"{z['grund'].replace('|', '/')}\n")
     print(f"\nVerkaufsliste -> {out}  (PDF: python3 kartenbilder.py verkauf {out} --out out/verkauf --mobil)")
 
 
@@ -2872,7 +2987,7 @@ def parser():
     p.add_argument("--kurz", action="store_true", help="kurze Ausgabe (Standard; nur aus Kompatibilität)")
     p.add_argument("--idee", **idee)
     p.add_argument("--out")
-    p = sp.add_parser("verkauf", help="Verkaufsprüfung der freien Karten")
+    p = sp.add_parser("verkauf", help="Verkaufsprüfung der Sammlung (Kat. 1–3)")
     p.add_argument("--min-preis", type=float, default=1.0, help="nur Karten ab diesem Preis (eigener Druck), Standard 1 €")
     p.add_argument("--bracket", type=int, default=3)
     p.add_argument("--out", help="Verkaufsliste (Standard out/verkauf.txt)")

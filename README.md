@@ -55,7 +55,7 @@ Das **Ziel**: bessere, konsistentere Decks aus dem, was du schon hast – mit m�
 | **Kaufliste** | Nur was fehlt: Rolle, Preis in Euro (günstigster Druck auf Cardmarket, mit Datum), günstigere Alternative und [Klasse A–D](#klassen-a-bis-d-lohnt-sich-ein-kauf) |
 | **PDFs mit Kartenbildern** | Deck-PDF (ganzes Deck mit Manakurve), Tauschübersicht (welche Karte du aus welcher Box holst), Einkaufsliste (Sammelbestellung), Fazit (alle Änderungen erklärt) – auch als kleinere Handy-Variante; in Tausch-, Einkaufs- und Verkaufsliste hakst du jede Karte im PDF-Reader per Klick ab |
 | **Import-Liste für deine externe Datenbank** | Deckliste zum Einfügen und neue Karten als CSV – für das Programm, in dem du Decks und Sammlung außerhalb von Claude pflegst ([mehr dazu](#deine-daten-und-deine-externe-datenbank)) |
-| **Verkaufsliste mit PDF** | Welche freien Karten kein Deck braucht und was sie wert sind ([Verkaufsliste](#die-verkaufsliste)) |
+| **Verkaufsliste mit PDF** | Welche Sammlungskarten du verkaufen kannst, welche Bedenken es gibt und welche du behalten solltest ([Verkaufsliste](#die-verkaufsliste)) |
 | **Regelantworten** | Ergebnis in einem Satz, dann die Regelnummern aus den Comprehensive Rules |
 
 So sieht ein Ausschnitt aus einem Vorschlag aus (gekürztes Beispiel):
@@ -296,21 +296,23 @@ Urteil: **bestanden · bedingt** (offene Punkte brauchen eine Einschätzung) **�
 
 ## Die Verkaufsliste
 
-Ein eigenes Feature, unabhängig vom Deckbau: Claude prüft, welche **freien Karten** kein Deck braucht, und macht daraus eine Liste und ein PDF zum Verkaufen.
+Ein eigenes Feature, unabhängig vom Deckbau: Claude prüft, welche Karten deiner **Sammlung** (alles, was nicht in einem Deck steckt) du verkaufen kannst, und macht daraus eine Liste und ein PDF.
 
-**Was geprüft wird:** jedes freie Exemplar ab einem Mindestpreis (Standard 1 €) gegen **alle** deine Decks – Commander-Decks und 60-Karten-Decks.
+**Was geprüft wird:** jedes Sammlungs-Exemplar ab einem Mindestpreis (Standard 1 €) gegen **alle** deine Decks – Commander-Decks und 60-Karten-Decks. Auch Karten, die du für eine Deck-Idee vorgemerkt hast, sind dabei; sie sind markiert und stehen immer mindestens in Kat. 2.
 
-| Gruppe | Wann | Beispiel für den Hinweis |
+| Gruppe | Wann | Beispiel für die Begründung |
 |---|---|---|
-| **Behalten** | Upgrade-Kandidat für eins deiner Decks: EDHREC-Wert ≥ 0,10 oder Oracle-Bezug ≥ 0,5 zum Commander (Karten, die den Plan des Decks zerstören, zählen nicht) | „Upgrade-Kandidat für Deck X (Inclusion, Synergy)“ |
-| **Kat. 2 – Verkauf möglich, mit Hinweis** | nicht gebraucht, aber es gibt einen Grund zum Nachdenken | Kompromiss für eine Rolle unter Minimum in Deck X · Game Changer (mit Hinweis, welches Deck noch einen Slot frei hat) · Playset-Ergänzung für ein 60-Karten-Deck · ⚑ (zusammen mit einem Deck gescannt, liegt vielleicht dort) |
+| **Kat. 3 – nicht verkaufen** | passt exakt zu einem deiner Commander-Decks: auf EDHREC in mindestens jedem dritten Deck dieses Commanders und deutlich häufiger als im Farbschnitt – oder der Oracle-Text bedient den Plan des Decks direkt (je Deck ein Exemplar) | „Passt genau zum Plan von Deck X: belohnt viele Spielsteine und bringt Vorteil beim Eintreten. Nachkaufen kostet heute ab 8,23 € (günstigster Druck).“ |
+| **Kat. 2 – Verkauf möglich, mit Bedenken** | passt zu einem Deck, ist aber kein Muss · füllt eine Rolle unter Minimum · Game Changer · Playset-Ergänzung für ein 60-Karten-Deck · ⚑ zusammen mit einem Deck gescannt · für eine Idee vorgemerkt | „Wird auf EDHREC in etwa jedem sechsten Deck mit diesem Commander gespielt, dort etwa so oft wie im Farbschnitt – ein Allrounder, kein Muss.“ · „Deck X hat zu wenig Ramp (8 statt mindestens 10) – die Karte könnte die Lücke füllen.“ |
 | **Kat. 1 – ohne Bedenken verkaufen** | alles andere | – |
+
+Die Begründungen sind ganze Sätze ohne Indexwerte: Anteile als „etwa jedem dritten Deck“, Lücken mit Ist- und Soll-Zahl, Kat. 3 mit dem Nachkaufpreis.
 
 **Was du bekommst:**
 
-- **im Chat:** die drei Gruppen mit Anzahl und Summe, je Karte Name, Druck (Set und Nummer), Sprache, Preis und Hinweis;
-- **als Datei:** die Verkaufsliste (Kat. 1 und Kat. 2) als Text;
-- **als PDF:** Kopf mit Anzahl und Summe je Kategorie, dann die Abschnitte Kat. 1 und Kat. 2, je Karte das Box-Etikett (wo sie in deiner Ablage liegt), Druck, Sprache, Preis und bei Kat. 2 der Hinweis. Sortiert nach deiner Ablage, damit du die Karten Box für Box ziehen kannst; dazu je Seite ein PNG und auf Wunsch eine Handy-Variante.
+- **im Chat:** die drei Gruppen mit Anzahl und Summe, je Karte Name, Druck (Set und Nummer), Sprache, Preis und Begründung;
+- **als Datei:** die Verkaufsliste (Kat. 1–3) als Text;
+- **als PDF:** Kopf mit Anzahl und Summe je Kategorie und der verkäuflichen Summe (Kat. 1+2), dann die Abschnitte Kat. 1, Kat. 2 und Kat. 3, je Karte das Box-Etikett (wo sie in deiner Ablage liegt), Druck, Sprache, Preis und die Begründung; am Ende alle Begründungen von Kat. 2 und 3 ungekürzt zum Abhaken. Sortiert nach deiner Ablage, damit du die Karten Box für Box ziehen kannst; dazu je Seite ein PNG und auf Wunsch eine Handy-Variante.
 
 **Preise:** dein eigener Druck, Cardmarket-Preis über Scryfall mit Datum. Deutsche Exemplare stehen zum Preis der englischen Version – auf Cardmarket liegen sie meist etwas darunter; Gebühren und Versand gehen ab.
 
@@ -467,7 +469,7 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | **Abnahme · Stärke-Index** | acht Prüfpunkte, ab wann ein Deck fertig ist · Vergleichszahl zwischen zwei Ständen desselben Decks ([Details](#die-abnahme-wann-ein-deck-fertig-ist)) |
 | **Gegenlauf · Gegentest** | zwei fremde Agenten bauen mit · Vergleich der drei Listen ([Details](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)) |
 | **Fazit-PDF · Tauschübersicht · Deck-PDF** | Änderungen mit Begründung · Pickliste „was aus welcher Box“ · ganzes Deck mit Kurzdaten |
-| **Verkaufsliste · Kat. 1 / Kat. 2 · V-nnn** | freie Karten zum Verkauf ohne bzw. mit Hinweis · gesicherter, geplanter Verkauf ([Details](#die-verkaufsliste)) |
+| **Verkaufsliste · Kat. 1 / 2 / 3 · V-nnn** | Sammlungskarten ohne Bedenken, mit Bedenken, nicht verkaufen · gesicherter, geplanter Verkauf ([Details](#die-verkaufsliste)) |
 
 **Rollen im Projekt**
 
