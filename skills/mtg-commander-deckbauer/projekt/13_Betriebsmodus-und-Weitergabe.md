@@ -1,6 +1,6 @@
 # Rollen, Betriebsmodus und Weitergabe
 
-**Stand:** 30.10.2026 (V1.8.1: Weitergabe nur noch über das Repo, Abschnitte 10–12 · V1.8: Einkaufsliste-PDF, Abhak-Kästchen in den Listen-PDFs, Begriffe Einkaufsliste und Abhaken (3.4) · V1.7.1: Begriffe geschärft – Sammlung = Bestand ohne Deckkarten, freie Karten = Sammlung ohne vorgemerkte Karten (3.4) · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.8.1, Weitergabe über das Repo (Abschnitte 10–12) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
+**Stand:** 31.10.2026 (V1.9: Begriffe Ausgangsbracket, Ziel-Bracket, Bracket-Wächter (3.4) · V1.8.1: Weitergabe nur noch über das Repo, Abschnitte 10–12 · V1.8: Einkaufsliste-PDF, Abhak-Kästchen in den Listen-PDFs, Begriffe Einkaufsliste und Abhaken (3.4) · V1.7.1: Begriffe geschärft – Sammlung = Bestand ohne Deckkarten, freie Karten = Sammlung ohne vorgemerkte Karten (3.4) · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten für alle Rollen · V1.6: Review umgesetzt – Projektanweisungen mit Willkommensnachricht, Abnahme, Kompromiss-Stufen, Gegentest, neue Dateien `01a`, `05a`, `08a`, `09a`, `12a` · V1.5: Abweisen mit Gag, Willkommensnachricht, Begriffe für User und Gast, Verkaufsliste · V1.4: Rollen und Anmeldung) · **Version des Programms:** V1.8.1, Weitergabe über das Repo (Abschnitte 10–12) · gilt für das Admin-Projekt und jede Weitergabe-Kopie
 
 Zweck: Das Projekt kennt vier Zustände – Start, Admin, User, Gast. Jeder Chat beginnt im Zustand Start; erst die Anmeldung gibt Rechte. Das Programm (Regeln, Abläufe, Werkzeuge, PDF-Vorlagen) ändert nur der Admin. Gäste arbeiten mit ihren eigenen Daten, die nie Teil des Grundbestands werden.
 
@@ -162,6 +162,9 @@ User und Gast kennen die Begriffe dieses Projekts nicht. Deshalb gilt:
 | Klasse A–D | Kosten-Nutzen einer Kaufkarte: A Kern · B effizient · C Luxus · D Falle | gleich |
 | Tauschpaar „raus → rein“ | eine Karte geht, eine kommt – jeweils mit Begründung und Preisunterschied | gleich |
 | Bracket-Zeile | das Ergebnis des Bracket-Checks in einer Zeile (Game Changer, Landzerstörung, Extra-Züge, frühe Combos) | gleich |
+| Ausgangsbracket | das Bracket, in dem dein Deck heute steht – gemessen an Game Changern, Landzerstörung, Extra-Zügen und Combos | gleich |
+| Ziel-Bracket | das Bracket, das das Deck nach Bau oder Upgrade erreichen soll; wird immer gefragt – auf Wunsch erkläre ich alle Brackets | gleich |
+| Bracket-Wächter | Warnung, wenn eine Änderung dein Deck ungewollt in ein anderes Bracket schiebt – mit einer Karte, die im Bracket bleibt | gleich |
 | Fazit-PDF | Zusammenfassung nach der Freigabe: Änderungen, Kennzahlen, Kartenerklärungen | gleich |
 | Tauschübersicht | Pickliste mit Kartenbildern: was raus, was rein, aus welcher Box | gleich |
 | Einkaufsliste | PDF der Sammelbestellung mit Kartenbildern: was zu kaufen ist, je Idee mit Anzahl und Preis | gleich, aus deinen Ideen |
@@ -344,7 +347,7 @@ Idee,Name,Anzahl,Datum,Hinweis
 ~~~~
 # Nutzerprofil
 
-Persönliche Einstellungen des Nutzers (V1.8.1, frei änderbar). Claude liest die Datei zu Beginn jeder Aufgabe zu Deck, Bestand oder Kauf. Ändert der Nutzer im Chat eine Einstellung, trägt Claude sie hier mit Datum ein und notiert sie im Protokoll (Typ „Entscheidung“). Leere Felder = Standard.
+Persönliche Einstellungen des Nutzers (V1.9, frei änderbar). Claude liest die Datei zu Beginn jeder Aufgabe zu Deck, Bestand oder Kauf. Ändert der Nutzer im Chat eine Einstellung, trägt Claude sie hier mit Datum ein und notiert sie im Protokoll (Typ „Entscheidung“). Leere Felder = Standard.
 
 | Einstellung | Wert | Standard | Stand |
 |---|---|---|---|

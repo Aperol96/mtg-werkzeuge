@@ -17,6 +17,8 @@ Befehle (Details: python3 deckbau.py <befehl> --help)
                                  nach Ziel, ≥ 2 Siegwege, Kernpakete ≥ 80 %, Simulation, stärker als die Basis
   upgrade <deck>                 Upgrade-Modus mit Raus-Sperren (Kernpaket unter Median, Commander-Bezug, Rolle unter
                                  Minimum), Kompromiss-Stufen, Klassen A–D; kurze Ausgabe (--voll für alle Listen)
+  bracket <deck> [--neu E]       Bracket-Wächter (V1.9): Ausgangsbracket aus den harten Grenzen; mit --neu Vergleich
+                                 Soll-Stand ↔ Entwurf gegen das Ziel-Bracket, Warnung bei Wechsel, Alternativen
   passung <deck>                 Passt das Deck zu Commander und Ziel? Alternative Commander, Befund, Optionen A–D
   fazit --neu <entwurf>          Fazit-Entwurf für kartenbilder.py (Zahlen, Status, Abnahme vorbefüllt)
   gegentest <A> <B> | --prompt   Zwei Decks vergleichen (z. B. Projekt gegen Konkurrenz-Skill) bzw. Auftrag für
@@ -1088,23 +1090,32 @@ def cmd_alternativen(con, a):
     if not r:
         print("Keine Funktionsrolle erkannt – Alternativen über Synergie/Thema suchen (synergie, kandidaten).")
         return
+    M.table(alternativen_liste(con, c, farben, r)[:a.limit], ["Alternative", "Rollen", "MV", "ab €", "frei", "EDHREC-Rang"])
+
+
+def alternativen_liste(con, c, farben, r, im_bracket=False, ohne=frozenset()):
+    """Karten mit gleicher Rolle und höchstens 1 MV mehr, freie zuerst -> [(Name, Rollen, MV, €, frei, Rang)].
+    Normal: nur freie oder günstigere. im_bracket (Bracket-Wächter): ohne Game Changer, MLD und Extra Turns,
+    Preis egal – eine Karte, die im Bracket bleibt."""
+    sperr = {o for (o,) in con.execute("SELECT oracle_id FROM tags WHERE tag IN ('mass-land-denial','extra-turn')")} \
+        if im_bracket else set()
     kand = []
     for (oid,) in con.execute("SELECT oracle_id FROM cards WHERE legal_commander='legal' AND cmc <= ?",
                               ((c["cmc"] or 0) + 1,)):
-        if oid == c["oid"]:
+        if oid == c["oid"] or oid in ohne or oid in sperr:
             continue
         x = card(con, oid)
-        if not set(x["ci"]) <= farben or "Land" in front_type(x):
+        if not set(x["ci"]) <= farben or "Land" in front_type(x) or (im_bracket and x["gc"]):
             continue
         rr = rollen(con, x)
         if not set(r) & set(rr):
             continue
         b, d, f = besitz(con, oid)
-        if not f and c["eur"] is not None and (x["eur"] is None or x["eur"] >= c["eur"]):
+        if not im_bracket and not f and c["eur"] is not None and (x["eur"] is None or x["eur"] >= c["eur"]):
             continue
         kand.append((x["name"], rollen_txt(rr), x["cmc"], x["eur"], f, x["rank"]))
     kand.sort(key=lambda k: (-(k[4] > 0), k[5] or 999999))
-    M.table(kand[:a.limit], ["Alternative", "Rollen", "MV", "ab €", "frei", "EDHREC-Rang"])
+    return kand
 
 
 def oracle_block(con, c, rulings=False):
@@ -1766,6 +1777,143 @@ def beinahe_hinweis(d):
     for x in zwei[:8]:
         warn = " ⚠" if "frei in der Sammlung" in x["status"] else ""
         print(f"  {' + '.join(x['karten'])} – fehlt {', '.join(x['fehlt'])} ({', '.join(x['status'])}){warn}")
+
+
+# ----------------------------------------------------------------- Bracket-Wächter (V1.9, 08 Abschnitt 2c)
+BRACKET_NAME = {1: "Exhibition", 2: "Core", 3: "Upgraded", 4: "Optimized", 5: "cEDH"}
+
+
+def bracket_einstufung(bz):
+    """Ausgangsbracket aus den harten Grenzen (01a): das niedrigste Bracket, dessen Grenzen das Deck einhält.
+    -> {stufe, gruende, offen}. 1 gegen 2, 4 gegen 5 und „früh“ bei Combos bleiben Einschätzung (offen)."""
+    gc, xt, zwei, mld = bz["gc"], bz["xt"], bz["zwei"], bz["mld"]
+    gruende, offen = [], []
+    if mld:
+        gruende.append("MLD: " + ", ".join(mld))
+    if len(gc) > 3:
+        gruende.append(f"{len(gc)} Game Changer (Bracket 3 erlaubt 3)")
+    if len(xt) >= 2:
+        gruende.append(f"{len(xt)} Extra-Turn-Karten ({', '.join(xt)}) – Kette möglich")
+    if gruende:
+        stufe = 4
+        offen.append("4 oder 5 (cEDH) ist Einschätzung")
+    elif gc or zwei:
+        stufe = 3
+        if gc:
+            gruende.append(f"{len(gc)} Game Changer ({', '.join(gc)})")
+        if zwei:
+            gruende.append("2-Karten-Combo: " + "; ".join(zwei))
+            offen.append("Combo früh möglich? Dann Bracket 4 (Einschätzung)")
+    else:
+        stufe = 2
+        gruende.append("keine Game Changer, keine MLD, keine Extra-Turn-Ketten, kein 2-Karten-Combo")
+        offen.append("1 statt 2, wenn das Deck klar Thema vor Stärke spielt (Einschätzung)")
+    if len(xt) == 1:
+        offen.append(f"Extra-Turn-Karte {xt[0]} – keine Kette allein, beim Spielplan prüfen")
+    tag = bz.get("sb_tag")
+    if isinstance(tag, str) and tag.startswith("nicht erreichbar"):
+        offen.append("2-Karten-Combos ungeprüft (Commander Spellbook nicht erreichbar) – später nachholen")
+    if tag in ("R", "S"):
+        offen.append(f"Commander Spellbook stuft {SPELLBOOK[tag]} ein – spricht für ein höheres Bracket")
+    return {"stufe": stufe, "gruende": gruende, "offen": offen}
+
+
+def bracket_waechter(alt, neu, ziel):
+    """Vergleich Ausgangsstand ↔ Entwurf (je dict mit bz, ein = Einstufung) gegen das Ziel-Bracket.
+    -> (Warnungen, Hinweise, Auslöser) – Auslöser: [(Kartenname, Grund, 'hoch'|'runter')]."""
+    a, n = alt["ein"]["stufe"], neu["ein"]["stufe"]
+    ba, bn = alt["bz"], neu["bz"]
+    menge = lambda l: {frozenset(x.split(" + ")) for x in l}
+    ausloeser = [(k, "neuer Game Changer", "hoch") for k in bn["gc"] if k not in ba["gc"]]
+    ausloeser += [(k, "MLD", "hoch") for k in bn["mld"] if k not in ba["mld"]]
+    ausloeser += [(k, "Extra Turn", "hoch") for k in bn["xt"] if k not in ba["xt"]]
+    neue_combos = menge(bn["zwei"]) - menge(ba["zwei"])
+    ausloeser += [(" + ".join(sorted(c)), "neue 2-Karten-Combo", "hoch") for c in neue_combos]
+    ausloeser += [(k, "Game Changer geht raus", "runter") for k in ba["gc"] if k not in bn["gc"]]
+    warn, hinw = [], []
+    if ziel == a:
+        if n > a:
+            warn.append(f"⚠ Bracket-Wechsel: der Entwurf geht von Bracket {a} auf {n} – "
+                        + "; ".join(f"{k} ({g})" for k, g, r in ausloeser if r == "hoch"))
+        elif n < a:
+            warn.append(f"⚠ Bracket-Wechsel nach unten: harte Grenzen jetzt Bracket {n} statt {a} – "
+                        + ("; ".join(f"{k} ({g})" for k, g, r in ausloeser if r == "runter") or "Merkmale fehlen")
+                        + " · spürbar schwächer? (Stärke-Index vergleichen)")
+        elif neue_combos:
+            warn.append("⚠ neue 2-Karten-Combo im selben Bracket – früh möglich? Sonst Bracket-Wechsel: "
+                        + "; ".join(" + ".join(sorted(c)) for c in neue_combos))
+    else:
+        hinw.append(f"Ziel-Bracket {ziel} ≠ Ausgangsbracket {a}: gewollter Umbau – keine Wechsel-Warnung")
+        if n > ziel:
+            warn.append(f"⚠ Entwurf überschreitet das Ziel: Bracket {n} statt {ziel} – "
+                        + "; ".join(neu["ein"]["gruende"]))
+        elif n < ziel:
+            hinw.append(f"Harte Grenzen erlauben Bracket {n}; ob das Deck Bracket {ziel} trägt, ist Einschätzung "
+                        "(Stärke-Index, Spielplan)")
+    return warn, hinw, ausloeser
+
+
+def bracket_text(ein, bz):
+    return (f"Bracket {ein['stufe']} ({BRACKET_NAME[ein['stufe']]}) – " + "; ".join(ein["gruende"])
+            + (f" · Commander Spellbook: {SPELLBOOK.get(bz['sb_tag'], str(bz['sb_tag']).split(' (')[0])}"
+               if bz.get("sb_tag") else ""))
+
+
+def cmd_bracket(con, a):
+    pfad, did = deck_aus_ref(con, a.deck)
+    cmdr, main, unbekannt, _ = lies_deck(con, pfad)
+    if not cmdr:
+        sys.exit("Kein Commander erkannt")
+    alt = {"bz": bracket_zeile(con, cmdr, main, a.ziel or 3)}
+    alt["ein"] = bracket_einstufung(alt["bz"])
+    if a.ausgang and a.ausgang != alt["ein"]["stufe"]:      # Einschätzung (Deckregister) statt der harten Grenzen
+        alt["ein"]["offen"] = [o for o in alt["ein"]["offen"] if not o.startswith(("1 statt 2", "4 oder 5"))]
+        alt["ein"]["offen"].insert(0, f"harte Grenzen: Bracket {alt['ein']['stufe']} – Ausgangsbracket {a.ausgang} "
+                                      "nach Einschätzung (--ausgang)")
+        alt["ein"]["stufe"] = a.ausgang
+    ziel = a.ziel or alt["ein"]["stufe"]
+    print(f"Bracket-Wächter {os.path.basename(pfad)} | {cname_von(cmdr)} | Stand {time.strftime('%d.%m.%Y')} "
+          "(Grenzen laut 01a; Game Changer aus den Scryfall-Daten der Datenbank)")
+    print(f"\nAusgangsbracket: {bracket_text(alt['ein'], alt['bz'])}")
+    for o in alt["ein"]["offen"]:
+        print(f"  offen (Einschätzung): {o}")
+    if not a.neu:
+        print(f"\nZiel-Bracket: {ziel}" + (" = Ausgangsbracket → Bracket-Wächter aktiv" if ziel == alt["ein"]["stufe"]
+                                          else " – Umbau aufs Ziel") + " · Entwurf prüfen: --neu <entwurf>")
+        return
+    ncmdr, nmain, nunb, _ = lies_deck(con, a.neu)
+    if not ncmdr:
+        sys.exit("Kein Commander im Entwurf erkannt")
+    neu = {"bz": bracket_zeile(con, ncmdr, nmain, ziel)}
+    neu["ein"] = bracket_einstufung(neu["bz"])
+    print(f"Entwurf:         {bracket_text(neu['ein'], neu['bz'])}")
+    for o in neu["ein"]["offen"]:
+        print(f"  offen (Einschätzung): {o}")
+    warn, hinw, ausloeser = bracket_waechter(alt, neu, ziel)
+    print(f"\nZiel-Bracket {ziel}" + (" = Ausgangsbracket → Bracket-Wächter aktiv" if ziel == alt["ein"]["stufe"]
+                                     else ""))
+    for h in hinw:
+        print(f"  {h}")
+    for w in warn:
+        print(f"  {w}")
+    if warn:
+        im_deck = {c["oid"] for _, c in ncmdr + nmain}
+        ci = set("".join(c["ci"] for _, c in ncmdr))
+        for k, g, r in ausloeser:
+            if r != "hoch" or " + " in k:
+                continue
+            oid = M.resolve_name(con, k)
+            c = card(con, oid) if oid else None
+            if not c:
+                continue
+            rl = [x for x in rollen(con, c) if x not in ("tutor", "rekursion")] or rollen(con, c)
+            alt_l = alternativen_liste(con, c, ci, rl, im_bracket=True, ohne=im_deck)[:4] if rl else []
+            print(f"  im Bracket bleiben statt {k}: " + ("; ".join(
+                f"{n_} ({'frei' if f_ else (str(e_).replace('.', ',') + ' €' if e_ is not None else '?')})"
+                for n_, _, _, e_, f_, _ in alt_l) or "keine Karte gleicher Rolle gefunden – am Spielplan prüfen"))
+    print("\nErgebnis: " + (f"WARNUNG ({len(warn)}) – nicht stillschweigend umsetzen, Nutzer entscheidet "
+                            "(Alternative oder Ziel-Bracket ändern)" if warn else
+                            "kein Bracket-Wechsel" if ziel == alt["ein"]["stufe"] else "Entwurf hält das Ziel-Bracket ein"))
 
 
 # ----------------------------------------------------------------- Gegentest (Projekt gegen Konkurrenz-Skill)
@@ -2728,6 +2876,13 @@ def parser():
     p.add_argument("--min-preis", type=float, default=1.0, help="nur Karten ab diesem Preis (eigener Druck), Standard 1 €")
     p.add_argument("--bracket", type=int, default=3)
     p.add_argument("--out", help="Verkaufsliste (Standard out/verkauf.txt)")
+    p = sp.add_parser("bracket", help="Bracket-Wächter: Ausgangsbracket, Vergleich mit Entwurf (08, 2c)")
+    p.add_argument("deck", help="Deckname oder Soll-Stand (Ausgangsstand)")
+    p.add_argument("--neu", help="Entwurf, der gegen den Ausgangsstand geprüft wird")
+    p.add_argument("--ziel", type=int, choices=range(1, 6), help="Ziel-Bracket (Standard: Ausgangsbracket)")
+    p.add_argument("--ausgang", type=int, choices=range(1, 6),
+                   help="Ausgangsbracket nach Einschätzung (Deckregister), wenn es von den harten Grenzen abweicht")
+    p.add_argument("--idee", **idee)
     p = sp.add_parser("passung", help="Passt das Deck zu Commander und Ziel?")
     p.add_argument("deck", help="Deckname oder Soll-Stand-Datei")
     p.add_argument("--thema", help="Ziel-Thema: Archetyp (landfall, counters …) oder EDHREC-Slug; sonst aus der Strategie")
@@ -2782,7 +2937,7 @@ def parser():
 BEFEHLE = {"commander": cmd_commander, "commander-suche": cmd_commander_suche, "synergie": cmd_synergie,
            "kandidaten": cmd_kandidaten, "pruefen": cmd_pruefen, "abnahme": cmd_abnahme, "erklaerung": cmd_erklaerung,
            "alternativen": cmd_alternativen, "upgrade": cmd_upgrade, "oracle": cmd_oracle, "passung": cmd_passung,
-           "fazit": cmd_fazit, "verkauf": cmd_verkauf, "gegentest": cmd_gegentest, "gegenlauf": cmd_gegenlauf}
+           "fazit": cmd_fazit, "verkauf": cmd_verkauf, "bracket": cmd_bracket, "gegentest": cmd_gegentest, "gegenlauf": cmd_gegenlauf}
 
 
 def main(argv=None):

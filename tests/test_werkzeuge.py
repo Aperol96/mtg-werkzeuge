@@ -116,3 +116,57 @@ def test_upgrade_durchlauf_und_tragbarkeit(arbeit):
     out = ok(lauf(arbeit, "deckbau.py", "upgrade", "Testdeck", "--out", "out/upgrade2.csv"))
     if "Kernpakete:" in out and "✗" in out.split("Kernpakete:")[1].split("\n")[0]:
         assert "Sammlungs-Durchlauf" in out
+
+
+def test_bracket_einstufung_und_waechter():
+    """Bracket-Wächter (V1.9): Ausgangsbracket aus den harten Grenzen, Warnung nur bei ungewolltem Wechsel."""
+    import deckbau as D
+
+    def bz(gc=(), mld=(), xt=(), zwei=(), tag=None):
+        return {"gc": list(gc), "mld": list(mld), "xt": list(xt), "zwei": list(zwei), "sb_tag": tag}
+    assert D.bracket_einstufung(bz())["stufe"] == 2
+    assert D.bracket_einstufung(bz(gc=["Demonic Tutor"]))["stufe"] == 3
+    assert D.bracket_einstufung(bz(zwei=["A + B"]))["stufe"] == 3
+    assert D.bracket_einstufung(bz(gc=["a", "b", "c", "d"]))["stufe"] == 4
+    assert D.bracket_einstufung(bz(mld=["Armageddon"]))["stufe"] == 4
+    assert D.bracket_einstufung(bz(xt=["Time Warp"]))["stufe"] == 2          # eine Karte ist noch keine Kette
+    assert D.bracket_einstufung(bz(xt=["Time Warp", "Temporal Mastery"]))["stufe"] == 4
+
+    def stand(**k):
+        b = bz(**k)
+        return {"bz": b, "ein": D.bracket_einstufung(b)}
+    # Ziel = Ausgang: neuer Game Changer hebt 2 -> 3 -> Warnung mit Auslöser
+    warn, _, ausl = D.bracket_waechter(stand(), stand(gc=["Demonic Tutor"]), 2)
+    assert warn and "2 auf 3" in warn[0] and ("Demonic Tutor", "neuer Game Changer", "hoch") in ausl
+    # letzter Game Changer geht raus: 3 -> 2 -> Warnung nach unten
+    warn, _, _ = D.bracket_waechter(stand(gc=["Demonic Tutor"]), stand(), 3)
+    assert warn and "nach unten" in warn[0]
+    # neue 2-Karten-Combo im selben Bracket -> Warnung (früh?)
+    warn, _, _ = D.bracket_waechter(stand(gc=["X"]), stand(gc=["X"], zwei=["A + B"]), 3)
+    assert warn and "2-Karten-Combo" in warn[0]
+    # gleiche Combo in anderer Reihenfolge ist nicht neu
+    warn, _, _ = D.bracket_waechter(stand(zwei=["A + B"]), stand(zwei=["B + A"]), 3)
+    assert not warn
+    # Ziel ≠ Ausgang: Umbau aufs Ziel ist gewollt, nur Überschreiten warnt
+    warn, hinw, _ = D.bracket_waechter(stand(), stand(gc=["Demonic Tutor"]), 3)
+    assert not warn and "gewollter Umbau" in hinw[0]
+    warn, _, _ = D.bracket_waechter(stand(), stand(gc=["a", "b", "c", "d"]), 3)
+    assert warn and "überschreitet" in warn[0]
+
+
+def test_bracket_befehl(arbeit):
+    out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck"))
+    assert "Ausgangsbracket: Bracket" in out
+    zeilen = open(os.path.join(arbeit, "decks", "testdeck.txt"), encoding="utf-8").read().splitlines()
+    tausch = next(i for i, z in enumerate(zeilen) if z.startswith("1 ") and "Zurgo" not in z and "Plains" not in z
+                  and "Mountain" not in z and "Swamp" not in z)
+    zeilen[tausch] = "1 Demonic Tutor"
+    os.makedirs(os.path.join(arbeit, "out"), exist_ok=True)
+    open(os.path.join(arbeit, "out", "bracket_entwurf.txt"), "w", encoding="utf-8").write("\n".join(zeilen) + "\n")
+    out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck", "--neu", "out/bracket_entwurf.txt"))
+    if "Ausgangsbracket: Bracket 2" in out:
+        assert "⚠ Bracket-Wechsel" in out and "Demonic Tutor (neuer Game Changer)" in out
+        assert "im Bracket bleiben statt Demonic Tutor" in out and "WARNUNG" in out
+    out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck", "--neu", "out/bracket_entwurf.txt", "--ziel", "3",
+                  "--ausgang", "2"))
+    assert "gewollter Umbau" in out and "hält das Ziel-Bracket ein" in out

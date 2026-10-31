@@ -40,7 +40,7 @@ Die Sammlung wächst, die Decks sollen besser werden – aber welche Karten lieg
 Dieses Projekt bringt Claude bei, diese Fragen **wie ein erfahrener Mitspieler mit Taschenrechner** zu beantworten:
 
 - **Deine Karten zuerst.** Claude kennt deinen Bestand und plant zuerst freie Karten ein. Gekauft wird nur, wenn es sich lohnt – mit Preis, günstigerer Alternative und einer Klasse A–D.
-- **Bracket-treu.** Jedes Deck wird gegen die offiziellen Brackets geprüft (Standard: Bracket 3) – im Bracket so stark wie möglich, aber nicht heimlich darüber.
+- **Bracket-treu.** Jedes Deck wird gegen die offiziellen Brackets geprüft (Standard: Bracket 3) – im Bracket so stark wie möglich, aber nicht heimlich darüber. Das Ziel-Bracket wird bei jedem Bau und Upgrade gefragt (auf Wunsch mit Erklärung aller Brackets); bleibt das Ziel das heutige Bracket des Decks, warnt der **Bracket-Wächter** bei jeder Änderung, die es verschieben würde, und schlägt eine Karte vor, die im Bracket bleibt.
 - **Belegen statt raten.** Oracle-Texte, Preise und Statistiken kommen aus Scryfall, EDHREC und Commander Spellbook, nicht aus dem Gedächtnis. EDHREC ist dabei nur ein Anhaltspunkt: Eine Karte, die dort beim Commander fehlt, ist unbekannt – nicht schwach.
 - **Du entscheidest.** Claude fragt, schlägt vor und begründet. Erst wenn du freigibst und das Deck wirklich umgebaut hast, wird etwas gebucht.
 
@@ -332,7 +332,7 @@ Claude bekommt in jedem Gespräch einen kleinen Rechner mit Python. Dort laufen 
 
 ## Aufwand und Kosten
 
-Das Projekt ist an **sechs Arbeitstagen vom 25. bis 30.10.2026** entstanden – von der ersten Datenbank bis zu dieser README.
+Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden – von der ersten Datenbank bis zu dieser README.
 
 | Tag | Was entstanden ist | gemessen |
 |---|---|---|
@@ -342,6 +342,7 @@ Das Projekt ist an **sechs Arbeitstagen vom 25. bis 30.10.2026** entstanden – 
 | 28.10.2026 | Rollen und Anmeldung (Admin, User, Gast) | – |
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
+| 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
 
 - **Gemessen** wird erst seit dem 29.10.2026, und nur in Sitzungen mit lesbarem Protokoll (Werkzeug- und GitHub-Arbeit). Die Chats der ersten Tage in claude.ai lassen sich nicht auswerten – der tatsächliche Aufwand liegt also höher.
 - **API-Gegenwert** heißt: So viel hätte dieselbe Nutzung über die Anthropic-API zu Listenpreisen gekostet (umgerechnet mit rund 1,15 USD je Euro). Den größten Teil der Token macht das günstige Cache-Lesen aus, weil jede Antwort den ganzen Gesprächsstand neu liest.
@@ -462,6 +463,7 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | **Raus-Sperre** | Karten, die nicht raus dürfen: Ein Kernpaket fiele unter den Median, die Karte hat starken Commander-Bezug (≥ 0,5), oder ihre Rolle bzw. das Removal gegen ein Ziel fiele unter das Minimum |
 | **Tauschpaar** | „raus → rein“, je mit Begründung aus dem Oracle-Text und Preisunterschied |
 | **Bracket-Zeile** | das Ergebnis des Bracket-Checks in einer Zeile |
+| **Ausgangsbracket · Ziel-Bracket · Bracket-Wächter** | Bracket, in dem das Deck heute steht · Bracket, das es erreichen soll · Warnung, wenn eine Änderung das Deck ungewollt in ein anderes Bracket schiebt (`deckbau.py bracket`) |
 | **Abnahme · Stärke-Index** | acht Prüfpunkte, ab wann ein Deck fertig ist · Vergleichszahl zwischen zwei Ständen desselben Decks ([Details](#die-abnahme-wann-ein-deck-fertig-ist)) |
 | **Gegenlauf · Gegentest** | zwei fremde Agenten bauen mit · Vergleich der drei Listen ([Details](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)) |
 | **Fazit-PDF · Tauschübersicht · Deck-PDF** | Änderungen mit Begründung · Pickliste „was aus welcher Box“ · ganzes Deck mit Kurzdaten |
