@@ -1,6 +1,6 @@
 # Sitzungsstart – Werkzeuge, Daten, Datenbank
 
-**Stand:** 29.10.2026 (V1.6, ausgelagert aus `05`, Abschnitt 2) · Diese Datei liest Claude zu Beginn jeder Arbeitssitzung; alle Befehle im Detail: `05_Datenbank-und-Tools`.
+**Stand:** 07.11.2026 (Startbefehl auch ohne Sitzungsprotokoll: Pakete als Datei, Hinweis bei fehlendem Datenpaket; V1.6 ausgelagert aus `05`, Abschnitt 2) · Diese Datei liest Claude zu Beginn jeder Arbeitssitzung; alle Befehle im Detail: `05_Datenbank-und-Tools`.
 
 ## 1. Rolle zuerst (`13_Betriebsmodus-und-Weitergabe`)
 
@@ -18,11 +18,11 @@
 | `werkzeugkiste.txt` | `mtg_db.py`, `deckbau.py`, `bewertung.py`, `simulation.py`, `archetypen.py`, `kartenbilder.py`, `protokoll.py`, `paket.py`, `zugang.py`, `archetypen_daten.json`, `projektanweisungen.md` (Admin: + `weitergabe.py`) | ein Werkzeug geändert wurde (nur Admin) |
 | `datenpaket.txt` | `claude/sammlung/` (Basis `basis.csv`, `buchungen.csv`, `vormerkungen.csv`), `claude/decks/`, `claude/ideen/`, `deck_namen.json`, `04_Deckregister`, `09_Aenderungsprotokoll`, `10_Geplante-Kaeufe-und-Ideen` | nach **jeder** Schreibrunde (Admin, User) |
 
-Die Projektdateien bleiben maßgeblich; die Pakete sind ihre Transportkopie und werden in derselben Schreibrunde nachgezogen.
+Die Projektdateien bleiben maßgeblich; die Pakete sind ihre Transportkopie und werden in derselben Schreibrunde nachgezogen. Große Einzeldateien (z. B. `claude/sammlung/basis.csv`) nicht ganz lesen – sie stecken im Datenpaket.
 
 ## 3. Startbefehl (genau so ausführen)
 
-Holt die gelesenen Pakete aus dem Sitzungsprotokoll (ohne gelesene Werkzeugkiste die Werkzeuge von GitHub), prüft die Prüfsummen und packt nach `/home/claude/mtg/` aus: Werkzeuge in den Stamm, Bestand nach `data/`, Soll-Stände nach `decks/`, Ideen nach `ideen/`, 04/09/10 nach `projekt/`.
+Holt die gelesenen Pakete aus dem Sitzungsprotokoll bzw. aus den Argumenten (ohne gelesene Werkzeugkiste die Werkzeuge von GitHub), prüft die Prüfsummen und packt nach `/home/claude/mtg/` aus: Werkzeuge in den Stamm, Bestand nach `data/`, Soll-Stände nach `decks/`, Ideen nach `ideen/`, 04/09/10 nach `projekt/`.
 
 ```bash
 python3 - <<'EOF' && cd /home/claude/mtg && python3 paket.py auspacken *.paket.txt
@@ -31,8 +31,8 @@ ziel, pakete, quelle = "/home/claude/mtg", {}, []
 def merke(s):                               # nur vollständige Pakete/Quellen – keine Bildschirmausgaben wie von auspacken
     if s.startswith("MTG-PAKET") and "=====BEGIN=====" in s and "=====END=====" in s: pakete[s.split()[1]] = s
     elif s.startswith("MTG-QUELLE") and " · sha256 " in s.split("\n")[0]: quelle[:] = [s]
-for f in sys.argv[1:]:                      # Fallback: project_read hat Paket oder Quelle als Datei abgelegt
-    merke(open(f, encoding="utf-8").read())
+for a in sys.argv[1:]:                      # Quelle als Text oder Datei mit Paket/Quelle (z. B. von project_read abgelegt)
+    merke(a if a.startswith("MTG-") else open(a, encoding="utf-8").read())
 for f in sorted(glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), recursive=True), key=os.path.getmtime):
     for zeile in open(f, encoding="utf-8", errors="replace"):
         if "MTG-PAKET" not in zeile and "MTG-QUELLE" not in zeile:
@@ -64,6 +64,8 @@ if "werkzeuge" not in pakete and quelle:   # Werkzeuge von GitHub: fester Stand 
         print(f"GitHub nicht nutzbar ({e})")
 if "werkzeuge" not in pakete:
     sys.exit("RÜCKFALL: werkzeugkiste.txt mit project_read lesen, dann den Startbefehl erneut ausführen.")
+if "daten" not in pakete:
+    print("HINWEIS: Datenpaket nicht gefunden – 05a, Abschnitt 3 „Ohne Sitzungsprotokoll“ (Gast: so richtig).")
 os.makedirs(ziel, exist_ok=True)
 for art, s in pakete.items():
     open(f"{ziel}/{art}.paket.txt", "w", encoding="utf-8").write(s)
@@ -74,9 +76,13 @@ print("Pakete:", ", ".join(pakete))
 EOF
 ```
 
-- **Ohne Sitzungsprotokoll** (anderer Arbeitsbereich) oder wenn `project_read` den Inhalt als lokale Datei ablegt (großer Text): die Pfade hinten an `python3 -` anhängen (`python3 - /pfad/zur/datei … <<'EOF'`) – der Befehl liest dann diese Dateien. Erst wenn auch das nicht geht: Dateien einzeln lesen (nur die nötigen) und im Protokoll vermerken.
+- **Ohne Sitzungsprotokoll** (z. B. Cloud-Arbeitsbereich ohne `~/.claude/projects/`, geprüft 06.11.2026): Die Pakete müssen als Datei vorliegen, Pfade hinten an `python3 -` anhängen (`python3 - /pfad/zur/datei … <<'EOF'`):
+  1. Hat `project_read` den Inhalt als lokale Datei abgelegt (großer Text): diesen Pfad nehmen.
+  2. Sonst den gelesenen Paket-Text **unverändert** mit Write nach `/home/claude/mtg-in/<paket>.txt` schreiben (Kopfzeile bis `=====END=====`). Die Prüfsumme beim Auspacken deckt Abschreibfehler auf; bei Fehler erneut schreiben. Das kostet Ausgabe in Größe des Pakets – nur, wenn die Aufgabe die Werkzeuge bzw. die Datenbank braucht (Deck, Bestand, Kauf, Scan). Für reine Fragen zu offenen Punkten genügen `10_Geplante-Kaeufe-und-Ideen` und `project_search`.
+  3. Nie Einzeldateien wie `basis.csv` ganz lesen, um ein Paket zu ersetzen (doppelte Kosten).
 - **„RÜCKFALL“** (GitHub nicht erreichbar oder Prüfsumme falsch): Werkzeugkiste lesen, Befehl erneut ausführen.
 - **Falsche Prüfsumme beim Auspacken:** die Leseausgabe war abgeschnitten → Paket erneut lesen.
+- **Ausführen blockiert** (Rechteprüfung der Umgebung lehnt das Starten der Werkzeuge ab, 06.11.2026): nicht umgehen. Dem Nutzer in einem Satz sagen, dass die Werkzeuge (Prüfsumme stimmt) ausgeführt werden müssen, und um Freigabe bitten; bis dahin nur Arbeit ohne Werkzeuge (Fragen, Abläufe, Lesen der Projektdateien).
 
 ## 4. Datenbank bauen (im Hintergrund)
 
@@ -92,6 +98,7 @@ EOF
 - `python3 protokoll.py zeigen --deck <Deck>` – die Einträge zu diesem Deck (neueste zuerst); `--typ`, `--suche`, `--letzte N`
 - `python3 protokoll.py register --deck <Deck>` – Zeile im Deckregister · Soll-Stand: `decks/<deckname>.txt`
 - Schnellabfrage „Habe ich X frei?“: `python3 mtg_db.py frei "<Karte>" …` (Besitz, Decks, vorgemerkt, Verkauf geplant, frei)
+- Ohne Werkzeuge (Datenpaket fehlt oder Ausführen blockiert): `project_read` auf `claude/10_Geplante-Kaeufe-und-Ideen.md` (klein) statt `protokoll.py offen`.
 
 ## 6. Zurückschreiben (Ende jeder Schreibrunde; Admin, User)
 
