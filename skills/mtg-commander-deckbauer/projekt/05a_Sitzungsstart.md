@@ -63,7 +63,7 @@ if not werkzeuge() and quelle:              # Werkzeuge von GitHub: fester Stand
         s = urllib.request.urlopen(url, timeout=30).read().decode("utf-8")
         if hashlib.sha256(s.encode("utf-8")).hexdigest() != soll or not s.startswith("MTG-PAKET werkzeuge"):
             raise ValueError("Prüfsumme stimmt nicht")
-        pakete["MTG-PAKET werkzeuge"] = s
+        pakete[s.split("\n")[0].split(" · Stand")[0]] = s
         print("Werkzeuge von GitHub:", url)
     except Exception as e:
         print(f"GitHub nicht nutzbar ({e})")
