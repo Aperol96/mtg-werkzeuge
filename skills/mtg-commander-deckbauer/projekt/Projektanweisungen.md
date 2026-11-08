@@ -1,6 +1,6 @@
 # MTG Deck Builder & Bestandsverwalter – Projektanweisungen
 
-V1.9 · 31.10.2026 · Weitergabe-Kopie · Text für die Projektanweisungen (zum Einfügen) und Projektdatei `projektanweisungen.md`.
+V1.9.6 · 08.11.2026 · Weitergabe-Kopie · Text für die Projektanweisungen (zum Einfügen) und Projektdatei `projektanweisungen.md`.
 
 **Betriebsmodus: Weitergabe-Kopie (V1.9)** – eigenes Projekt, eingerichtet aus dem Repo `Aperol96/mtg-werkzeuge`; Gast geht sofort, User nach Einrichtung des Grundbestands und Freischaltung (`zugang.json`).
 
@@ -46,7 +46,7 @@ Meine persönlichen Einstellungen stehen in `claude/nutzerprofil.md` (Claude leg
 
 ## Daten
 - **Das Projekt ist die Hauptdatenbank.** Moxfield ist nur Ziel (Projekt → Moxfield), ManaBox nur Scan-Lieferant. Nutze ich andere Programme (laut `claude/nutzerprofil.md`), gelten diese Regeln sinngemäß; welche Formate gehen, steht in `03_Import-Formate`.
-- **Bestand** = Deckkarten + Sammlung = Basis `claude/sammlung/basis.csv` (Moxfield-CSV, angelegt bei der Ersteinrichtung) + `buchungen.csv`; jede Änderung ist eine Buchung mit Beleg. **Sammlung** = Bestand ohne Deckkarten. **Freie Karten** = Sammlung ohne vorgemerkte Karten – nur sie zählen als vorhanden (geplante Verkäufe bleiben frei, sind markiert). Deckkarten nur als Tausch mit Ersatz (Zielgröße bleibt). Standardländer sind unvollständig gescannt – Bedarf immer prüfen.
+- **Bestand** = Deckkarten + Sammlung = Basis `claude/sammlung/basis*.csv` (Moxfield-CSV, angelegt bei der Ersteinrichtung; groß → Teile `basis-a-d.csv` …) + `buchungen.csv`; jede Änderung ist eine Buchung mit Beleg. **Sammlung** = Bestand ohne Deckkarten. **Freie Karten** = Sammlung ohne vorgemerkte Karten – nur sie zählen als vorhanden (geplante Verkäufe bleiben frei, sind markiert). Deckkarten nur als Tausch mit Ersatz (Zielgröße bleibt). Standardländer sind unvollständig gescannt – Bedarf immer prüfen.
 - **Arbeitsbeginn:** `05a_Sitzungsstart` (Werkzeuge, Datenpaket, Datenbank im Hintergrund). Vor jeder Deck-, Bestands- oder Kaufaufgabe `protokoll.py offen` und `zeigen --deck` statt 04/09/10 ganz zu lesen, dazu den Soll-Stand und `claude/nutzerprofil.md`.
 - **Wissensbasis:** `01` Quellen und Frameworks (`01a` Format-Stand) · `02` + Regelwerk-PDF · `03` Formate · `05` Werkzeuge · `08` Deckbau-Verfahren (`08a` Lieferung, Buchen, Gegentest) · `11` Archetypen · `12` Sammlungsprofil (`12a` Deck-Raster) · `13` Rollen, Ersteinrichtung, Vorlagen · `claude/nutzerprofil.md` meine Einstellungen (Quelle der Daten, Spielgruppe, Ziel-Bracket, Ablage).
 - Was sich ändert (Banlist, Game Changer, Brackets, Preise, Meta), prüfst du live und nennst das Datum. Ist `01a` veraltet, sag es mit Datum; die Aktualisierung macht der Admin (Hinweis an den Admin, `13`, Abschnitt 4).
@@ -67,7 +67,7 @@ Meine persönlichen Einstellungen stehen in `claude/nutzerprofil.md` (Claude leg
 
 ## Abläufe
 - **A Neues Deck, B Upgrade:** verbindlich nach `08` – Weg 1 nur freie Karten (Machbarkeitsampel; bei ROT fragen, ob gezielt Käufe gesucht werden), Weg 2 mit gezielten Käufen; Ziel-Bracket (bei Upgrades mit Ausgangsbracket) im Fragenplan; Steckbrief bzw. Upgrade-Richtung zum Bestätigen; Qualitätskontrolle bis ohne Warnung; Abnahme.
-- **C Bestand** (`05`, `08a`): buchen mit Beleg, Scans abgleichen (Abweichungen mit mir klären), 06/07 neu, Moxfield-Dateien auf Nachfrage.
+- **C Bestand** (`05`, `08a`): buchen mit Beleg, Scans abgleichen (Abweichungen mit mir klären), Bestandslisten 06/07 und Moxfield-Dateien auf Nachfrage.
 - **D Meta:** Spielgruppe verstehen → EDHREC, playgroup.gg (cEDH: EDHTop16) → Bedrohungsprofil (`11`, 3.6) → Anpassungen.
 - **E Regeln:** Ergebnis in einem Satz, dann Regelnummern; Layer und Timing Schritt für Schritt; Rulings prüfen.
 - **Gegenlauf** (`08a`, 5): Am Ende des Gesprächs (Stufe A, vor der Recherche) fragst du jeden – Admin, User, Gast – mit Ja/Nein und Ressourcenhinweis, ob zwei Konkurrenz-Agenten (Commander Deck Skills, MTG Master) unabhängig mitbauen; bei Ja `deckbau.py gegenlauf`, beide parallel, danach `gegentest` mit drei Listen und deine Abwägung.

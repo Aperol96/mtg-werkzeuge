@@ -85,7 +85,8 @@ def test_datenpaket_rundlauf(tmp_path):
     ziel.mkdir()
     r = lauf(ziel, "paket.py", "packen", "--art", "daten", "--quelle", str(q), "--out", str(tmp_path / "daten.txt"))
     assert r.returncode == 0, r.stderr
-    r = lauf(ziel, "paket.py", "auspacken", str(tmp_path / "daten.txt"), "--ziel", str(ziel))
+    r = lauf(ziel, "paket.py", "auspacken", str(tmp_path / "daten.txt"), str(tmp_path / "daten-basis.txt"),
+             "--ziel", str(ziel))                    # seit V1.9.6: Basis im eigenen Teil
     assert r.returncode == 0, r.stderr
     assert (ziel / "projekt/09_Aenderungsprotokoll.md").exists()
     assert (ziel / "data/basis.csv").exists() and (ziel / "decks/testdeck.txt").exists()
@@ -148,3 +149,55 @@ def test_aufwand_messen_und_summe(tmp_path):
             "\n**Summe:** alt\n")
     s = P.summen_setzen(text)
     assert "2 Arbeitstage seit 25.10.2026 · gemessen 1,5 h · 200 Mio. Token · ≈ 80 €" in s
+
+
+def test_datenpaket_teile(tmp_path):
+    """V1.9.6: Basis in Teilen, Datenpaket in Teilen „haupt“/„basis“ ≤ GRENZE; unveränderte Teile nicht neu."""
+    import paket
+    q = projekt(tmp_path)
+    r = lauf(tmp_path, "mtg_db.py", "basis-teilen", "--out", str(q / "claude/sammlung"))
+    assert r.returncode == 0, r.stderr
+    teile = sorted(p.name for p in (q / "claude/sammlung").glob("basis*.csv"))
+    assert "basis.csv" not in teile and teile and all(t.startswith("basis-") for t in teile)
+    (q / "claude/ideen/gross.txt").write_text(os.urandom(45000).hex(), encoding="utf-8")   # erzwingt Folgeteile
+    pk = tmp_path / "pk"
+    pk.mkdir()
+    r = lauf(tmp_path, "paket.py", "packen", "--art", "daten", "--quelle", str(q), "--out", str(pk / "datenpaket.txt"))
+    assert r.returncode == 0, r.stderr
+    dateien = sorted(p.name for p in pk.iterdir())
+    assert {"datenpaket.txt", "datenpaket-2.txt", "datenpaket-basis.txt"} <= set(dateien), dateien
+    assert all(os.path.getsize(pk / d) <= paket.GRENZE for d in dateien)
+    ziel = tmp_path / "arbeit"
+    ziel.mkdir()
+    r = lauf(ziel, "paket.py", "auspacken", *[str(pk / d) for d in dateien], "--ziel", str(ziel))
+    assert r.returncode == 0, r.stderr
+    assert (ziel / "ideen/gross.txt").exists() and (ziel / f"data/{teile[0]}").exists()
+    assert f"data/{teile[0]}" in r.stdout and "data/buchungen.csv" in r.stdout          # Bau-Befehl mit allen Teilen
+    # Teil fehlt -> klare Meldung
+    r = lauf(ziel, "paket.py", "auspacken", str(pk / "datenpaket.txt"), str(pk / "datenpaket-basis.txt"),
+             "--ziel", str(tmp_path / "x"))
+    assert r.returncode != 0 and "unvollständig" in r.stderr
+    # nur 09 geändert: Teil basis unverändert, haupt neu; großer Entwurf weg -> Folgeteil überzählig
+    (ziel / "ideen/gross.txt").unlink()
+    assert lauf(ziel, "protokoll.py", "neu", "--typ", "Entscheidung", "--thema", "Testdeck",
+                "--zeile", "Grund: Test").returncode == 0
+    r = lauf(ziel, "paket.py", "packen", "--art", "daten", "--arbeit", str(ziel), "--out", str(pk / "datenpaket.txt"))
+    assert r.returncode == 0, r.stderr
+    assert "unverändert  claude/pakete/datenpaket-basis.txt" in r.stdout
+    assert "neu          claude/pakete/datenpaket.txt" in r.stdout and "überzählig" in r.stdout
+    assert not (pk / "datenpaket-2.txt").exists()
+    # neue Basis-Datei im Arbeitsordner wird als neu gemeldet
+    (ziel / "data/basis-zz.csv").write_text((ziel / f"data/{teile[0]}").read_text(encoding="utf-8"), encoding="utf-8")
+    r = lauf(ziel, "paket.py", "geaendert", "--ziel", str(ziel))
+    assert "claude/sammlung/basis-zz.csv" in r.stdout
+
+
+def test_moxfield_export_basis_teile(arbeit):
+    """moxfield-export liest alle Basis-Teile (Standard data/basis*.csv) – Summe wie aus einer Datei."""
+    import csv as _csv
+    r = lauf(arbeit, "mtg_db.py", "basis-teilen", os.path.join(DATEN, "sammlung.csv"), "--out", str(arbeit / "bt"))
+    assert r.returncode == 0, r.stderr
+    from mtg_db import netto_bestand
+    ein, _ = netto_bestand([os.path.join(DATEN, "sammlung.csv")], str(arbeit / "fehlt.csv"))
+    aus, _ = netto_bestand(sorted(str(p) for p in (arbeit / "bt").glob("basis*.csv")), str(arbeit / "fehlt.csv"))
+    assert sum(int(r["Count"]) for r in ein) == sum(int(r["Count"]) for r in aus) > 0

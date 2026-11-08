@@ -383,7 +383,7 @@ def freie_karten(karten, namen, frei_csv):
         con = sqlite3.connect("mtg.sqlite")
         return dict(con.execute("SELECT oracle_id, frei FROM v_karten WHERE frei > 0")), "mtg.sqlite (v_karten)"
     if not frei_csv or not os.path.exists(frei_csv):
-        sys.exit("Keine Datenbank und keine Liste der freien Karten (--frei claude/07_Sammlung-Frei.csv)")
+        sys.exit("Keine Datenbank und keine Liste der freien Karten (--frei 07.csv aus mtg_db.py bestand-export)")
     out, fehlt = {}, []
     with open(frei_csv, encoding="utf-8-sig", newline="") as fh:
         kopf = fh.readline()

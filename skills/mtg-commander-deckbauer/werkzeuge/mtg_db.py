@@ -38,8 +38,11 @@ Befehle
   scan <manabox.csv> [--buchen] [--verdacht-buchen] [--moxfield zugang.csv] [--beleg T]
                                 ManaBox-Scan prüfen (Datei-Hash, schon gebuchte Scan-Zeilen, Druck schon im
                                 Bestand, Sprache) und als Zugang ins Journal buchen
-  moxfield-export <out.csv> [--basis B] [--journal J]
-                                Gesamtbestand (Basis + Journal) als Moxfield-Sammlungs-CSV
+  moxfield-export <out.csv> [--basis B …] [--journal J]
+                                Gesamtbestand (Basis + Journal) als Moxfield-Sammlungs-CSV (Standard: data/basis-*.csv)
+  basis-teilen [<csv…>] [--out data] [--ohne-zeit]
+                                Basis in die Teile basis-a-d/e-l/m-r/s-z.csv schreiben (je ≤ 40 KB, damit jeder Teil
+                                ohne Abschreiben ins Projekt zurückgeht); gleiche Zeilen zusammengefasst
   manabox-zu-moxfield <manabox.csv> [--sammlung out.csv] [--deck out.txt] [--sets] [--tausch 0] [--tags T]
                                 ManaBox-Scan -> Moxfield-Sammlungsimport (CSV) und Moxfield-Deckimport (TXT)
   vergleich <alt> <neu> [--titel T] [--art deck|sammlung] [--csv diff.csv]
@@ -1363,13 +1366,78 @@ def cmd_scan(con, args):
             for m in buchen:
                 w.writerow([m[c] for c in MOX_COLS])
         print(f"Moxfield-Import (nur Zugänge) -> {args.moxfield}")
-    print("Danach: Datenbank neu bauen, 06/07 neu erzeugen, Protokoll „Import“.")
+    print("Danach: Datenbank neu bauen, Protokoll „Import“ (Bestandslisten 06/07 nur auf Nachfrage: bestand-export).")
+
+
+BASIS_TEILE = [("a", "d"), ("e", "l"), ("m", "r"), ("s", "z")]   # Basis in Teilen je ≈ 20–30 KB (V1.9.6)
+
+
+def basis_dateien(ordner="data"):
+    """Basis im Ordner: basis-*.csv (seit V1.9.6), sonst basis.csv bzw. moxfield_haves_*.csv (ältere Stände)."""
+    import glob
+    return (sorted(glob.glob(os.path.join(ordner, "basis*.csv")))
+            or sorted(glob.glob(os.path.join(ordner, "moxfield_haves_*.csv"))))
+
+
+def basis_teil(name):
+    """Dateiname des Basis-Teils für einen Kartennamen (Anfangsbuchstabe; Ziffern und Zeichen in den ersten)."""
+    c = unicodedata.normalize("NFKD", (name or "")[:1]).encode("ascii", "ignore").decode().lower()
+    von, bis = next(((v, b) for v, b in BASIS_TEILE if v <= c <= b), BASIS_TEILE[0])
+    return f"basis-{von}-{bis}.csv"
+
+
+def cmd_basis_teilen(con, args):
+    """Basis (eine oder mehrere Moxfield-CSV) in die Teile basis-a-d.csv … basis-s-z.csv schreiben; gleiche Zeilen
+    (alle Spalten außer Count/Tradelist Count) zusammenfassen. Alte Basis-Dateien im Zielordner werden entfernt."""
+    quellen = args.dateien or basis_dateien(args.out)
+    if not quellen:
+        sys.exit(f"keine Basis gefunden (in {args.out})")
+    zeilen = {}
+    for q in quellen:
+        with open(q, encoding="utf-8-sig", newline="") as fh:
+            for r in csv.DictReader(fh):
+                r = {c: r.get(c) or "" for c in MOX_COLS}
+                if args.ohne_zeit:
+                    r["Last Modified"] = ""
+                k = tuple(r[c] for c in MOX_COLS if c not in ("Count", "Tradelist Count"))
+                if k in zeilen:
+                    zeilen[k]["Count"] = str(int(zeilen[k]["Count"]) + int(float(r["Count"] or 0)))
+                    zeilen[k]["Tradelist Count"] = str(int(float(zeilen[k]["Tradelist Count"] or 0))
+                                                       + int(float(r["Tradelist Count"] or 0)))
+                else:
+                    r["Count"] = str(int(float(r["Count"] or 0)))
+                    zeilen[k] = r
+    teile = defaultdict(list)
+    for r in sorted(zeilen.values(), key=lambda r: (fold(r["Name"]), r["Edition"], r["Collector Number"],
+                                                     r["Language"], r["Foil"], r["Tags"])):
+        if int(r["Count"]) > 0:
+            teile[basis_teil(r["Name"])].append(r)
+    os.makedirs(args.out, exist_ok=True)
+    neu = []
+    for name in sorted(teile):
+        pfad = os.path.join(args.out, name)
+        with open(pfad, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=MOX_COLS, lineterminator="\n")
+            w.writeheader()
+            w.writerows(teile[name])
+        neu.append(pfad)
+        groesse = os.path.getsize(pfad)
+        print(f"  {name}: {len(teile[name])} Zeilen, {sum(int(r['Count']) for r in teile[name])} Karten, "
+              f"{groesse // 1024} KB" + ("  !! größer als 40 KB – BASIS_TEILE feiner teilen" if groesse > 40000 else ""))
+    for alt in basis_dateien(args.out):
+        if alt not in neu:
+            os.remove(alt)
+            print(f"  entfernt: {alt} (im Projekt löschen)")
+    ein = sum(int(r["Count"]) for r in zeilen.values())
+    print(f"Basis: {len(zeilen)} Zeilen, {ein} Karten aus {len(quellen)} Datei(en) -> {len(neu)} Teile in {args.out}")
 
 
 def netto_bestand(basis, journal_pfad):
-    """Basis + Journal -> Zeilen im Moxfield-Format (Abgänge von passenden Basiszeilen abgezogen)."""
-    with open(basis, encoding="utf-8-sig", newline="") as fh:
-        rows = [dict(r) for r in csv.DictReader(fh)]
+    """Basis (Liste von Dateien) + Journal -> Zeilen im Moxfield-Format (Abgänge von passenden Basiszeilen abgezogen)."""
+    rows = []
+    for b in [basis] if isinstance(basis, str) else basis:
+        with open(b, encoding="utf-8-sig", newline="") as fh:
+            rows += [dict(r) for r in csv.DictReader(fh)]
     offen = []
     schluessel = ("Name", "Edition", "Collector Number", "Foil", "Language")
     for j in lies_journal(journal_pfad):
@@ -1401,7 +1469,7 @@ def netto_bestand(basis, journal_pfad):
 
 def cmd_moxfield_export(con, args):
     """Gesamtbestand (Basis + Journal) als Moxfield-Sammlungs-CSV zum Ersetzen der Moxfield-Sammlung."""
-    out, offen = netto_bestand(args.basis, args.journal)
+    out, offen = netto_bestand(args.basis or basis_dateien(), args.journal)
     if offen:
         for b, n, q in offen:
             print(f"  !! Abgang ohne passende Zeile: {b} {n} ({q})")
@@ -1852,11 +1920,17 @@ def main():
     sc.add_argument("--moxfield", help="Ausgabe: Moxfield-CSV nur mit den gebuchten Zugängen")
     mx = sp.add_parser("moxfield-export", help="Gesamtbestand als Moxfield-Sammlungs-CSV")
     mx.add_argument("datei")
-    mx.add_argument("--basis", default="data/basis.csv")
+    mx.add_argument("--basis", nargs="+", help="Basis-Dateien (Standard: data/basis-*.csv)")
+    bt = sp.add_parser("basis-teilen", help="Basis in die Teile basis-a-d.csv … basis-s-z.csv schreiben")
+    bt.add_argument("dateien", nargs="*", help="Quell-CSV (Standard: alle Basis-Dateien im Zielordner)")
+    bt.add_argument("--out", default="data")
+    bt.add_argument("--ohne-zeit", action="store_true", help="Spalte Last Modified leeren (mehr Zeilen zusammenfassen)")
     mx.add_argument("--journal", default="data/buchungen.csv")
     args = ap.parse_args()
     if args.cmd == "build":
         return build(args)
+    if args.cmd == "basis-teilen":
+        return cmd_basis_teilen(None, args)
     con = sqlite3.connect(args.db)
     {"sammlung": cmd_sammlung, "decks": cmd_decks, "namen": cmd_namen, "besitz": cmd_besitz,
      "mehrfach": cmd_mehrfach, "bracket": cmd_bracket, "export": cmd_export, "suche": cmd_suche, "frei": cmd_frei,

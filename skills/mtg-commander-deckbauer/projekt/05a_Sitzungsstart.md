@@ -1,6 +1,6 @@
 # Sitzungsstart – Werkzeuge, Daten, Datenbank
 
-**Stand:** 07.11.2026 (Startbefehl auch ohne Sitzungsprotokoll: Pakete als Datei, Hinweis bei fehlendem Datenpaket; V1.6 ausgelagert aus `05`, Abschnitt 2) · Diese Datei liest Claude zu Beginn jeder Arbeitssitzung; alle Befehle im Detail: `05_Datenbank-und-Tools`.
+**Stand:** 08.11.2026 (V1.9.6: Datenpaket und Basis in Teilen ≤ 30 KB, Listen 06/07 nur auf Nachfrage · 07.11.2026: Startbefehl auch ohne Sitzungsprotokoll · V1.6 ausgelagert aus `05`, Abschnitt 2) · Diese Datei liest Claude zu Beginn jeder Arbeitssitzung; alle Befehle im Detail: `05_Datenbank-und-Tools`.
 
 ## 1. Rolle zuerst (`13_Betriebsmodus-und-Weitergabe`)
 
@@ -11,14 +11,17 @@
 
 ## 2. Lesen – nicht abschreiben
 
-`project_read` auf `werkzeugkiste.txt` (in dieser Kopie gibt es keine Werkzeuge-Quelle) und – Admin/User – `claude/pakete/datenpaket.txt` (Basis, Buchungen, Vormerkungen, Soll-Stände, Ideen, `deck_namen.json`, 04/09/10). Arbeit am Programm (nur Admin) oder Rückfall: `werkzeugkiste.txt` statt der Quelle.
+`project_read` auf `werkzeugkiste.txt` (in dieser Kopie gibt es keine Werkzeuge-Quelle) und – Admin/User – **alle Teile des Datenpakets**: `claude/pakete/datenpaket.txt` (Teil „haupt“), `claude/pakete/datenpaket-basis.txt` (Teil „basis“) und Folgeteile `…-2.txt`, falls `project_info` sie listet. Arbeit am Programm (nur Admin) oder Rückfall: `werkzeugkiste.txt` statt der Quelle.
 
 | Paket | Inhalt | neu packen, wenn … |
 |---|---|---|
 | `werkzeugkiste.txt` | `mtg_db.py`, `deckbau.py`, `bewertung.py`, `simulation.py`, `archetypen.py`, `kartenbilder.py`, `protokoll.py`, `paket.py`, `zugang.py`, `archetypen_daten.json`, `projektanweisungen.md` (Admin: + `weitergabe.py`) | ein Werkzeug geändert wurde (nur Admin) |
-| `datenpaket.txt` | `claude/sammlung/` (Basis `basis.csv`, `buchungen.csv`, `vormerkungen.csv`), `claude/decks/`, `claude/ideen/`, `deck_namen.json`, `04_Deckregister`, `09_Aenderungsprotokoll`, `10_Geplante-Kaeufe-und-Ideen` | nach **jeder** Schreibrunde (Admin, User) |
+| `datenpaket.txt` (+ Folgeteile) | Teil „haupt“: `buchungen.csv`, `vormerkungen.csv`, `claude/decks/`, `claude/ideen/`, `deck_namen.json`, `04_Deckregister`, `09_Aenderungsprotokoll`, `10_Geplante-Kaeufe-und-Ideen` | nach **jeder** Schreibrunde (Admin, User) |
+| `datenpaket-basis.txt` (+ Folgeteile) | Teil „basis“: die Basis `claude/sammlung/basis*.csv` | nur, wenn sich die Basis ändert – `packen` meldet sonst „unverändert“ |
 
-Die Projektdateien bleiben maßgeblich; die Pakete sind ihre Transportkopie und werden in derselben Schreibrunde nachgezogen. Große Einzeldateien (z. B. `claude/sammlung/basis.csv`) nicht ganz lesen – sie stecken im Datenpaket.
+Die Projektdateien bleiben maßgeblich; die Pakete sind ihre Transportkopie und werden in derselben Schreibrunde nachgezogen. Große Einzeldateien (die Basis) nicht ganz lesen – sie stecken im Datenpaket.
+
+**Seit V1.9.6:** `project_write` mit `local_path` nimmt nur Dateien, die Claude in einem Lesevorgang ganz gelesen hat. Deshalb ist jedes Paket höchstens 30 KB groß (Folgeteile), und eine große Basis wird mit `mtg_db.py basis-teilen` in die Teile `basis-a-d.csv` … `basis-s-z.csv` aufgeteilt (eine einzelne `basis.csv` geht weiter). Die Bestandslisten 06/07 sind abgeleitet und werden nicht mehr im Projekt geführt – auf Nachfrage `mtg_db.py bestand-export` und als Datei senden.
 
 ## 3. Startbefehl (genau so ausführen)
 
@@ -26,10 +29,11 @@ Holt die gelesenen Pakete aus dem Sitzungsprotokoll bzw. aus den Argumenten (ohn
 
 ```bash
 python3 - <<'EOF' && cd /home/claude/mtg && python3 paket.py auspacken *.paket.txt
-import base64, glob, hashlib, io, json, os, sys, tarfile, urllib.request
+import base64, glob, hashlib, io, json, os, re, sys, tarfile, urllib.request
 ziel, pakete, quelle = "/home/claude/mtg", {}, []
 def merke(s):                               # nur vollständige Pakete/Quellen – keine Bildschirmausgaben wie von auspacken
-    if s.startswith("MTG-PAKET") and "=====BEGIN=====" in s and "=====END=====" in s: pakete[s.split()[1]] = s
+    if s.startswith("MTG-PAKET") and "=====BEGIN=====" in s and "=====END=====" in s:
+        pakete[s.split("\n")[0].split(" · Stand")[0]] = s     # Schlüssel: Art + Teil („daten v1 · Teil basis 1/1“)
     elif s.startswith("MTG-QUELLE") and " · sha256 " in s.split("\n")[0]: quelle[:] = [s]
 for a in sys.argv[1:]:                      # Quelle als Text oder Datei mit Paket/Quelle (z. B. von project_read abgelegt)
     merke(a if a.startswith("MTG-") else open(a, encoding="utf-8").read())
@@ -50,7 +54,8 @@ for f in sorted(glob.glob(os.path.expanduser("~/.claude/projects/**/*.jsonl"), r
                     pass
                 if isinstance(s, str):
                     merke(s)
-if "werkzeuge" not in pakete and quelle:   # Werkzeuge von GitHub: fester Stand (Commit) + Prüfsumme
+werkzeuge = lambda: [k for k in pakete if k.startswith("MTG-PAKET werkzeuge ")]
+if not werkzeuge() and quelle:              # Werkzeuge von GitHub: fester Stand (Commit) + Prüfsumme
     kopf = quelle[0].split("\n")[0].split(" · ")
     url = next(t for t in kopf if t.startswith(("https://", "http://")))
     soll = next(t.split()[1] for t in kopf if t.startswith("sha256 "))
@@ -58,18 +63,18 @@ if "werkzeuge" not in pakete and quelle:   # Werkzeuge von GitHub: fester Stand 
         s = urllib.request.urlopen(url, timeout=30).read().decode("utf-8")
         if hashlib.sha256(s.encode("utf-8")).hexdigest() != soll or not s.startswith("MTG-PAKET werkzeuge"):
             raise ValueError("Prüfsumme stimmt nicht")
-        pakete["werkzeuge"] = s
+        pakete["MTG-PAKET werkzeuge"] = s
         print("Werkzeuge von GitHub:", url)
     except Exception as e:
         print(f"GitHub nicht nutzbar ({e})")
-if "werkzeuge" not in pakete:
+if not werkzeuge():
     sys.exit("RÜCKFALL: werkzeugkiste.txt mit project_read lesen, dann den Startbefehl erneut ausführen.")
-if "daten" not in pakete:
+if not any(k.startswith("MTG-PAKET daten ") for k in pakete):
     print("HINWEIS: Datenpaket nicht gefunden – 05a, Abschnitt 3 „Ohne Sitzungsprotokoll“ (Gast: so richtig).")
 os.makedirs(ziel, exist_ok=True)
-for art, s in pakete.items():
-    open(f"{ziel}/{art}.paket.txt", "w", encoding="utf-8").write(s)
-w = pakete["werkzeuge"]
+for k, s in pakete.items():
+    open(f"{ziel}/" + re.sub(r"[^a-z0-9]+", "-", k.lower()[10:]).strip("-") + ".paket.txt", "w", encoding="utf-8").write(s)
+w = pakete[werkzeuge()[-1]]
 tar = tarfile.open(fileobj=io.BytesIO(base64.b64decode("".join(w.split("=====BEGIN=====")[1].split("=====END=====")[0].split()))), mode="r:xz")
 open(f"{ziel}/paket.py", "wb").write(tar.extractfile(next(m for m in tar.getmembers() if m.name.endswith("paket.py"))).read())
 print("Pakete:", ", ".join(pakete))
@@ -80,13 +85,14 @@ EOF
   1. Hat `project_read` den Inhalt als lokale Datei abgelegt (großer Text): diesen Pfad nehmen.
   2. Sonst den gelesenen Paket-Text **unverändert** mit Write nach `/home/claude/mtg-in/<paket>.txt` schreiben (Kopfzeile bis `=====END=====`). Die Prüfsumme beim Auspacken deckt Abschreibfehler auf; bei Fehler erneut schreiben. Das kostet Ausgabe in Größe des Pakets – nur, wenn die Aufgabe die Werkzeuge bzw. die Datenbank braucht (Deck, Bestand, Kauf, Scan). Für reine Fragen zu offenen Punkten genügen `10_Geplante-Kaeufe-und-Ideen` und `project_search`.
   3. Nie Einzeldateien wie `basis.csv` ganz lesen, um ein Paket zu ersetzen (doppelte Kosten).
+- **Teil fehlt** („Datenpaket unvollständig: Teil … fehlt“): den genannten Teil mit `project_read` lesen und erneut auspacken.
 - **„RÜCKFALL“** (GitHub nicht erreichbar oder Prüfsumme falsch): Werkzeugkiste lesen, Befehl erneut ausführen.
 - **Falsche Prüfsumme beim Auspacken:** die Leseausgabe war abgeschnitten → Paket erneut lesen.
 - **Ausführen blockiert** (Rechteprüfung der Umgebung lehnt das Starten der Werkzeuge ab, 06.11.2026): nicht umgehen. Dem Nutzer in einem Satz sagen, dass die Werkzeuge (Prüfsumme stimmt) ausgeführt werden müssen, und um Freigabe bitten; bis dahin nur Arbeit ohne Werkzeuge (Fragen, Abläufe, Lesen der Projektdateien).
 
 ## 4. Datenbank bauen (im Hintergrund)
 
-`cd /home/claude/mtg && python3 mtg_db.py build --sammlung data/basis.csv data/buchungen.csv --decks decks/*.txt` (≈ 20–60 s inkl. Scryfall-Download ≈ 110 MB; `auspacken` gibt den Befehl aus).
+`cd /home/claude/mtg && python3 mtg_db.py build --sammlung data/basis*.csv data/buchungen.csv --decks decks/*.txt` (≈ 20–60 s inkl. Scryfall-Download ≈ 110 MB; `auspacken` gibt den Befehl mit den Basis-Dateien aus).
 
 - Hinweise des Baus prüfen (z. B. „Commander erkannt – bitte bestätigen“, „Deckname fehlt“). Die Zuordnung der Soll-Stände läuft über `deck_namen.json`.
 - Kontrolle: `python3 mtg_db.py sql "SELECT name, SUM(qty) FROM collection GROUP BY oracle_id HAVING SUM(qty) < 0"` muss leer sein; die Zeile „Exemplare: …“ kommt ohne „abweichende Frei-Zählung“ aus (Ausnahme: ein Deck braucht mehr Exemplare, als da sind).
@@ -103,6 +109,6 @@ EOF
 ## 6. Zurückschreiben (Ende jeder Schreibrunde; Admin, User)
 
 1. Einträge und Listen mit dem Werkzeug pflegen: `protokoll.py neu …` (09), `idee-neu`, `idee-status`, `idee-entfernen`, `nachziehen`, `nachziehen-erledigt` (10). Das Deckregister (04) nach einem Bau bzw. Abgleich direkt in `projekt/04_Deckregister.md` ändern.
-2. `python3 paket.py geaendert` → je Datei `project_write(path=<Projektpfad>, local_path=<lokal>)` – der Inhalt läuft nicht durch den Chat.
-3. `python3 paket.py packen --art daten --arbeit /home/claude/mtg --out datenpaket.txt` → `project_write(path="claude/pakete/datenpaket.txt", local_path=…)`.
+2. `python3 paket.py geaendert` → je Datei: lokale Datei mit **einem** Read ganz lesen, dann `project_write(path=<Projektpfad>, local_path=<lokal>)` – der Inhalt wird gelesen, nicht abgeschrieben. „gelöscht“ → `project_delete`.
+3. `python3 paket.py packen --art daten --arbeit /home/claude/mtg --out datenpaket.txt` → nur die Teile, die `packen` als **neu** meldet, genauso schreiben; „unverändert“ nicht anfassen, „überzählig“ → `project_delete`.
 4. Werkzeuge geändert (nur Admin): `05`, Abschnitt 9.

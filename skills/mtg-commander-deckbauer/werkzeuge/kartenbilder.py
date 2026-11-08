@@ -53,13 +53,13 @@ Vergleich (Modus 2): --alt <Soll-Stand> --neu <Entwurf> erzeugt die Tauschliste 
   Quelle je neuer Karte: frei in der Sammlung (--frei 07) → Sammlung; Standardland → Standardland
   (frei/kaufen); steckt in anderem Deck (--bestand 06) → Deck: <Name>; sonst Kauf.
   --vormerkungen + --idee I-nnn: die Vormerkungen genau dieser Idee zählen als frei.
-  --haves Basis.csv [buchungen.csv]: eigene Druckversion und Sprache je Karte.
+  --haves <Basis-Dateien> [buchungen.csv]: eigene Druckversion und Sprache je Karte.
 
 Beispiele
   python3 kartenbilder.py tausch tausch/boros.txt --out out/tausch_boros --png
   python3 kartenbilder.py tausch --alt decks/boros.txt --neu entwurf.txt --frei 07.csv \\
       --bestand 06.csv --vormerkungen data/vormerkungen.csv --idee I-001 \\
-      --haves data/basis.csv data/buchungen.csv --deckname Boros --out out/tausch_boros
+      --haves data/basis-*.csv data/buchungen.csv --deckname Boros --out out/tausch_boros
   python3 kartenbilder.py deck decks/mardu-surge.txt --set tdc --bracket "…" \\
       --beschreibung "…" --themen "…" --out out/deck_mardu-surge --png
 """
