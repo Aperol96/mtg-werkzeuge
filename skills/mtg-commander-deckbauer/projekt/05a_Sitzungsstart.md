@@ -15,7 +15,7 @@
 
 | Paket | Inhalt | neu packen, wenn … |
 |---|---|---|
-| `werkzeugkiste.txt` | `mtg_db.py`, `deckbau.py`, `bewertung.py`, `simulation.py`, `archetypen.py`, `kartenbilder.py`, `protokoll.py`, `paket.py`, `zugang.py`, `archetypen_daten.json`, `projektanweisungen.md` (Admin: + `weitergabe.py`) | ein Werkzeug geändert wurde (nur Admin) |
+| `werkzeugkiste.txt` | `mtg_db.py`, `deckbau.py`, `bewertung.py`, `simulation.py`, `archetypen.py`, `kartenbilder.py`, `protokoll.py`, `paket.py`, `zugang.py`, `archetypen_daten.json`, `projektanweisungen.md` | ein Werkzeug geändert wurde (nur Admin) |
 | `datenpaket.txt` (+ Folgeteile) | Teil „haupt“: `buchungen.csv`, `vormerkungen.csv`, `claude/decks/`, `claude/ideen/`, `deck_namen.json`, `04_Deckregister`, `09_Aenderungsprotokoll`, `10_Geplante-Kaeufe-und-Ideen` | nach **jeder** Schreibrunde (Admin, User) |
 | `datenpaket-basis.txt` (+ Folgeteile) | Teil „basis“: die Basis `claude/sammlung/basis*.csv` | nur, wenn sich die Basis ändert – `packen` meldet sonst „unverändert“ |
 
