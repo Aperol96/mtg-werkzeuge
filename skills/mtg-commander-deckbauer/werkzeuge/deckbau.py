@@ -1838,6 +1838,12 @@ def bracket_waechter(alt, neu, ziel):
     ausloeser += [(" + ".join(sorted(c)), "neue 2-Karten-Combo", "hoch") for c in neue_combos]
     ausloeser += [(k, "Game Changer geht raus", "runter") for k in ba["gc"] if k not in bn["gc"]]
     warn, hinw = [], []
+    # V1.9.9: neue Combos mit 3 oder mehr Karten – kein Bracket-Wechsel (späte Combos sind in Bracket 3 erlaubt),
+    # aber nie stumm: im Vorschlag nennen, Spielgruppe informieren (Fund 09.11.2026: 4-Karten-Endlos-Combo blieb unbemerkt)
+    gross = lambda bz: {frozenset(k) for k in bz.get("combo_karten", []) if len(k) > 2}
+    for c in sorted(gross(bn) - gross(ba), key=lambda c: sorted(c)):
+        hinw.append(f"ℹ neue Combo mit {len(c)} Karten: {' + '.join(sorted(c))} – kein Bracket-Wechsel "
+                    "(späte Combos erlaubt), aber im Vorschlag nennen und die Spielgruppe informieren")
     if ziel == a:
         if n > a:
             warn.append(f"⚠ Bracket-Wechsel: der Entwurf geht von Bracket {a} auf {n} – "
@@ -1918,9 +1924,11 @@ def cmd_bracket(con, a):
             print(f"  im Bracket bleiben statt {k}: " + ("; ".join(
                 f"{n_} ({'frei' if f_ else (str(e_).replace('.', ',') + ' €' if e_ is not None else '?')})"
                 for n_, _, _, e_, f_, _ in alt_l) or "keine Karte gleicher Rolle gefunden – am Spielplan prüfen"))
+    n_combo = sum(1 for h in hinw if h.startswith("ℹ neue Combo"))
     print("\nErgebnis: " + (f"WARNUNG ({len(warn)}) – nicht stillschweigend umsetzen, Nutzer entscheidet "
                             "(Alternative oder Ziel-Bracket ändern)" if warn else
-                            "kein Bracket-Wechsel" if ziel == alt["ein"]["stufe"] else "Entwurf hält das Ziel-Bracket ein"))
+                            "kein Bracket-Wechsel" if ziel == alt["ein"]["stufe"] else "Entwurf hält das Ziel-Bracket ein")
+          + (f" · {n_combo} neue Combo(s) mit 3+ Karten – im Vorschlag nennen" if n_combo else ""))
 
 
 # ----------------------------------------------------------------- Gegentest (Projekt gegen Konkurrenz-Skill)

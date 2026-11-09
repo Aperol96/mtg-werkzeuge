@@ -158,6 +158,7 @@ Wunsch: Bei jedem Bau und jedem Upgrade wird im Gespräch gefragt, welches Brack
   - Warnung direkt am Paar und gesammelt bei der Bracket-Zeile: „⚠ Bracket-Wechsel: <Karte> macht aus Bracket X → Y (<Grund>).“ Dazu eine Alternative mit gleicher Rolle, die im Bracket bleibt (`alternativen`), wenn es eine gibt.
   - Claude setzt eine solche Änderung **nicht stillschweigend** um: Im Vorschlag steht die Alternative; der Nutzer entscheidet „Alternative nehmen (Empfehlung) · Karte trotzdem, Ziel-Bracket ändern“. Ändert er das Ziel, gilt der nächste Punkt und die Recherche läuft für die neue Richtung neu (Stufe C).
 - **Ziel ≠ Ausgangsbracket:** Der Umbau zielt bewusst auf das neue Bracket – Verschiebungen dorthin sind gewollt und keine Warnung. Die Bracket-Zeile zeigt „Bracket X → Y (Ziel Y)“; gewarnt wird nur, wenn der Entwurf das Ziel überschreitet oder nicht erreicht (z. B. Ziel 3, aber 4 Game Changer; Ziel 2, aber noch ein Game Changer im Deck – er geht raus und wird ersetzt).
+- **Neue Combo mit 3 oder mehr Karten** (seit V1.9.9): kein Bracket-Wechsel – späte Combos sind in Bracket 3 erlaubt –, aber nie stumm. Der Wächter nennt sie als Hinweis „ℹ neue Combo mit N Karten: …“; Claude nennt sie im Vorschlag mit Teilen und Ablauf und rät, die Spielgruppe zu informieren. Ist sie früh möglich (Spellbook-Speed, Tutoren), gilt sie wie eine 2-Karten-Combo (Einschätzung).
 - **Neues Deck:** kein Ausgangsbracket; der Wächter prüft jeden Entwurf gegen das Ziel-Bracket (Grundsatz 5).
 - Die Abnahme (8a) läuft mit dem Ziel-Bracket.
 

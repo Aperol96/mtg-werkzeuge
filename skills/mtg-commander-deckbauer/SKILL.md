@@ -3,7 +3,7 @@ name: mtg-commander-deckbauer
 description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand führen (CSV aus Moxfield, ManaBox oder anderen Programmen), Verkaufsliste erstellen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
-# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.8)
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.9)
 
 Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seinen Bestand führen oder Karten verkaufen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
 

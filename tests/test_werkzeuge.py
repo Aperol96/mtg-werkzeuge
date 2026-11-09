@@ -169,6 +169,25 @@ def test_bracket_einstufung_und_waechter():
     assert warn and "überschreitet" in warn[0]
 
 
+def test_waechter_meldet_neue_grosse_combos():
+    """V1.9.9: neue Combos mit 3+ Karten sind kein Bracket-Wechsel, werden aber als Hinweis genannt."""
+    import deckbau as D
+
+    def stand(combos=()):
+        b = {"gc": ["X"], "mld": [], "xt": [], "zwei": [], "sb_tag": None, "combo_karten": [list(c) for c in combos]}
+        return {"bz": b, "ein": D.bracket_einstufung(b)}
+    vier = ("A", "B", "C", "D")
+    warn, hinw, _ = D.bracket_waechter(stand(), stand([vier]), 3)
+    assert not warn
+    assert any(h.startswith("ℹ neue Combo mit 4 Karten") and "A + B + C + D" in h for h in hinw)
+    # dieselbe Combo in anderer Reihenfolge ist nicht neu; ohne combo_karten (ältere Aufrufer) kein Fehler
+    _, hinw, _ = D.bracket_waechter(stand([vier]), stand([("D", "C", "B", "A")]), 3)
+    assert not any(h.startswith("ℹ neue Combo") for h in hinw)
+    alt = stand(); del alt["bz"]["combo_karten"]
+    _, hinw, _ = D.bracket_waechter(alt, stand([("A", "B")]), 3)      # 2-Karten-Combos laufen über „zwei“
+    assert not any(h.startswith("ℹ neue Combo") for h in hinw)
+
+
 def test_bracket_befehl(arbeit):
     out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck"))
     assert "Ausgangsbracket: Bracket" in out
