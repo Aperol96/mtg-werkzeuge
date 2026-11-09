@@ -17,8 +17,9 @@ Inhalt
                                   (eigene Wipes im Go-wide-Deck), GO_WIDE
   5. Kompromiss-Stufen, Klassen    funktionsgrad(), kompromiss_stufe(), wirkung(), klasse() (A–D aus 01, Abschnitt 6)
 
-Grundsatz (08): EDHREC ist ein Anhaltspunkt. Entscheidend sind Oracle-Text, Rolle und Spielplan – deshalb
-bewertet dieses Modul jede Karte zuerst aus Text und Funktionstags und nimmt EDHREC nur dazu.
+Grundsatz (08, V1.9.7): Hauptquellen sind Scryfall (Kategorien und Themen über die Funktionstags) und EDHREC
+(Synergien, Combos); entscheidend bleibt der Kartentext – deshalb bewertet dieses Modul jede Karte aus Text
+und Funktionstags und nimmt den EDHREC-Wert dazu (Wert = Maximum aus beiden).
 """
 import math
 import re

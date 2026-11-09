@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.9.6** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.9.7** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -41,7 +41,7 @@ Dieses Projekt bringt Claude bei, diese Fragen **wie ein erfahrener Mitspieler m
 
 - **Deine Karten zuerst.** Claude kennt deinen Bestand und plant zuerst freie Karten ein. Gekauft wird nur, wenn es sich lohnt – mit Preis, günstigerer Alternative und einer Klasse A–D.
 - **Bracket-treu.** Jedes Deck wird gegen die offiziellen Brackets geprüft (Standard: Bracket 3) – im Bracket so stark wie möglich, aber nicht heimlich darüber. Das Ziel-Bracket wird bei jedem Bau und Upgrade gefragt (auf Wunsch mit Erklärung aller Brackets); bleibt das Ziel das heutige Bracket des Decks, warnt der **Bracket-Wächter** bei jeder Änderung, die es verschieben würde, und schlägt eine Karte vor, die im Bracket bleibt.
-- **Belegen statt raten.** Oracle-Texte, Preise und Statistiken kommen aus Scryfall, EDHREC und Commander Spellbook, nicht aus dem Gedächtnis. EDHREC ist dabei nur ein Anhaltspunkt: Eine Karte, die dort beim Commander fehlt, ist unbekannt – nicht schwach.
+- **Belegen statt raten.** Oracle-Texte, Preise und Statistiken kommen aus den Hauptquellen Scryfall (Kategorien, Themen) und EDHREC (Synergien, Combos über Commander Spellbook, Absicherung gegen vergessene Karten), nicht aus dem Gedächtnis; Community-Decklisten von Moxfield und Archidekt kommen ergänzend dazu. Entscheidend bleibt der Kartentext: Eine Karte, die auf EDHREC beim Commander fehlt, ist unbekannt – nicht schwach.
 - **Du entscheidest.** Claude fragt, schlägt vor und begründet. Erst wenn du freigibst und das Deck wirklich umgebaut hast, wird etwas gebucht.
 
 Das **Ziel**: bessere, konsistentere Decks aus dem, was du schon hast – mit möglichst wenig Geld und ohne die Runde zu überfahren.
@@ -345,6 +345,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
+| 09.11.2026 | V1.9.7: Quellen-Rangfolge – Scryfall und EDHREC Hauptquellen, Moxfield/Archidekt Zusatzquelle, Check „nichts vergessen“ | – |
 | 08.–09.11.2026 | V1.9.6: Basis und Datenpaket in Teilen ≤ 30 KB (`mtg_db.py basis-teilen`), Bestandslisten 06/07 nur auf Nachfrage, Werkzeuge nur noch von GitHub | – |
 
 - **Gemessen** wird erst seit dem 29.10.2026, und nur in Sitzungen mit lesbarem Protokoll (Werkzeug- und GitHub-Arbeit). Die Chats der ersten Tage in claude.ai lassen sich nicht auswerten – der tatsächliche Aufwand liegt also höher.

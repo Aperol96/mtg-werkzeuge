@@ -3,7 +3,7 @@ name: mtg-commander-deckbauer
 description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand führen (CSV aus Moxfield, ManaBox oder anderen Programmen), Verkaufsliste erstellen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
-# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.6)
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.7)
 
 Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seinen Bestand führen oder Karten verkaufen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
 
@@ -59,7 +59,7 @@ Will der Nutzer Rollen (Admin/User/Gast) und einen dauerhaften Bestand, bereite 
 - **Nichts erfinden:** Karten nur aus `deckbau.py oracle` beschreiben, nie aus dem Gedächtnis; Regeln mit Regelnummer.
 - **Bracket-Treue:** Ziel Bracket 3 (falls nicht anders gesagt) – höchstens 3 Game Changer, keine Massen-Landzerstörung, keine Extra-Turn-Ketten, keine früh möglichen 2-Karten-Combos; Formatstand live prüfen und mit Datum nennen.
 - **Absichern:** Ramp, Kartenvorteil, Interaktion (nach Ziel, Instants), Wipes, Schutz und Länder bis zum Minimum des Archetyps; tragende Karten nicht herausnehmen (Raus-Sperren). Symmetrische Kreaturen-Wipes zählen im Go-wide-Deck nicht.
-- **Daten vor Meinung:** EDHREC ist ein Anhaltspunkt; nicht gelistet = unbekannt, nicht schwach. Daten und Einschätzung kennzeichnen.
+- **Daten vor Meinung – Quellen-Rangfolge** (`projekt/01_Quellen-Framework.md`, Abschnitt 0): Hauptquellen Scryfall (Kategorien, Themen, Faktenbasis des Deck-Primers) und EDHREC (Combos, Synergien, Absicherung „nichts vergessen“); Moxfield/Archidekt-Community-Listen nur als Zusatz; maßgeblich bleiben Kartentext und Synergien. Nicht gelistet = unbekannt, nicht schwach. Daten und Einschätzung kennzeichnen.
 - **Rückfall vor Kauf:** Lücken zuerst mit freien Karten (Kompromiss-Stufe), daneben die Kauf-Alternative mit Preis und Nutzen.
 - **Sparsam ausgeben:** PDFs, Dateien und lange Listen nur nach kurzer Ja/Nein-Frage.
 

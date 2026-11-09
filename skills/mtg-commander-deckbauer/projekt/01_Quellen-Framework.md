@@ -1,8 +1,23 @@
 # Quellen-Framework: Commander-Deckbau, Meta & Synergien
 
-**Stand:** 29.10.2026 (Rolle von Moxfield/ManaBox 26.10.2026; V1.6: Format-Stand in `01a`, Rechenregel der Klassen) · **Pflege:** nach jeder Banned-&-Restricted-Ankündigung (nächste: 30.11.2026) und jedem Brackets-Update `01a_Format-Stand` aktualisieren.
+**Stand:** 09.11.2026 (V1.9.7: Quellen-Rangfolge für Deckbau und Upgrade – EDHREC und Scryfall Hauptquellen, Moxfield/Archidekt Zusatzquelle, Abschnitt 0 · 29.10.2026: Rolle von Moxfield/ManaBox; V1.6: Format-Stand in `01a`, Rechenregel der Klassen) · **Pflege:** nach jeder Banned-&-Restricted-Ankündigung (nächste: 30.11.2026) und jedem Brackets-Update `01a_Format-Stand` aktualisieren.
 
 Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche Kennzahl was bedeutet und wie ich Empfehlungen bewerte.
+
+---
+
+## 0. Quellen-Rangfolge beim Deckbau und Upgrade (Vorgabe des Admins, 09.11.2026)
+
+| Rang | Quelle | Wofür | Werkzeug |
+|---|---|---|---|
+| **Hauptquelle** | **Scryfall** | **Kategorien** (Rollen über die Tagger-Funktionstags), **Themen** (`otag:synergy-…`, Kreaturtypen, Mechaniken), Oracle-Text, Legalität, Game Changer, Preise – und damit die Faktenbasis für den **Deck-Primer** (Steckbrief, Spielplan, Kartenerklärungen) | `mtg_db.py` (Bulk + Tags), `deckbau.py oracle`, `synergie`, `pruefen` |
+| **Hauptquelle** | **EDHREC** | **Combos** (Combo-Seiten des Commanders; die Combo-Daten stammen aus Commander Spellbook, das die Werkzeuge direkt abfragen) und **Synergien** (Synergy-Score, High-Synergy-Karten, Themen) – außerdem die **Absicherung, dass keine Karte „vergessen“ wurde**: Top- und High-Synergy-Karten des Commanders gegen den Entwurf abgleichen und jede fehlende mit einem Satz begründen | `deckbau.py commander`, `kandidaten`, `upgrade`, `passung`; Commander Spellbook über `pruefen --combos-fehlend`, `bracket` |
+| **Zusatzquelle** | **Moxfield und Archidekt** (Community-Decklisten) | öffentliche Listen desselben Commanders: Varianten, ungewöhnliche Karten, Primer anderer Spieler als Ideenquelle – nie allein entscheidend | Archidekt per Skript (`archidekt.com/api/decks/v3/…`), Moxfield nur über Websuche/WebFetch (Abschnitt 8) |
+| **maßgeblich bei der Entscheidung** | **Kartentext und Synergien** | Oracle-Text, Rolle, Bezug zum Commander und Spielplan entscheiden am Ende; das sollte durch die Hauptquellen abgedeckt sein – ist es das nicht (Karte auf keiner Liste, aber starker Oracle-Bezug), gilt der Kartentext und Claude sagt das | `deckbau.py synergie`, `oracle` |
+
+- **Reihenfolge in der Recherche (Stufe B, `08`):** Scryfall (Kategorien, Themen, Oracle) → EDHREC (Synergien, Combos) → Moxfield/Archidekt (Community-Listen, Stichprobe) → Kartentext-Prüfung jedes Vorschlags. Abschluss-Check **„nichts vergessen“**: EDHREC-Top-/High-Synergy-Karten in den Deckfarben, die weder im Entwurf noch begründet abgelehnt sind, nachtragen oder in einem Satz begründen.
+- **Daten kennzeichnen:** je Karte, aus welcher Quelle die Begründung kommt (EDHREC-Wert, Scryfall-Tag, Community-Listen, Oracle-Bezug). Nicht auf EDHREC heißt **unbekannt, nicht schwach**.
+- **Weitere Quellen** (Meta, Siegquoten, Preise, Regeln) unverändert: playgroup.gg, EDHTop16/TopDeck.gg, Cardmarket über Scryfall EUR, Comprehensive Rules.
 
 ---
 
@@ -10,9 +25,11 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 
 | Frage | Erste Anlaufstelle | Zweitquelle |
 |---|---|---|
-| Was spielen andere mit Commander X? | EDHREC-Commander-Seite (Filter Bracket/Budget) | Öffentliche Decks auf Moxfield/Archidekt |
+| Was spielen andere mit Commander X? | EDHREC-Commander-Seite (Filter Bracket/Budget) | Öffentliche Decks auf Moxfield/Archidekt (Zusatzquelle) |
+| Welche Kategorie/Rolle hat eine Karte, welche Themen trägt sie? | Scryfall Tagger-Tags (`otag:`) | Oracle-Text |
 | Welche Karte ist *speziell* für X stark (nicht nur generisch gut)? | EDHREC Synergy-Score | Scryfall `otag:synergy-…` |
-| Welche Combos stecken im Deck / welche fehlen nur 1 Karte? | Commander Spellbook „Find My Combos" | EDHREC Combos-Tab |
+| Habe ich eine starke Karte vergessen? | EDHREC Top-/High-Synergy-Karten gegen den Entwurf | Community-Listen auf Moxfield/Archidekt |
+| Welche Combos stecken im Deck / welche fehlen nur 1 Karte? | EDHREC Combos (Daten: Commander Spellbook „Find My Combos“, per Skript) | – |
 | Was gewinnt wirklich (Casual)? | playgroup.gg (Siegquoten, Staples nach Winrate-Lift) | TopDeck.gg Bracket-3-Events |
 | cEDH-Meta | EDHTop16 (Meta-Anteil, Conversion) | cEDH Decklist Database, TopDeck.gg |
 | Karte mit Funktion X in Farben Y finden | Scryfall (`otag:`, `id<=`, `f:commander`) | Scryfall Tagger (tagger.scryfall.com) |
@@ -28,8 +45,9 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 
 ## 2. Quellen im Detail
 
-### EDHREC – edhrec.com (Daten: Was wird gespielt?)
+### EDHREC – edhrec.com (Hauptquelle: Synergien, Combos, Absicherung)
 - **Was:** Aggregiert Decklisten von Archidekt, Moxfield und Scryfall. Seiten für Commander, Themen, Karten, Combos, „Average Deck", Salt.
+- **Rolle im Deckbau (09.11.2026):** Hauptquelle für Synergien und Combos und Absicherung gegen vergessene Karten (Abschnitt 0). Die Entscheidung trifft der Kartentext.
 - **Kennzahlen:**
   - *Inclusion* – Anteil der Decks mit dieser Karte.
   - *Synergy* – Anteil bei diesem Commander minus Anteil in allen Decks derselben Farbidentität. Hoch = commander-spezifisch, niedrig/negativ = generischer Staple.
@@ -39,24 +57,27 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 - **Fallen:** Popularität ≠ Stärke; Precon-Listen verzerren; neue Commander = kleine Stichprobe.
 - **Zugriff für Claude:** Seiten per WebFetch, Rohdaten per Skript über json.edhrec.com (siehe Abschnitt 8).
 
-### Commander Spellbook – commanderspellbook.com (Combos)
-- Datenbank für unendliche Combos, Locks und Siegbedingungen mit Voraussetzungen, Schritten, Ergebnis und Preis. Speist die Combo-Seiten von EDHREC.
+### Commander Spellbook – commanderspellbook.com (Combo-Daten hinter EDHREC)
+- Datenbank für unendliche Combos, Locks und Siegbedingungen mit Voraussetzungen, Schritten, Ergebnis und Preis. Speist die Combo-Seiten von EDHREC; die Werkzeuge fragen sie direkt ab (Find My Combos, `estimate-bracket`).
 - **Find My Combos:** Deckliste einfügen → Combos im Deck + Combos, denen nur eine Karte fehlt.
 - **Combo-Einstufung** (pro Combo, nicht pro Deck): Ruthless, Spicy, Powerful, Core, Oddball, Exhibition. Wichtig für Bracket 3 (keine frühen 2-Karten-Combos).
 - **Zugriff für Claude:** API per Skript, inkl. Find My Combos (siehe Abschnitt 8).
 
-### Scryfall – scryfall.com (Kartendatenbank & Funktionssuche)
+### Scryfall – scryfall.com (Hauptquelle: Kategorien, Themen, Kartendaten)
 - Oracle-Text, Rulings, Legalität, alle Drucke, Preise (USD über TCGplayer, EUR über Cardmarket – Partnerschaft seit 2025).
-- **Tagger-Tags** (`otag:` / `function:`) = Community-Funktionstags → beste Suche nach Rollen und Synergien. Spickzettel in Abschnitt 3.
+- **Tagger-Tags** (`otag:` / `function:`) = Community-Funktionstags → **Kategorien** (Rollen) und **Themen** (Synergie-Tags); beste Suche nach Rollen und Synergien. Spickzettel in Abschnitt 3.
+- **Rolle im Deckbau (09.11.2026):** Hauptquelle für Kategorien und Themen und Faktenbasis des Deck-Primers (Steckbrief, Spielplan, Kartenerklärungen kommen aus Oracle-Text und Tags).
 - **Zugriff für Claude:** API und Bulk-Daten per Skript; WebFetch weiterhin blockiert (siehe Abschnitt 8).
 
-### Moxfield – moxfield.com (externe Datenbank des Nutzers)
+### Moxfield – moxfield.com (externe Datenbank des Nutzers · Zusatzquelle Community-Listen)
 - Decks, Bestand, Tags, Playtester, Bracket-Hinweis, Preise – für die Nutzung außerhalb des Projekts.
-- **Rolle seit 26.10.2026:** Hauptdatenbank ist das Projekt; Daten fließen nur **Projekt → Moxfield**. Moxfield-Exporte werden nur zur Fehlerkorrektur oder auf ausdrücklichen Wunsch zum Überschreiben genutzt (`05_Datenbank-und-Tools`, Abschnitt 0).
+- **Rolle der eigenen Daten:** Hauptdatenbank ist das Projekt; Daten fließen nur **Projekt → Moxfield**. Moxfield-Exporte werden nur zur Fehlerkorrektur oder auf ausdrücklichen Wunsch zum Überschreiben genutzt.
+- **Zusatzquelle (09.11.2026):** öffentliche Decklisten und Primer anderer Spieler zum selben Commander – Varianten und ungewöhnliche Karten finden, nie allein entscheidend. Zugriff nur über Websuche/WebFetch (API per Skript gesperrt, Abschnitt 8).
 - Import: Deck als Text (`1 Sol Ring (C21) 263`), Bestand als CSV (fügt nur hinzu) → Details in `03_Import-Formate`. Deckbeschreibung max. 140 Zeichen, Themen aus fester Liste (`Moxfield-Beschreibungen`).
 
-### Archidekt – archidekt.com
+### Archidekt – archidekt.com (Zusatzquelle Community-Listen)
 - Alternativer Deckbauer mit Sammlung und Bracket-Markierung; erlaubt Scryfall-Syntax als Filter innerhalb des Decks. Datenquelle für EDHREC.
+- **Zusatzquelle (09.11.2026):** öffentliche Decklisten zum Commander (Suche nach Commander, sortiert nach Aktualität/Ansichten) – wie Moxfield nur ergänzend. API per Skript erreichbar (Abschnitt 8).
 
 ### ManaBox (App)
 - Nur Scanner des Nutzers – Zulieferer der gescannten Daten, keine Bestandsquelle. CSV-Export enthält die Scryfall-ID → eindeutige Druckversion; Scans werden im Projekt gebucht.
@@ -139,7 +160,7 @@ Ramp-Wahrscheinlichkeit: Mit 10 Ramp-Karten ca. 54 % mindestens eine in der Star
 **Anpassen:** niedrige Kurve/Aggro → 35–36 Länder; Landfall → mehr Länder; Commander zieht selbst Karten → weniger Draw; Bracket 4 → mehr effiziente Interaktion (≤ 2 MV), Tutoren, schnelles Mana.
 
 ### 4.2 Rollen-Zählung (bei jeder Analyse)
-Jede Karte bekommt eine Primärrolle (+ optional Nebenrolle): Land · Ramp · Kartenvorteil · Gezielte Interaktion · Wipe · Schutz · Engine · Enabler · Payoff · Wincon · Utility. Dazu: Kurve (Durchschnitts-MV ohne Länder), Farbpips vs. Farbquellen, Anteil getappter Länder.
+Jede Karte bekommt eine Primärrolle (+ optional Nebenrolle): Land · Ramp · Kartenvorteil · Gezielte Interaktion · Wipe · Schutz · Engine · Enabler · Payoff · Wincon · Utility. Dazu: Kurve (Durchschnitts-MV ohne Länder), Farbpips vs. Farbquellen, Anteil getappter Länder. Grundlage der Kategorien sind die Scryfall-Funktionstags (Abschnitt 0).
 
 ### 4.3 Manabasis (Frank Karsten)
 - Startwert 37–38 Länder für ein typisches Deck.
@@ -153,7 +174,7 @@ Jede Karte bekommt eine Primärrolle (+ optional Nebenrolle): Land · Ramp · Ka
 - **Bausteine:** Engine (erzeugt fortlaufend Wert) · Enabler (macht Engine möglich) · Payoff (belohnt den Plan) · Schutz.
 - **Pakete denken:** z. B. Aristokraten = Opfer-Outlet + Token-Quelle + Tod-Trigger-Payoff.
 - **Redundanz (Faustregel):** Schlüsselfunktion 3–4× im Deck → Konsistenz ohne Tutoren.
-- **Synergien finden:** (1) EDHREC High-Synergy, (2) Scryfall `otag:synergy-…`, (3) Spellbook inkl. „1 Karte fehlt", (4) Oracle-Muster, z. B. `o:"whenever" o:"dies"`.
+- **Synergien finden** (Rangfolge aus Abschnitt 0): (1) Scryfall `otag:synergy-…` und Themen-Tags, (2) EDHREC High-Synergy, (3) Combos über EDHREC/Spellbook inkl. „1 Karte fehlt", (4) Community-Listen auf Moxfield/Archidekt, (5) Oracle-Muster, z. B. `o:"whenever" o:"dies"`.
 - **Prüffragen:** Funktioniert die Karte auch ohne Commander? Hat sie mehrere Rollen? Antisynergien (eigene Wipes vs. Go-wide, Friedhofs-Hate vs. eigener Friedhofsplan)?
 
 ---
@@ -163,7 +184,7 @@ Jede Karte bekommt eine Primärrolle (+ optional Nebenrolle): Land · Ramp · Ka
 | Bereich | Meta ist … | Datenquellen |
 |---|---|---|
 | Bracket 1–3 (Casual) | vor allem die eigene Spielgruppe | Erst Gruppe erfassen (Decks, Tempo, Interaktion), dann EDHREC (üblich?) + playgroup.gg (gewinnt?) + TopDeck.gg B3-Events |
-| Bracket 4 | Gruppe + effiziente Standardpakete | EDHREC Bracket-4-Filter, „Optimized"-Listen auf Moxfield |
+| Bracket 4 | Gruppe + effiziente Standardpakete | EDHREC Bracket-4-Filter, „Optimized"-Listen auf Moxfield/Archidekt |
 | Bracket 5 (cEDH) | Turnier-Meta | EDHTop16 (3 Monate, große Turniere), cEDH DDB |
 
 - **Kennzahlen:** Inclusion · Synergy · Siegquote (normalisiert 25 %) · Winrate-Lift einer Karte · Conversion-Rate · Meta-Anteil · Salt.
@@ -213,7 +234,7 @@ Steht seit V1.6 in **`01a_Format-Stand`** (Brackets, Game Changer, Banlist, näc
 
 ---
 
-## 8. Zugriffshinweise für Claude (im Admin-Projekt getestet 25.10.2026)
+## 8. Zugriffshinweise für Claude (im Admin-Projekt getestet 25.10.2026, Archidekt/Moxfield 09.11.2026)
 
 In der Nutzer-Kopie hängt der Zugriff von den Netzwerk-Einstellungen des Kontos ab (erlaubte Domains, siehe README des Repos). Schlägt ein Abruf fehl, sagt Claude das und nennt die Domain.
 
@@ -223,15 +244,16 @@ In der Nutzer-Kopie hängt der Zugriff von den Netzwerk-Einstellungen des Kontos
 | data.scryfall.io (Bulk) | ✅ | – | Liste über `api.scryfall.com/bulk-data`. **Formatänderung:** Download-Link steht jetzt in `jsonl_download_uri` (gzip-komprimiertes JSONL, eine Karte pro Zeile); `download_uri` und `size` gibt es nicht mehr. `oracle_cards` ≈ 25 MB (≈ 39.000 Karten, inkl. `game_changer`, `color_identity`, `legalities`, `prices.eur`) · `default_cards` ≈ 80 MB (alle Drucke → Abgleich über Scryfall-ID bzw. Set + Nummer) · `oracle_tags` ≈ 6 MB (Funktionstags offline) · `rulings` ≈ 5 MB |
 | json.edhrec.com | ✅ | edhrec.com ✅ | `/pages/commanders/<slug>[/<bracket>][/budget].json`, `/pages/precon/<deck>/<commander>.json`. Kartenlisten unter `container.json_dict.cardlists[].cardviews[]` mit `num_decks`, `potential_decks` (Inclusion = Quotient) und `synergy` |
 | backend.commanderspellbook.com | ✅ | – | `/variants/?q=card="Name"`; `POST /find-my-combos` mit `{"main":[{"card":"…"}],"commanders":[{"card":"…"}]}` → `included`, `almostIncluded` u. a.; je Combo `bracketTag` |
+| archidekt.com/api | ✅ (HTTP 200, 09.11.2026) | – | Decksuche `GET /api/decks/v3/?commanderName=<Name>&orderBy=-viewCount`, Liste `GET /api/decks/<id>/` (Karten mit Kategorien) – Zusatzquelle, Stichprobe 5–10 Listen |
 | edhtop16.com | ✅ (HTTP 200) | – | GraphQL-API bei erster cEDH-Nutzung testen |
 | playgroup.gg | ❌ | ✅ Commander-Seiten | Startseite ohne Daten; Commander-ID per Websuche |
 | cardmarket.com | ❌ | ❌ | Preise über Scryfall EUR (Quelle Cardmarket), Datum nennen |
-| moxfield.com | ❌ (Proxy) | ❌ | Themenliste und Daten gibt der Nutzer per Screenshot/Text (Stand 26.10.2026) |
+| moxfield.com | ❌ (API 403, 09.11.2026) | Websuche ✅ | öffentliche Decks per Websuche finden (`site:moxfield.com <Commander>`); Inhalte, die WebFetch nicht lädt, gibt der Nutzer per Text/Screenshot |
 | media.wizards.com | ❌ | – | magic.wizards.com/en/rules per WebFetch ✅ (Versionsname); CR-Volltext muss der Nutzer hochladen oder die Domain freischalten |
 
 - **Connectoren (falls im Konto verbunden):** karten-ankauf.de (Ankaufspreise), games-island.eu (Sortiment/Lager, keine Preise) – im Admin-Projekt getestet 25.10.2026.
 - **Arbeitsumgebung:** Python 3; Datenarbeit mit `mtg_db.py` und `deckbau.py` (`05_Datenbank-und-Tools`).
-- **Damit möglich:** Bestand automatisch mit Oracle-Text, Farbidentität, Legalität, Game-Changer-Flag und EUR-Preisen anreichern; Funktionstags offline; Deck-Combos per Find My Combos prüfen; EDHREC-Daten je Bracket auswerten.
+- **Damit möglich:** Bestand automatisch mit Oracle-Text, Farbidentität, Legalität, Game-Changer-Flag und EUR-Preisen anreichern; Funktionstags offline; Deck-Combos per Find My Combos prüfen; EDHREC-Daten je Bracket auswerten; Community-Listen von Archidekt vergleichen.
 - **Noch freischaltbar (Einstellungen → Capabilities → erlaubte Domains):** `media.wizards.com` (Regelwerk-Volltext automatisch laden). Cardmarket ist durch Bot-Schutz gesperrt – Freischaltung bringt dort voraussichtlich nichts.
 
 ---

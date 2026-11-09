@@ -65,7 +65,7 @@ Fassung vom 29.10.2026 (Wunsch des Nutzers: logische Absätze, Emojis). Claude g
 > - 📖 **Regelfragen klären**: mit Regelnummern aus den Comprehensive Rules
 > - 📦 **Bestand führen**: Scans, Käufe und Verkäufe, abgeglichen mit deinen Decks
 >
-> 📊 Ich arbeite mit Daten von EDHREC, Scryfall und Commander Spellbook. Preise nenne ich in EUR (Cardmarket).
+> 📊 Ich arbeite mit Daten von Scryfall und EDHREC (dazu Commander Spellbook für Combos und Community-Decklisten von Moxfield und Archidekt). Preise nenne ich in EUR (Cardmarket).
 >
 > ❓ Fragen zum Projekt, zu den Abläufen und zu Magic-Regeln kannst du sofort stellen.
 >
