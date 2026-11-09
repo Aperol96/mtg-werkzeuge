@@ -118,6 +118,21 @@ def test_upgrade_durchlauf_und_tragbarkeit(arbeit):
         assert "Sammlungs-Durchlauf" in out
 
 
+def test_grund_raus_nennt_bezug_des_rollenstands():
+    """V1.9.8: „warum raus“ zeigt den Stand nach den Paaren davor gegen das Ziel und dazu den Ausgangsstand –
+    vorher wirkte „Ramp über Richtwert (26/25)“ wie ein Widerspruch zu „Ramp 16/23“ in der Kopfzeile."""
+    from collections import Counter
+    import deckbau as D
+    x = {"b": {"v": {}, "bezug": 0, "gruende": [], "sicht": {"tl": "", "kw": set()}}, "rollen": ["ramp"]}
+    soll = {"ramp": (23, 25, 27)}
+    txt = D.grund_raus(x, Counter(ramp=26), soll, "Testcommander", Counter(ramp=16))
+    assert "nach den Paaren davor über Ziel (26/25; vor dem Upgrade 16)" in txt
+    txt = D.grund_raus(x, Counter(ramp=26), soll, "Testcommander", Counter(ramp=26))
+    assert "über Ziel (26/25)" in txt and "vor dem Upgrade" not in txt
+    assert "über Ziel (26/25)" in D.grund_raus(x, Counter(ramp=26), soll, "Testcommander")
+    assert "über Ziel" not in D.grund_raus(x, Counter(ramp=24), soll, "Testcommander")
+
+
 def test_bracket_einstufung_und_waechter():
     """Bracket-Wächter (V1.9): Ausgangsbracket aus den harten Grenzen, Warnung nur bei ungewolltem Wechsel."""
     import deckbau as D

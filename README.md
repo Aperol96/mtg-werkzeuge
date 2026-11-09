@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.9.7** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.9.8** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -345,6 +345,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
+| 09.11.2026 | V1.9.8: `upgrade` – „warum raus“ nennt den Rollenstand nach den Paaren davor gegen das Ziel und den Ausgangsstand (vorher wirkte „Ramp über Richtwert (26/25)“ wie ein Widerspruch zur Kopfzeile „Ramp 16/23“); Kopfzeile „Rollen vor dem Upgrade (Ist/Minimum)“ | – |
 | 09.11.2026 | V1.9.7: Quellen-Rangfolge – Scryfall und EDHREC Hauptquellen, Moxfield/Archidekt Zusatzquelle, Check „nichts vergessen“ | – |
 | 08.–09.11.2026 | V1.9.6: Basis und Datenpaket in Teilen ≤ 30 KB (`mtg_db.py basis-teilen`), Bestandslisten 06/07 nur auf Nachfrage, Werkzeuge nur noch von GitHub | – |
 

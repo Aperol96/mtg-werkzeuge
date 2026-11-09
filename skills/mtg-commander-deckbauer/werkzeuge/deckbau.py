@@ -1418,13 +1418,20 @@ def bilde_paare(ctx, kand, kauf_alt, a):
     return t
 
 
-def grund_raus(x, zaehl, soll, ckurz):
-    """Datenbasis für „warum raus“: EDHREC beim Commander, Bezug, Rolle über Richtwert, keine Kernrolle."""
+def grund_raus(x, zaehl, soll, ckurz, start=None):
+    """Datenbasis für „warum raus“: EDHREC beim Commander, Bezug, Rolle über dem Ziel-Richtwert, keine Kernrolle.
+    zaehl = Rollenstand vor diesem Paar (nach den Paaren davor); start = Stand vor dem Upgrade. Weichen beide ab,
+    nennt der Text beide – sonst wirkt „Ramp über Ziel (26/25)“ wie ein Widerspruch zu „Ramp 16/23“ in der
+    Kopfzeile (die zeigt den Ausgangsstand gegen das Minimum)."""
     teile = [edh_txt(x["b"]["v"], ckurz), f"Bezug {de(x['b']['bezug'])}" + (
         f" ({', '.join(x['b']['gruende'][:2])})" if x["b"]["gruende"] else "")]
     for r in x["rollen"]:
         if r in soll and zaehl[r] > soll[r][1]:
-            teile.append(f"{ROLLE_NAME[r]} über Richtwert ({zaehl[r]}/{soll[r][1]})")
+            if start is not None and start[r] != zaehl[r]:
+                teile.append(f"{ROLLE_NAME[r]} nach den Paaren davor über Ziel ({zaehl[r]}/{soll[r][1]}; "
+                             f"vor dem Upgrade {start[r]})")
+            else:
+                teile.append(f"{ROLLE_NAME[r]} über Ziel ({zaehl[r]}/{soll[r][1]})")
     if not x["rollen"]:
         teile.append("keine Kernrolle (nur Plan/Synergie)")
     sit = B.situativ(x["b"]["sicht"])
@@ -1459,7 +1466,7 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
           + (f" (Käufe bis {a.max_preis:g} €)" if a.stufe else " (nur freie Karten)")
           + f" | {edh_zeile(ctx['epfad'])}" + (f" | Thema: {a.thema}" if a.thema else ""))
     print(f"Ziel-Archetyp {ak['name']} ({ak['herkunft']}) – Richtwerte: Archetyp vor Template")
-    print("Rollen (99 ohne Commander): " + " · ".join(
+    print("Rollen vor dem Upgrade (99 ohne Commander, Ist/Minimum): " + " · ".join(
         f"{ROLLE_NAME[k]} {zaehl[k]}/{soll[k][0]}{' ✗' if zaehl[k] < soll[k][0] else ''}" for k in KERN))
     print("Kernpakete: " + " · ".join(f"{p['label']} {p['ist']}/{A_de(p['median'])}"
                                       + (" ✗" if p["median"] and p["ist"] < p["median"] else "")
@@ -1519,7 +1526,7 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
                     print(f"  {n}: " + ", ".join(sel[:10]) + (f" (+{len(sel) - 10})" if len(sel) > 10 else ""))
     print("\nWarum raus / warum rein (Datenbasis – im Vorschlag und im Fazit in einen Satz aus dem Oracle-Text fassen):")
     for i, (x, k, _, vorher, nachher) in enumerate(t.paare):
-        print(f"  {i + 1}. raus {x['c']['name']}: {grund_raus(x, vorher, soll, ctx['ckurz'])}")
+        print(f"  {i + 1}. raus {x['c']['name']}: {grund_raus(x, vorher, soll, ctx['ckurz'], ctx['zaehl'])}")
         print(f"     rein {k['c']['name']}: {grund_rein(k, vorher, nachher, soll, ctx['ckurz'])}")
     if zp:
         print(f"⚑ = frei, aber zusammen mit diesem Deck erfasst ({zp[:16]}): liegt vielleicht schon beim Deck – "
