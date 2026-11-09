@@ -288,6 +288,7 @@ Ein Deck ist erst fertig, wenn es die Abnahme besteht – neu gebaut oder nach e
 - Friedhofs-Hate fehlt, obwohl die Spielgruppe Friedhof spielt
 - Bracket-Verstöße: 4. Game Changer, frühe 2-Karten-Combos, MLD, Extra-Turn-Ketten – die Abnahme (8a) prüft sie
 - Bracket ungewollt verschoben (Ziel = Ausgangsbracket), z. B. erster Game Changer in Bracket 2, vervollständigte Beinahe-Combo, letzter Game Changer raus – Bracket-Wächter (2c)
+- neue Combo mit 3 oder mehr Karten unbemerkt im Deck – der Wächter nennt sie seit V1.9.9 als Hinweis; im Vorschlag erklären, Spielgruppe informieren
 - Singleton- oder Farbidentitätsfehler; Karten, die schon in anderen Decks stecken oder in `10` vorgemerkt sind
 - Standardländer nicht im Bestand → Nachkauf
 
