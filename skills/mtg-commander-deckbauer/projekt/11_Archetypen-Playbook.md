@@ -1,6 +1,6 @@
 # Archetypen-Playbook – Commander (Schwerpunkt Bracket 3)
 
-**Stand:** 30.10.2026 (Richtwerte neu erhoben mit den Paket- und Rollenregeln seit V1.7 – Entscheidung des Admins: am aktuellen EDHREC orientieren · V1.6: Rollen mit Qualitätsregeln neu gezählt) · **Daten:** EDHREC (Themenseiten und Durchschnittsdecks mit Bracket-3-Filter „Upgraded“, abgerufen 30.10.2026), Scryfall-Tagger (Funktionstags, Bulk vom 26.10.2026), playgroup.gg (Spieldaten, geprüft 27.10.2026), Commander Spellbook (Combos, geprüft 27.10.2026) · **Werkzeug:** `archetypen.py`, Rohdaten `archetypen_daten.json` · **Auf die Sammlung angewendet:** `12_Sammlungsprofil` · **Pflege:** Abschnitt 7
+**Stand:** 09.11.2026 (V1.9.6: Pflege ohne Bestandsliste 07 im Projekt, Werkzeuge von GitHub; vier Combo-Zeilen in 3.4 repariert, Einstufung live geprüft) · 30.10.2026 (Richtwerte neu erhoben mit den Paket- und Rollenregeln seit V1.7 – Entscheidung des Admins: am aktuellen EDHREC orientieren · V1.6: Rollen mit Qualitätsregeln neu gezählt) · **Daten:** EDHREC (Themenseiten und Durchschnittsdecks mit Bracket-3-Filter „Upgraded“, abgerufen 30.10.2026), Scryfall-Tagger (Funktionstags, Bulk vom 26.10.2026), playgroup.gg (Spieldaten, geprüft 27.10.2026), Commander Spellbook (Combos, geprüft 27.10.2026) · **Werkzeug:** `archetypen.py`, Rohdaten `archetypen_daten.json` · **Auf die Sammlung angewendet:** `12_Sammlungsprofil` · **Pflege:** Abschnitt 7
 
 Zweck: die Ebene zwischen dem allgemeinen Template (`01_Quellen-Framework`, Abschnitt 4) und den commander-spezifischen Live-Daten beim Deckbau (`08_Deckbau-Verfahren`). Hier steht, was ein Archetyp konkret braucht, was die Community spielt und wo die Fallen liegen.
 
@@ -74,11 +74,11 @@ Zweck: die Ebene zwischen dem allgemeinen Template (`01_Quellen-Framework`, Absc
 | Counter / Tokens | Scurry Oak + Ivy Lane Denizen | Ruthless |
 | Blink | Saheeli Rai + Felidar Guardian | Spicy |
 | Blink | Kiki-Jiki, Mirror Breaker + Restoration Angel | Ruthless |
-| Spellslinger | Dualcaster Mage + Twinflame · Niv-Mizzet, Parun + Curiosity | 34 | 10 | 22 | 12 (9,5) | 2 | 3,5 | 2 | 1 | 2,8 |
+| Spellslinger | Dualcaster Mage + Twinflame · Niv-Mizzet, Parun + Curiosity | Spicy |
 | Spellslinger / Artefakte | Isochron Scepter + Dramatic Reversal (braucht Manasteine) | Spicy |
-| Reanimator | Worldgorger Dragon + Animate Dead | 35 | 14 | 17 | 10 (5) | 2 | 1 | 2,5 | 2,5 | 3,1 |
-| Artefakte | Basalt Monolith + Rings of Brighthearth | 34,5 | 14 | 17,5 | 9 (7) | 2 | 2,5 | 4,5 | 2,5 | 3,1 |
-| Mill | Painter's Servant + Grindstone | 35,5 | 6,5 | 12 | 9 (6,5) | 2,5 | 5 | 3,5 | 0 | 3 |
+| Reanimator | Worldgorger Dragon + Animate Dead | Ruthless |
+| Artefakte | Basalt Monolith + Rings of Brighthearth | Ruthless |
+| Mill | Painter's Servant + Grindstone | Spicy |
 
 - *Einschätzung:* Solche Paare nur nach Absprache mit der Gruppe und ohne Tutor-Paket drumherum; `deckbau.py pruefen` meldet sie automatisch.
 
@@ -253,7 +253,7 @@ Archetyp-Schlüssel: tokens, aristokraten, counters, artefakte, spellslinger, re
 
 ## 7. Pflege
 
-- Setup in einer neuen Sitzung: kommt mit der Werkzeugkiste (`05a_Sitzungsstart`). Mit `mtg.sqlite` zählt der aktuelle Bestand; ohne Datenbank `--frei claude/07_Sammlung-Frei.csv --decks claude/decks/*.txt` angeben (Scryfall-Bulk wird bei Bedarf geladen).
+- Setup in einer neuen Sitzung: `archetypen.py` und `archetypen_daten.json` kommen mit den Werkzeugen von GitHub (`05a_Sitzungsstart`). Mit `mtg.sqlite` zählt der aktuelle Bestand (Normalfall). Ohne Datenbank zuerst `mtg_db.py bestand-export out/06_Sammlung-Bestand.csv --frei out/07_Sammlung-Frei.csv` und dann `--frei out/07_Sammlung-Frei.csv --decks decks/*.txt` angeben (Scryfall-Bulk wird bei Bedarf geladen); eine Datei 07 im Projekt gibt es seit 08.11.2026 nicht mehr.
 - Richtwerte erneuern (nur Admin; sonst Hinweis an den Admin): `archetypen.py daten` (≈ 1 Minute, rund 120 EDHREC-Abrufe) → `archetypen_daten.json` ersetzen, Tabellen in Abschnitt 3.1, 4 und 5 nachziehen.
 - Turnus: nach großen Commander-Sets oder alle drei Monate, zusammen mit `01a_Format-Stand`.
 - Sammlungsprofil nach größeren Zugängen neu erzeugen (`archetypen.py profil`).

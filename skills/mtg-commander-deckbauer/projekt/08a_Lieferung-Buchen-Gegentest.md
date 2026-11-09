@@ -1,6 +1,6 @@
 # Lieferung, Buchen und Gegentest – nach der Freigabe
 
-**Stand:** 29.10.2026 (V1.7: Gegenlauf mit zwei Konkurrenz-Agenten als feste Routine, Abschnitt 5 · V1.6, ausgelagert aus `08_Deckbau-Verfahren`, Abschnitte 9, 10, 10a, 12; neu: Gegentest) · Grundsätze, Stufen A–F und Abnahme: `08` · Werkzeuge: `05`, Sitzungsstart `05a`
+**Stand:** 09.11.2026 (V1.9.6: Buchen ohne Listen 06/07, Abschnitt 4 · V1.7: Gegenlauf mit zwei Konkurrenz-Agenten als feste Routine, Abschnitt 5 · V1.6, ausgelagert aus `08_Deckbau-Verfahren`, Abschnitte 9, 10, 10a, 12; neu: Gegentest) · Grundsätze, Stufen A–F und Abnahme: `08` · Werkzeuge: `05`, Sitzungsstart `05a`
 
 Diese Datei liest Claude erst, wenn ein Vorschlag freigegeben ist (Stufen D–F) oder ein Gegenlauf gewünscht wird (Abschnitt 5 – die Frage danach kommt schon am Ende von Stufe A).
 
@@ -76,8 +76,8 @@ Werkzeuge: `deckbau.py fazit` und `kartenbilder.py` (Befehle in `05_Datenbank-un
 1. Idee und Entwurf aus `10` bzw. `claude/ideen/` lesen; gemeldete Abweichungen in den Entwurf einarbeiten (Ersatzkarte → frei? sonst nachfragen).
 2. Datenbank bauen (falls nicht schon in diesem Chat), Käufe, die angekommen sind, als Zugang buchen (`buchungen.csv`, Beleg; bevorzugt per Scan). Noch nicht angekommene Käufe bleiben in der Kaufliste, das Deck wird mit dem gemeldeten Stand gebucht.
 3. Soll-Stand speichern (`claude/decks/<deckname>.txt`, z. B. Datenbank mit dem Entwurf bauen und `mtg_db.py snapshot … --deck "<Deckname>"`); bei Karten aus einem anderen Deck auch dessen Soll-Stand (mit Ersatz).
-4. Vormerkungen und Idee aus `10` entfernen; 06/07 neu (`bestand-export`); Deckregister (Deckname, voller Name, Commander, Bracket-Zeile, Status, Themen, Wert, Datum); Eintrag „Deck neu“ bzw. „Deck geändert“ in `09` mit `protokoll.py neu` (Weg, Bracket-Zeile, Abnahme, Käufe, Abweichungen beim Aufbau).
-5. Moxfield-Dateien anbieten (Ja/Nein; Deck als Einfügeblock/TXT, Zugänge als CSV); Zeile „In Moxfield nachziehen“ in `10`, solange sie nicht übernommen sind. Zum Schluss `paket.py geaendert` → alle geänderten Dateien zurückschreiben → Datenpaket neu packen und schreiben.
+4. Vormerkungen und Idee aus `10` entfernen; Deckregister (Deckname, voller Name, Commander, Bracket-Zeile, Status, Themen, Wert, Datum); Eintrag „Deck neu“ bzw. „Deck geändert“ in `09` mit `protokoll.py neu` (Weg, Bracket-Zeile, Abnahme, Käufe, Abweichungen beim Aufbau). Die Bestandslisten 06/07 gibt es seit V1.9.6 nur auf Nachfrage (`mtg_db.py bestand-export`, als Datei).
+5. Moxfield-Dateien anbieten (Ja/Nein; Deck als Einfügeblock/TXT, Zugänge als CSV); Zeile „In Moxfield nachziehen“ in `10`, solange sie nicht übernommen sind. Zum Schluss `paket.py geaendert` → alle geänderten Dateien zurückschreiben → Datenpaket neu packen und die als „neu“ gemeldeten Teile schreiben (`05a`, Abschnitt 6).
 6. Hat der Aufbau das Deck verändert, Deck-PDF neu erzeugen. `12_Sammlungsprofil` nur nach größeren Änderungen neu (ab ≈ 10 freien Karten).
 
 ## 5. Gegenlauf mit zwei Konkurrenz-Agenten (V1.7, feste Routine)
