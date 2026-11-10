@@ -25,6 +25,7 @@ Dieses Verfahren gilt für **jedes neue Commander-Deck** und für Neuaufbauten �
 15. **Archetyp-Richtwert vor Template** (Review 29.10.2026). Die Rollen-Minima kommen vom Ziel-Archetyp (Median der EDHREC-Durchschnittsdecks, `11`), das Template aus `01` gilt nur ohne Archetyp. Karten, die den eigenen Plan zerstören – symmetrische Kreaturen-Wipes im Go-wide-Deck (Tokens, Aristokraten, Kindred, Counter, Voltron, Blink) –, zählen nicht für ihre Rolle und werden nicht vorgeschlagen; Massen-Interaktion kommt dort aus einseitigen Wipes, Edikten oder Schutz.
 16. **Nichts Tragendes herausnehmen** (Raus-Sperren, V1.6). Eine Karte verlässt das Deck nicht, wenn dadurch ein Kernpaket unter den Median fällt, wenn sie starken Commander-Bezug hat (≥ 0,5; außer für eine Karte mit gleichem Bezug und Grund), wenn ihre Rolle unter das Minimum fällt oder schlechter ersetzt wird oder wenn die Interaktion gegen ein Ziel unter die Untergrenze fällt. `upgrade` zeigt die gesperrten Karten mit Grund; Claude hebt eine Sperre nur mit Begründung im Vorschlag auf.
 17. **Bracket-Wächter** (Wunsch des Admins, 31.10.2026). Das Ziel-Bracket wird bei jedem Bau und Upgrade gefragt, die Erklärung aller Brackets angeboten; bei bestehenden Decks misst Claude vorher das Ausgangsbracket. Ist das Ziel das Ausgangsbracket, warnt Claude bei jeder Änderung, die das Bracket verschieben würde, und schlägt eine Karte vor, die im Bracket bleibt – der Nutzer entscheidet (Abschnitt 2c).
+18. **Wünsche gezielt suchen, nicht nur nach Wert wählen** (seit V1.9.10). Jeder ausdrückliche Wunsch des Nutzers („Landfall-Payoffs mit Tokens“, „mehr Extra-Landdrops“) wird als Suchmuster an `upgrade --ziel` übergeben und im Vorschlag mit einer Zeile „Ziel-Abgleich“ belegt. Kaufkandidaten wählt Claude nach Wunsch, Paket und Preis – nie aus einer selbst gefilterten Wertliste (Abschnitt 8).
 
 ---
 
@@ -78,7 +79,7 @@ Gleiche Stufen A–F. Unterschiede:
 2. **⚑-Karten** (frei, aber zusammen mit dem Deck erfasst): vor dem Vorschlag fragen, ob sie physisch beim Deck liegen (Maybeboard, fehlende Deckkarte) – bedingte Frage im Fragenplan; `mtg_db.py exemplare <deck>` zeigt die Liste.
 3. Paketlücken: `archetypen.py deck <Soll-Stand> --archetyp <a>` und `archetypen.py karten <a> --farben <WUBRG> --ohne-deck <Soll-Stand>`.
 4. **Zusatzquelle Community-Listen:** 5–10 aktuelle öffentliche Listen des Commanders (Archidekt per Skript, Moxfield per Websuche, `01`, Abschnitt 8) – Karten, die dort häufig, im Deck aber nicht sind, gegen den Kartentext prüfen; nur übernehmen, wenn Oracle-Text und Plan es tragen.
-5. Entwurf schreiben → `pruefen <entwurf> --ersetzt <deck>` → Check **„nichts vergessen“** (Abschnitt 8) → `abnahme <entwurf> --basis <deck>` (Abschnitt 8a; nicht bestanden → nachbessern oder offen benennen) → `oracle --alt <Soll-Stand> --neu <entwurf>` (Pflicht) → Bracket-Wächter `bracket <Soll-Stand> --neu <entwurf> --ziel <Ziel>` (2c) → Bracket-Zeile vorher → nachher.
+5. Entwurf schreiben → `pruefen <entwurf> --ersetzt <deck>` → Check **„nichts vergessen“** und **Ziel-Abgleich** (Abschnitt 8) → `abnahme <entwurf> --basis <deck>` (Abschnitt 8a; nicht bestanden → nachbessern oder offen benennen) → `oracle --alt <Soll-Stand> --neu <entwurf>` (Pflicht) → Bracket-Wächter `bracket <Soll-Stand> --neu <entwurf> --ziel <Ziel>` (2c) → Bracket-Zeile vorher → nachher.
 6. **Vorschlag:** Tauschpaare „raus → rein“ mit **warum raus** und **warum rein** – je ein Satz aus dem Oracle-Text plus Datenbasis mit Quelle aus `upgrade` (Scryfall-Kategorie bzw. -Thema, EDHREC-Wert oder „unbekannt“, Combo, Commander-Bezug mit Grund, Rolle über Richtwert bzw. füllt eine Rolle) –, Status frei mit Kompromiss-Stufe bzw. €, bei Käufen Klasse A–D und günstigere Alternative; Rollenbilanz und Kernpakete vorher → nachher, Abnahme vorher → nachher (Stärke-Index), Bracket-Zeile mit Ausgangs- und Ziel-Bracket und den Warnungen des Bracket-Wächters, offene ⚑-Fragen. `upgrade` gibt den Oracle-Text der Raus- und der Rein-Karten aus.
 
 **Keine Machbarkeitsampel:** Die Ampel aus Abschnitt 6 gilt nur für neue Decks (Weg 1). Bei Upgrades zeigen Rollenbilanz und Kandidaten von `upgrade`, was Stufe 0 leisten kann; reicht das nicht, Stufe 1 anbieten.
@@ -285,6 +286,7 @@ Ein Deck ist erst fertig, wenn es die Abnahme besteht – neu gebaut oder nach e
 - nur ein Siegweg; kein Finisher
 - Kern-Paket des Archetyps unterbesetzt (z. B. Aristokraten ohne genug Payoffs) – `archetypen.py deck`
 - starke Synergie- oder Combo-Karte des Commanders übersehen – Check „nichts vergessen“ (Abschnitt 8)
+- ausdrücklicher Wunsch des Nutzers nicht gezielt gesucht – Ziel-Abgleich mit `upgrade --ziel` (Abschnitt 8)
 - Kurve zu hoch (Ø MV > 3,5) ohne Ausgleich
 - zu wenige Farbquellen, zu viele getappte Länder, Doppel-Pips ohne Quellen
 - Friedhofs-Hate fehlt, obwohl die Spielgruppe Friedhof spielt
