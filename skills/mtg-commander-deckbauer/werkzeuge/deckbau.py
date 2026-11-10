@@ -1205,6 +1205,23 @@ def nicht_tragbar(ctx, k, x=None):
 FARB_DE = {"W": "Weiß", "U": "Blau", "B": "Schwarz", "R": "Rot", "G": "Grün"}
 
 
+def ziel_muster(liste):
+    """--ziel "landfall+token" → [(Label, [Regex …])]: jeder Teil (mit „+“ verbunden) muss im Oracle-Text oder in der
+    Typzeile vorkommen (ohne Groß-/Kleinschreibung, Regex erlaubt). V1.9.10: die ausdrücklichen Wünsche des Nutzers
+    werden gezielt gesucht – nicht nur über den Wert (Fund 10.11.2026: Landfall-Token-Karten fehlten in der Kaufliste)."""
+    out = []
+    for z in liste or []:
+        teile = [t.strip() for t in z.split("+") if t.strip()]
+        if teile:
+            out.append((z.strip(), [re.compile(t, re.I) for t in teile]))
+    return out
+
+
+def ziel_treffer(c, muster):
+    txt = f"{c.get('text') or ''}\n{c.get('type_line') or ''}"
+    return [lab for lab, rx in muster if all(r.search(txt) for r in rx)]
+
+
 def upgrade_kandidaten(con, ctx, a):
     """Freie Karten (Stufe 1: auch Käufe bis --max-preis) mit Bewertung; Karten, die den Plan zerstören, getrennt."""
     pool = {oid: "Sammlung" for (oid,) in con.execute(      # mit --idee: deren Vormerkungen gelten als frei
@@ -1214,6 +1231,13 @@ def upgrade_kandidaten(con, ctx, a):
             oid = M.resolve_name(con, n)
             if oid and oid not in pool:
                 pool[oid] = "EDHREC"
+    muster = ctx["ziel"] = ziel_muster(getattr(a, "ziel", None))
+    if muster and a.stufe:                      # auch Karten, die nicht auf der EDHREC-Seite stehen
+        for oid, txt, tl, ci in con.execute(
+                "SELECT oracle_id, oracle_text, type_line, color_identity FROM cards WHERE legal_commander='legal'"
+                " AND eur_min IS NOT NULL AND eur_min <= ?", (a.max_preis,)):
+            if oid not in pool and set(ci or "") <= ctx["ci"] and ziel_treffer({"text": txt, "type_line": tl}, muster):
+                pool[oid] = "Ziel-Suche"
     zp, beim_deck = M.deck_zeitstempel(con, ctx["did"]) if ctx["did"] else (None, None)
     beim_deck = {r[3] for r in beim_deck or []}
     kand, stoert = [], []
@@ -1237,6 +1261,9 @@ def upgrade_kandidaten(con, ctx, a):
              if f else f"{c['eur']:.2f} €"}
         k["untragbar"] = nicht_tragbar(ctx, k)
         k["prio"] = k["b"]["wert"] * (0.6 + 0.4 * max([B.funktionsgrad(b["sicht"], r) for r in k["rollen"]] or [0.7]))
+        k["ziel"] = ziel_treffer(c, muster)
+        if k["ziel"]:
+            k["prio"] *= 1.25                   # ausdrücklicher Wunsch des Nutzers geht vor
         kand.append(k)
     kand.sort(key=lambda k: -k["b"]["wert"])
     return kand, stoert, (zp if beim_deck else None)
@@ -1392,16 +1419,39 @@ def bilde_paare(ctx, kand, kauf_alt, a):
                     k["kompromiss"] = kompromiss(k, r, kauf_alt)
                 t.tausche(x, k, f"{ROLLE_NAME[r]} unter Minimum")
     # 2. Kernpakete unter dem Median (Rollen bleiben ab hier auf dem Ziel)
+    # V1.9.10: reihum – je Runde ein Paar je offenem Paket (größte relative Lücke zuerst), damit kein Paket die
+    # Paarzahl allein verbraucht (Fund 10.11.2026: Landfall-Payoffs bekamen kein Paar, Landdrops nahmen alle Plätze)
     t.phase = 2
-    for key, m in sorted(t.median.items(), key=lambda kv: t.paket[kv[0]] - kv[1]):
-        for k in sorted((k for k in kand if key in k["pakete"] and not k["untragbar"]), key=lambda k: -k["prio"]):
-            if t.paket[key] >= m or len(t.paare) >= a.paare:
-                break
+    reihe = {key: iter(sorted((k for k in kand if key in k["pakete"] and not k["untragbar"]), key=lambda k: -k["prio"]))
+             for key in t.median}
+    while len(t.paare) < a.paare:
+        offen = sorted((key for key, m in t.median.items() if t.paket[key] < m and key in reihe),
+                       key=lambda key: t.paket[key] / (t.median[key] or 1))
+        if not offen:
+            break
+        for key in offen:
+            if len(t.paare) >= a.paare or t.paket[key] >= t.median[key]:
+                continue
+            for k in reihe[key]:
+                if k["c"]["oid"] in t.rein_ok:
+                    continue
+                x = t.raus_fuer(k, schwach, paket=key, max_wert=k["b"]["wert"] - 0.02)   # kein Tausch ohne Gewinn
+                if x:
+                    t.tausche(x, k, f"Kernpaket {t.label[key]} unter Median")
+                    break
+            else:
+                reihe.pop(key)
+    # 2b. Ziel des Nutzers (--ziel): je Muster mindestens die beste tragbare Karte, wenn noch keine im Entwurf ist
+    for lab, _ in ctx.get("ziel", []):
+        if any(lab in k.get("ziel", []) for _, k, *_ in t.paare) or len(t.paare) >= a.paare:
+            continue
+        for k in sorted((k for k in kand if lab in k["ziel"] and not k["untragbar"]), key=lambda k: -k["prio"]):
             if k["c"]["oid"] in t.rein_ok:
                 continue
-            x = t.raus_fuer(k, schwach, paket=key, max_wert=k["b"]["wert"] - 0.02)     # kein Tausch ohne Gewinn
+            x = t.raus_fuer(k, schwach, max_wert=k["b"]["wert"] - 0.02)
             if x:
-                t.tausche(x, k, f"Kernpaket {t.label[key]} unter Median")
+                t.tausche(x, k, f"Ziel des Nutzers: {lab}")
+                break
     # 3. Wert verbessern (Länder nur gegen Länder und nur mit EDHREC-Wert)
     for k in kand:
         if len(t.paare) >= a.paare or k["c"]["oid"] in t.rein_ok:
@@ -1495,6 +1545,7 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
         print("Nicht vorgeschlagen – passt nicht zu Manabasis oder Kurve: "
               + "; ".join(f"{n} ({g})" for n, g in list(abgel.items())[:6]))
     durchlauf(ctx, kand, t)
+    ziel_abgleich(ctx, kand, t, a)
     print(f"\nTauschpaare – Startpunkt, Claude prüft jedes Paar am Oracle-Text und am Spielplan ({len(t.paare)}):")
     M.table([(i + 1, x["c"]["name"], wert_txt(x["b"]), k["c"]["name"], wert_txt(k["b"]),
               f"{k['b']['wert'] - x['b']['wert']:+.2f}".replace(".", ","), k["status"], grund)
@@ -1544,6 +1595,24 @@ def upgrade_ausgabe(con, ctx, kand, stoert, t, kauf_alt, zp, a):
     print("\n\n".join(oracle_block(con, k["c"]) for _, k, *_ in t.paare))
     print("\nOracle-Text der Karten, die raus sollen (auch die Raus-Begründung nur hieraus):\n")
     print("\n\n".join(oracle_block(con, x["c"]) for x, *_ in t.paare))
+
+
+def ziel_abgleich(ctx, kand, t, a):
+    """Je Ziel-Muster (--ziel) alle Treffer im Pool (frei, mit Stufe 1 auch Käufe bis --max-preis, auch ohne EDHREC):
+    ✓ = in einem Paar. Gehört als Zeile „Ziel-Abgleich“ in den Vorschlag (08, Abschnitt 8)."""
+    if not ctx.get("ziel"):
+        return
+    print("\nZiel-Abgleich – Karten zu den Wünschen des Nutzers (frei" + (" oder Kauf" if a.stufe else "")
+          + "; ✓ = in einem Paar; Quelle EDHREC, Sammlung oder Oracle-Suche):")
+    for lab, _ in ctx["ziel"]:
+        sel = sorted((k for k in kand if lab in k["ziel"]), key=lambda k: -k["prio"])
+        if not sel:
+            print(f"  „{lab}“: kein Treffer" + ("" if a.stufe else " in den freien Karten – mit --stufe 1 auch Käufe"))
+            continue
+        print(f"  „{lab}“ ({len(sel)}): " + "; ".join(
+            f"{k['c']['name']} ({wert_txt(k['b'])}, {k['status']}){' ✓' if k['c']['oid'] in t.rein_ok else ''}"
+            + (f" – {k['untragbar']}" if k["untragbar"] else "") for k in sel[:12])
+              + (f" … +{len(sel) - 12} in der CSV" if len(sel) > 12 else ""))
 
 
 def durchlauf(ctx, kand, t):
@@ -2997,6 +3066,8 @@ def parser():
     p.add_argument("--thema", help="Ziel-Archetyp bzw. EDHREC-Thema (sonst Strategie im Register)")
     p.add_argument("--bracket", type=int, default=3)
     p.add_argument("--paare", type=int, default=15)
+    p.add_argument("--ziel", action="append", help="Wunsch des Nutzers als Suchmuster, Teile mit + verbinden "
+                   "(z. B. \"landfall+create+token\"); mehrfach möglich – gezielte Suche, auch ohne EDHREC (V1.9.10)")
     p.add_argument("--abstand", type=float, default=0.08, help="Mindestabstand im Wert für ein Tauschpaar")
     p.add_argument("--voll", action="store_true", help="alle Listen ausgeben (sonst kurz; alles steht in der CSV)")
     p.add_argument("--kurz", action="store_true", help="kurze Ausgabe (Standard; nur aus Kompatibilität)")

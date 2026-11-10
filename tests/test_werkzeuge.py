@@ -188,6 +188,20 @@ def test_waechter_meldet_neue_grosse_combos():
     assert not any(h.startswith("ℹ neue Combo") for h in hinw)
 
 
+def test_ziel_muster_und_treffer():
+    """V1.9.10: ausdrückliche Wünsche (--ziel) werden als Oracle-Muster gesucht – alle Teile müssen passen."""
+    import deckbau as D
+    m = D.ziel_muster(["landfall+create.*token", "additional land", " "])
+    assert [lab for lab, _ in m] == ["landfall+create.*token", "additional land"]
+    karte = {"text": "Landfall — Whenever a land you control enters, create a 2/2 green Elemental creature token.",
+             "type_line": "Enchantment"}
+    assert D.ziel_treffer(karte, m) == ["landfall+create.*token"]
+    assert D.ziel_treffer({"text": "You may play an additional land on each of your turns.", "type_line": "Creature"},
+                          m) == ["additional land"]
+    assert D.ziel_treffer({"text": "Landfall — put a +1/+1 counter on target creature.", "type_line": ""}, m) == []
+    assert D.ziel_muster(None) == []
+
+
 def test_bracket_befehl(arbeit):
     out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck"))
     assert "Ausgangsbracket: Bracket" in out
