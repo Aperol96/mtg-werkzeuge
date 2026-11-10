@@ -197,7 +197,7 @@ User und Gast kennen die Begriffe dieses Projekts nicht. Deshalb gilt:
 | Gast-Archiv schreiben bzw. löschen | – | ✓ (löschen auf Wunsch) | – | ✓ (nur das eigene) |
 | Programm ändern (Regeln, Abläufe, Werkzeuge, PDF-Vorlagen und -Inhalte, Zugang), Weitergabe, GitHub, Testlauf | – | ✓ | – | – |
 | Verbesserungsvorschläge zum Programm | – | ✓ | – | – |
-| Gegenlauf mit zwei Konkurrenz-Agenten – Frage am Ende von Stufe A mit Ressourcenhinweis (`08a`, Abschnitt 5) | – | ✓ | ✓ | ✓ (mit eigenen Daten) |
+| Gegenlauf mit drei Konkurrenz-Agenten – Frage am Ende von Stufe A mit Ressourcenhinweis (`08a`, Abschnitt 5) | – | ✓ | ✓ | ✓ (mit eigenen Daten) |
 
 **Dateien**
 

@@ -90,11 +90,17 @@ def test_gegentest(arbeit):
 def test_gegenlauf_konkurrenten():
     """Konkurrenten mit festem Commit, Lizenz und Lesedateien; Auftrag nennt Unabhängigkeit und Methodik-Modus."""
     import deckbau as D
-    assert len(D.KONKURRENTEN) == 2
+    assert len(D.KONKURRENTEN) == 3 and "mtg-edh-upgrade" in D.KONKURRENTEN
     for k in D.KONKURRENTEN.values():
         assert re.fullmatch(r"[0-9a-f]{40}", k["commit"]) and k["lizenz"] and k["lesen"]
     t = D.GEGENLAUF_AUFTRAG
     assert "NICHT ausgeführt" in t and "Unabhängig" in t and "{key}" in t
+    # V1.9.11: Wortlaut des Nutzers und Zusammenfassung stehen beide im Auftrag
+    assert "{wortlaut}" in t and "{ziel}" in t and "folge dem Wortlaut" in t and "{behalten}" in t
+    txt = t.format(name="N", repo="R", commit="c", lizenz="MIT", key="k", ordner="/o", lesen="  - x", daten="d",
+                   neubau="", commander="C", bracket=3, ziel="Z", budget="B", karten="K", gc="G",
+                   hinweise="- H\n", wortlaut="„mehr Tokens“", behalten="Esper Sentinel")
+    assert "„mehr Tokens“" in txt and "Esper Sentinel" in txt and "- H" in txt
 
 
 def test_weitere_befehle(arbeit):

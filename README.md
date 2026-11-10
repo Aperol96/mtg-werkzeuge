@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.9.10** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.9.11** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -19,7 +19,7 @@ Stand **V1.9.10** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt
 5. [So läuft ein Deckbau oder Upgrade](#so-läuft-ein-deckbau-oder-upgrade)
 6. [Wege, Stufen und Klassen](#wege-stufen-und-klassen)
 7. [Die Abnahme: wann ein Deck fertig ist](#die-abnahme-wann-ein-deck-fertig-ist)
-8. [Der Gegenlauf: zwei fremde Agenten bauen mit](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)
+8. [Der Gegenlauf: drei fremde Agenten bauen mit](#der-gegenlauf-drei-fremde-agenten-bauen-mit)
 9. [Die Verkaufsliste](#die-verkaufsliste)
 10. [Was die Werkzeuge machen](#was-die-werkzeuge-machen)
 11. [Aufwand und Kosten](#aufwand-und-kosten)
@@ -135,7 +135,7 @@ flowchart TD
         direction TB
         G1["Agent 1: Commander Deck Skills<br/>baut unabhängig"]
         G2["Agent 2: MTG Master<br/>baut unabhängig"]
-        G3["Gegentest<br/>drei Listen vergleichen,<br/>Konsens-Tausche prüfen"]
+        G3["Gegentest<br/>vier Listen vergleichen,<br/>Konsens-Tausche prüfen"]
         G1 --> G3
         G2 --> G3
     end
@@ -164,7 +164,7 @@ flowchart TD
 
     START --> A1
     A5 -- "ja oder nein" --> B1
-    A5 -. "ja: beide parallel starten" .-> G1 & G2
+    A5 -. "ja: alle parallel starten" .-> G1 & G2
     B4 -- "bestanden oder<br/>offene Punkte benannt" --> V
     B4 -. "mit Gegenlauf" .-> G3
     G3 -. "ein abgewogener Vorschlag" .-> V
@@ -273,9 +273,9 @@ Ein Deck – neu oder nach einem Upgrade – gilt erst als fertig, wenn es die *
 
 Urteil: **bestanden · bedingt** (offene Punkte brauchen eine Einschätzung) **· nicht bestanden**. „Nicht bestanden“ heißt nicht „nicht liefern“: Claude nennt die offenen Punkte und was sie lösen würde (Kauf mit Klasse oder Kompromiss aus der Sammlung). Symmetrische Creature-Wipes zählen im Go-wide-Deck (Tokens, Aristocrats, Tribal, Counters, Voltron, Blink) nicht als Wipe, weil sie den eigenen Plan zerstören.
 
-## Der Gegenlauf: zwei fremde Agenten bauen mit
+## Der Gegenlauf: drei fremde Agenten bauen mit
 
-**Was:** Auf Wunsch bauen zwei unabhängige Agenten dasselbe Deck bzw. dasselbe Upgrade – mit denselben Vorgaben (Ziel, Stufe, Budget, Bracket, freie Karten), aber nach der Methodik zweier anderer, öffentlicher Claude-Skills. Claude legt danach **drei Vorschläge** nebeneinander und macht daraus **einen**.
+**Was:** Auf Wunsch bauen drei unabhängige Agenten dasselbe Deck bzw. dasselbe Upgrade – mit denselben Vorgaben (Ziel, Stufe, Budget, Bracket, freie Karten), aber nach der Methodik dreier anderer, öffentlicher Claude-Skills. Claude legt danach **drei Vorschläge** nebeneinander und macht daraus **einen**.
 
 **Wozu:** Jedes Verfahren hat blinde Flecken. Der Gegenlauf zeigt, wo das Projekt Karten, Pläne oder Raus-Gründe übersieht – und umgekehrt, wo die anderen danebenliegen. Was die Konkurrenz wiederholt besser macht, fließt als Verbesserung in die Werkzeuge ein.
 
@@ -283,16 +283,17 @@ Urteil: **bestanden · bedingt** (offene Punkte brauchen eine Einschätzung) **�
 |---|---|---|
 | **Commander Deck Skills** | [philiptyler/mtg-commander-deck-claude-skills](https://github.com/philiptyler/mtg-commander-deck-claude-skills) | Review → schwächste Karten → Combos vervollständigen → Kandidaten je Lücke → Manabasis mit hypergeometrischen Wahrscheinlichkeiten; bewusst ohne EDHREC |
 | **MTG Master** | [M-Sahin/mtg-master](https://github.com/M-Sahin/mtg-master) | „verify, don't recall“: Rolle des Commanders und Synergiepaket → Template-Abgleich → Manabasis → Bracket → Tauschliste; EDHREC als Anhaltspunkt |
+| **mtg-edh-upgrade** (seit V1.9.11) | [guuse/claude-mtg-skills](https://github.com/guuse/claude-mtg-skills) | Upgrade-Spezialist: Diagnose gegen EDHREC-Vergleichslisten → Kandidaten nach Wirkung je Euro, 2–3 Berührungspunkte je Karte → Schnitte je Rolle → ★-Rating vorher/nachher |
 
 **So läuft er ab:**
 
 1. **Frage:** Am Ende des Gesprächs (Stufe A) fragt Claude einmal mit Ja/Nein – mit Hinweis auf den Aufwand.
-2. **Vorbereiten:** Das Werkzeug legt je Agent einen Auftrag an: Ausgangsdeck, Liste der freien Karten, deine Vorgaben. Die Anleitungen der beiden Skills werden auf einem festen, geprüften Stand geholt.
-3. **Bauen:** Beide Agenten laufen parallel im Hintergrund, während Claude den eigenen Vorschlag erarbeitet. Sie sehen weder die Werkzeuge noch die Dokumente dieses Projekts noch die Ergebnisse der anderen. Fremder Code wird nicht ausgeführt – die Agenten folgen der beschriebenen Methodik und holen sich ihre Daten selbst (Scryfall, Commander Spellbook, ggf. EDHREC).
-4. **Gegentest:** Ein Werkzeug vergleicht die drei Listen: Abnahme je Punkt, Kennzahlen, Überschneidung – und welche Tausche mehrere Läufe unabhängig gewählt haben (**Konsens**) und welche nur einer.
+2. **Vorbereiten:** Das Werkzeug legt je Agent einen Auftrag an: Ausgangsdeck, Liste der freien Karten, deine Vorgaben. Die Anleitungen der drei Skills werden auf einem festen, geprüften Stand geholt. Deine Wünsche gehen zweifach mit: im Wortlaut (was du willst) und als abgestimmte Zusammenfassung (wie es fachlich umgesetzt wird); bei Widerspruch zählt der Wortlaut, außer er bricht Bracket oder Rollen-Minima.
+3. **Bauen:** Alle Agenten laufen parallel im Hintergrund, während Claude den eigenen Vorschlag erarbeitet. Sie sehen weder die Werkzeuge noch die Dokumente dieses Projekts noch die Ergebnisse der anderen. Fremder Code wird nicht ausgeführt – die Agenten folgen der beschriebenen Methodik und holen sich ihre Daten selbst (Scryfall, Commander Spellbook, ggf. EDHREC).
+4. **Gegentest:** Ein Werkzeug vergleicht die vier Listen: Abnahme je Punkt, Kennzahlen, Überschneidung – und welche Tausche mehrere Läufe unabhängig gewählt haben (**Konsens**) und welche nur einer.
 5. **Abwägen:** Konsens-Tausche prüft Claude am Oracle-Text und Spielplan und übernimmt sie, wenn sie halten; Einzelvorschläge der anderen prüft es gegen Raus-Sperren, Rollen-Minima, Bracket, Kurve und Manabasis. Raus-Gründe der Konkurrenz werden nie ungeprüft übernommen. Ergebnis: ein Vorschlag mit einer kurzen Tabelle „was von wem kam und warum“.
 
-**Aufwand:** je Agent rund 0,2–0,3 Mio. Token, 5–15 Minuten (beide parallel), API-Gegenwert rund 4–6 € je Agent – im Abo zählt das aufs Nutzungslimit. Gebucht wird aus dem Gegenlauf nichts.
+**Aufwand:** je Agent rund 0,15–0,3 Mio. Token, 4–15 Minuten (alle parallel), API-Gegenwert rund 4–6 € je Agent – im Abo zählt das aufs Nutzungslimit. Gebucht wird aus dem Gegenlauf nichts.
 
 ## Die Verkaufsliste
 
@@ -345,6 +346,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
+| 10.11.2026 | V1.9.11: Gegenlauf mit drei Konkurrenten (neu: mtg-edh-upgrade); Auftrag mit Wortlaut (`--wortlaut`) und Zusammenfassung (`--ziel`) der Wünsche, `--behalten` | – |
 | 10.11.2026 | V1.9.10: `upgrade --ziel` – ausdrückliche Wünsche als Oracle-Muster gezielt gesucht (auch ohne EDHREC-Eintrag), Abschnitt „Ziel-Abgleich“; Kernpakete reihum gefüllt | – |
 | 09.11.2026 | V1.9.9: Bracket-Wächter nennt neue Combos mit 3 oder mehr Karten als Hinweis (kein Bracket-Wechsel, aber im Vorschlag nennen) – vorher blieben sie stumm | – |
 | 09.11.2026 | V1.9.8: `upgrade` – „warum raus“ nennt den Rollenstand nach den Paaren davor gegen das Ziel und den Ausgangsstand (vorher wirkte „Ramp über Richtwert (26/25)“ wie ein Widerspruch zur Kopfzeile „Ramp 16/23“); Kopfzeile „Rollen vor dem Upgrade (Ist/Minimum)“ | – |
@@ -472,7 +474,7 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | **Bracket-Zeile** | das Ergebnis des Bracket-Checks in einer Zeile |
 | **Ausgangsbracket · Ziel-Bracket · Bracket-Wächter** | Bracket, in dem das Deck heute steht · Bracket, das es erreichen soll · Warnung, wenn eine Änderung das Deck ungewollt in ein anderes Bracket schiebt (`deckbau.py bracket`) |
 | **Abnahme · Stärke-Index** | acht Prüfpunkte, ab wann ein Deck fertig ist · Vergleichszahl zwischen zwei Ständen desselben Decks ([Details](#die-abnahme-wann-ein-deck-fertig-ist)) |
-| **Gegenlauf · Gegentest** | zwei fremde Agenten bauen mit · Vergleich der drei Listen ([Details](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)) |
+| **Gegenlauf · Gegentest** | drei fremde Agenten bauen mit · Vergleich der vier Listen ([Details](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)) |
 | **Fazit-PDF · Tauschübersicht · Deck-PDF** | Änderungen mit Begründung · Pickliste „was aus welcher Box“ · ganzes Deck mit Kurzdaten |
 | **Verkaufsliste · Kat. 1 / 2 / 3 · V-nnn** | Sammlungskarten ohne Bedenken, mit Bedenken, nicht verkaufen · gesicherter, geplanter Verkauf ([Details](#die-verkaufsliste)) |
 

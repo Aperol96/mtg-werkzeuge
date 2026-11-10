@@ -109,7 +109,7 @@ Regeln:
 - **Jede Frage** als Auswahl mit markierter Empfehlung und kurzer Datenbasis, plus **„Weiß nicht – entscheide du (Empfehlung: …)“**. Freitext für eigene Ideen und Ergänzungen geht immer; löst eine Ergänzung neue Fragen aus, passt Claude den Plan an und sagt es in einem Satz.
 - **„Reicht – entscheide den Rest“** beendet die Fragen: Für offene Punkte gilt die Empfehlung; sie steht im Steckbrief bzw. in der Upgrade-Richtung.
 - Der Plan endet mit dem **Steckbrief** (neues Deck) bzw. der **Upgrade-Richtung** zum Bestätigen – Auswahl „passt · ändern · ergänzen“; hier kann der Nutzer alles nachtragen, was nicht gefragt wurde.
-- Danach **eine** Ja/Nein-Frage zum **Gegenlauf** (`08a`, Abschnitt 5): zwei Konkurrenz-Agenten bauen unabhängig mit denselben Vorgaben, Claude wägt drei Vorschläge ab – mit Hinweis auf den Aufwand (je Agent ≈ 0,2–0,3 Mio. Token, 5–15 Minuten parallel, ≈ 4–6 € API-Gegenwert). Bei Ja sofort `deckbau.py gegenlauf` und die Agenten starten, dann die eigene Recherche.
+- Danach **eine** Ja/Nein-Frage zum **Gegenlauf** (`08a`, Abschnitt 5): drei Konkurrenz-Agenten bauen unabhängig mit denselben Vorgaben (Wortlaut und Zusammenfassung der Wünsche), Claude wägt vier Vorschläge ab – mit Hinweis auf den Aufwand (je Agent ≈ 0,2–0,3 Mio. Token, 5–15 Minuten parallel, ≈ 4–6 € API-Gegenwert). Bei Ja sofort `deckbau.py gegenlauf` und die Agenten starten, dann die eigene Recherche.
 
 **Schritt 3 – Passung abwägen** (bestehende Decks; `passung` liefert die Daten):
 

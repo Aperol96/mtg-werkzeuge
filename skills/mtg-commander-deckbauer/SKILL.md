@@ -3,7 +3,7 @@ name: mtg-commander-deckbauer
 description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand führen (CSV aus Moxfield, ManaBox oder anderen Programmen), Verkaufsliste erstellen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
-# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.10)
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.11)
 
 Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seinen Bestand führen oder Karten verkaufen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
 
@@ -38,7 +38,7 @@ Die Werkzeuge rechnen intern im Moxfield-CSV-Format: Moxfield-CSV direkt, ManaBo
 
 ## Ablauf in Kürze (Details in `08`)
 
-1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit zwei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
+1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit drei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
 2. **Recherche:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
 3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme. Der Nutzer passt an – Anpassungsrunden zeigen nur Änderungen.
 4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Einfügeblock für die externe Datenbank des Nutzers; gebucht wird erst, wenn das Deck physisch gebaut ist.

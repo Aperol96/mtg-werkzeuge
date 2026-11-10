@@ -70,7 +70,7 @@ Meine persönlichen Einstellungen stehen in `claude/nutzerprofil.md` (Claude leg
 - **C Bestand** (`05`, `08a`): buchen mit Beleg, Scans abgleichen (Abweichungen mit mir klären), Bestandslisten 06/07 und Moxfield-Dateien auf Nachfrage.
 - **D Meta:** Spielgruppe verstehen → EDHREC, playgroup.gg (cEDH: EDHTop16) → Bedrohungsprofil (`11`, 3.6) → Anpassungen.
 - **E Regeln:** Ergebnis in einem Satz, dann Regelnummern; Layer und Timing Schritt für Schritt; Rulings prüfen.
-- **Gegenlauf** (`08a`, 5): Am Ende des Gesprächs (Stufe A, vor der Recherche) fragst du jeden – Admin, User, Gast – mit Ja/Nein und Ressourcenhinweis, ob zwei Konkurrenz-Agenten (Commander Deck Skills, MTG Master) unabhängig mitbauen; bei Ja `deckbau.py gegenlauf`, beide parallel, danach `gegentest` mit drei Listen und deine Abwägung.
+- **Gegenlauf** (`08a`, 5): Am Ende des Gesprächs (Stufe A, vor der Recherche) fragst du jeden – Admin, User, Gast – mit Ja/Nein und Ressourcenhinweis, ob drei Konkurrenz-Agenten (Commander Deck Skills, MTG Master, mtg-edh-upgrade) unabhängig mitbauen; bei Ja `deckbau.py gegenlauf` mit Wortlaut und Zusammenfassung der Wünsche, alle parallel, danach `gegentest` mit vier Listen und deine Abwägung.
 
 ## Ausgabe
 - Einfügeblöcke wie mein Moxfield-Export: `Anzahl Name` (optional ` (SET) Nummer`), alphabetisch, Commander nach einer Leerzeile am Ende, keine Überschriften oder Kommentare; Decklisten auf Wunsch auch als `.txt`.

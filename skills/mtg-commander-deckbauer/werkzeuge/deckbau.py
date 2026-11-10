@@ -2045,10 +2045,26 @@ KONKURRENTEN = {
                  "Anhaltspunkt (Anleitung: nicht das Durchschnittsdeck kopieren)",
         "stil": "Commander-Rolle und Synergiepaket → Template-Abgleich → Manabasis → Bracket ehrlich → Tauschliste",
     },
+    # V1.9.11 (Admin, 10.11.2026): dritter Konkurrent – Upgrade-Spezialist; Probelauf Endless Harvest 10.11.2026
+    "mtg-edh-upgrade": {
+        "name": "mtg-edh-upgrade (guuse/claude-mtg-skills)",
+        "repo": "https://github.com/guuse/claude-mtg-skills",
+        "commit": "e85412a23e9ea97ae52835fbb8421df18572775f", "lizenz": "MIT",
+        "lesen": [f"mtg-skills/skills/mtg-edh-upgrade/{f}" for f in (
+            "SKILL.md", "references/methodology.md", "references/synergy.md", "references/brackets.md",
+            "references/rating.md", "references/data-sources.md", "references/scryfall-syntax.md")],
+        "daten": "EDHREC-JSON (json.edhrec.com/pages/commanders/<slug>.json, average-decks, Themen- und Budget-Seiten) "
+                 "als Vergleichslisten mit Inclusion-Raten, Scryfall-API (Oracle-Text, Farbidentität, prices.eur, "
+                 "Tagger-Suchen), Commander Spellbook für Combos; keine lokale Kartendatenbank",
+        "stil": "Diagnose gegen Vergleichslisten → Kandidaten nach Wirkung je Euro, 2–3 Berührungspunkte je Karte → "
+                "Schnitte je Rolle → Budget und Bracket → ★-Rating vorher/nachher",
+        "hinweise": "- Die Schritte „interaktiv fragen“, „present_files“, `.mtg`-Workspace, mtg-sync (pull/push) und "
+                    "Moxfield-Tags entfallen;\n  Deck-Rating (★, fünf Dimensionen) vorher → nachher gehört in den Bericht.",
+    },
 }
 KONKURRENZ_ORT = "/home/claude/konkurrenz"
-RESSOURCEN = ("je Agent ≈ 0,2–0,3 Mio. Token (meist Cache), 5–15 Minuten, API-Gegenwert ≈ 4–6 € mit Sonnet 5.5 "
-              "(gemessen 29.10.2026); beide laufen parallel, dazu der Vergleich ≈ 1 € – im Abo zählt es aufs "
+RESSOURCEN = ("je Agent ≈ 0,15–0,3 Mio. Token (meist Cache), 4–15 Minuten, API-Gegenwert ≈ 4–6 € mit Sonnet 5.5 "
+              "(gemessen 29.10. und 10.11.2026); alle laufen parallel, dazu der Vergleich ≈ 1 € – im Abo zählt es aufs "
               "Nutzungslimit")
 
 GEGENLAUF_AUFTRAG = """Du bist ein unabhängiger Deckbauer und arbeitest nach der Methodik des Skills „{name}“
@@ -2065,26 +2081,32 @@ Grundregeln dieses Laufs:
   Eigene Dateien nur in {ordner}/{key}/.
 - Stelle keine Rückfragen – die Vorgaben unten beantworten alle Fragen der Anleitung.
 - Kartentexte nur aus den abgefragten Oracle-Texten, nie aus dem Gedächtnis.
-
+{hinweise}
 Vorgaben des Nutzers:
 - Ausgangsdeck (Commander nach der Leerzeile am Ende): {ordner}/ausgangsdeck.txt{neubau}
 - Commander: {commander}
 - Format: Commander, Ziel-Bracket {bracket} (offizielle Brackets: max. 3 Game Changer in Bracket 3, keine MLD,
   keine Extra-Turn-Ketten, keine 2-Karten-Combos, die früh zusammenkommen)
-- Ziel: {ziel}
+- Wünsche des Nutzers im Wortlaut (zeigen, was er will): {wortlaut}
+- Upgrade-Richtung (Zusammenfassung, mit dem Nutzer abgestimmt; ergänzt Richtwerte und Lücken): {ziel}
+- Beides zusammen lesen: Der Wortlaut zeigt die Absicht, die Zusammenfassung die fachliche Umsetzung. Widersprechen
+  sie sich, folge dem Wortlaut – außer er verstößt gegen Bracket, Legalität oder Rollen-Minimum; dann folge der
+  Zusammenfassung. Nenne jeden Widerspruch und deine Entscheidung im Bericht unter (d).
+- Behalten (nicht rausnehmen): {behalten}
 - Budget: {budget}
 - Karten: {karten}
 - Game Changer: {gc}
 - Spielgruppe: 3–5 Spieler, Casual
 - Zielgröße 100 Karten; jede Karte, die rausgeht, braucht einen Grund aus dem Oracle-Text; tragende Rollen
   (Ramp, Kartenvorteil, Interaktion, Wipes, Schutz, Länder) nicht unter ihr Minimum drücken
+- Combos: jede Combo (auch mit 3+ Karten), die durch deine Tausche entsteht oder wegfällt, im Bericht nennen
 
 Ergebnis:
 1. {ordner}/{key}.txt – die fertige Liste im Moxfield-Format („1 Kartenname“ je Zeile, alphabetisch, Commander nach
    einer Leerzeile am Ende)
 2. {ordner}/{key}_bericht.txt mit den Abschnitten (a) Tauschliste raus → rein mit je einem Satz Begründung
    (Oracle-Text), (b) Spielplan und Siegwege, (c) gelaufene Prüfungen und Ergebnisse, (d) was nicht ging /
-   Abweichungen von den Vorgaben, (e) Aufwand (Dauer, Schritte, Anzahl Tool-Aufrufe)
+   Abweichungen von den Vorgaben / Widersprüche zwischen Wortlaut und Zusammenfassung, (e) Aufwand (Dauer, Schritte, Anzahl Tool-Aufrufe)
 Antworte zum Schluss nur mit 5–10 Zeilen Zusammenfassung."""
 
 
@@ -2176,7 +2198,9 @@ def cmd_gegenlauf(con, a):
             lesen="\n".join(f"  - {os.path.join(ort, f)}" for f in k["lesen"]), daten=k["daten"],
             neubau="" if not a.neubau else " (nur Commander maßgeblich – baue neu)",
             commander=cname_von(cmdr), bracket=a.bracket, ziel=a.ziel, budget=budget, karten=karten,
-            gc=a.game_changer)
+            gc=a.game_changer, hinweise=(k.get("hinweise", "") + "\n") if k.get("hinweise") else "",
+            wortlaut=" · ".join(f"„{w}“" for w in a.wortlaut) if a.wortlaut else "– (nicht übergeben)",
+            behalten=", ".join(a.behalten) if a.behalten else "–")
         ap = os.path.join(ordner, f"auftrag_{key}.txt")
         open(ap, "w", encoding="utf-8").write(auftrag)
         print(f"  {k['name']}: Quelle {k['commit'][:7]} geprüft · Auftrag {ap} · Ergebnis {ordner}/{key}.txt")
@@ -3111,6 +3135,9 @@ def parser():
     p = sp.add_parser("gegenlauf", help="Gegenlauf mit Konkurrenz-Agenten vorbereiten (08a, Abschnitt 5)")
     p.add_argument("deck", help="Deckname, Soll-Stand oder Entwurf (Ausgangsdeck der Agenten)")
     p.add_argument("--ziel", required=True, help="Ziel in einem Satz (aus der Upgrade-Richtung bzw. dem Steckbrief)")
+    p.add_argument("--wortlaut", action="append", help="Wunsch des Nutzers im Wortlaut aus dem Gespräch (mehrfach); "
+                   "steht im Auftrag neben --ziel – Absicht und fachliche Umsetzung zusammen (V1.9.11)")
+    p.add_argument("--behalten", action="append", help="Karte, die der Nutzer behalten will (mehrfach)")
     p.add_argument("--stufe", type=int, default=0, choices=[0, 1])
     p.add_argument("--max-preis", type=float, default=5.0)
     p.add_argument("--summe", type=float, default=25.0)
