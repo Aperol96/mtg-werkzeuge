@@ -27,7 +27,8 @@ FREI = ["Venerated Stormsinger", "Duty Beyond Death", "Skittering Precursor", "M
         "Wood Elves", "Path to Exile", "Explore", "Swords to Plowshares", "Blood Artist", "Intangible Virtue",
         "Plains", "Swamp", "Mountain"]
 NUR_DATENBANK = ["Pitiless Plunderer", "Cultivate", "Rampant Growth", "Dark Ritual", "Collective Voyage",
-                 "Demonic Tutor", "Lightning Bolt", "Wrath of God", "Heroic Intervention"]
+                 "Demonic Tutor", "Lightning Bolt", "Wrath of God", "Heroic Intervention",
+                 "Austere Command", "Wispdrinker Vampire", "Molten Gatekeeper", "Elvish Visionary"]
 EDHREC = ["commanders__zurgo-stormrender__upgraded.json"]
 
 

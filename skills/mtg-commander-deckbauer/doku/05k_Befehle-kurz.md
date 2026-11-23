@@ -30,7 +30,7 @@ Auszug aus `05_Datenbank-und-Tools` (Referenz – nur gezielt durchsuchen). Arbe
 | `kandidaten "<Name>" --weg 1\|2` · `upgrade <deck> --stufe 0\|1 --ziel "muster+muster" …` | Kartenpool · Upgrade mit Raus-Sperren und Ziel-Abgleich (`--ziel` Pflicht) |
 | `alternativen "<Karte>" [--farben RWB]` · `oracle <Karte …>` · `oracle --alt <Soll-Stand> --neu <Entwurf>` | günstigere Karten gleicher Rolle · Oracle-Text (Pflicht vor jeder Beschreibung) |
 | `pruefen <entwurf> --ersetzt <deck> [--idee I-nnn] [--budget 140]` · `abnahme <deck\|entwurf> [--basis <deck>]` | Qualitätskontrolle (mit Budget) · Bracket-3-Abnahme |
-| `tauschrunde <deck> --neu <entwurf> --paare <datei>` · `--antwort "1j 2n 3s 4e"` · `--karte N` · `--alle` · `--paar-neu "A -> B"` · `--stand` · `--ergebnis` | Routine Tauschrunde (`08a`, 5.2) |
+| `tauschrunde <deck> --neu <entwurf> --paare <datei>` · `--antwort "1j 2n 3s 4e"` · `--karte N` · `--alle` · `--paar-neu "A -> B"` · `--stand` · `--ergebnis` · `--ohne-bild` | Routine Tauschrunde (`08a`, 5.2) – Bild per `SendUserFile`, Frage im Text |
 | `gegenlauf <deck> --ziel "…" --wortlaut "…"` · `gegentest <Projekt> <K1> <K2> <K3> --basis <deck>` | Routine Gegenlauf (`08a`, 5.1) |
 | `fazit --neu <entwurf_drucke> --alt <deck> --out fazit.md` · `erklaerung <entwurf>` | Fazit-Entwurf · Datenbasis der Kartenerklärungen |
 | `verkauf [--min-preis 1] [--out out/verkauf.txt]` | Verkaufsprüfung Kat. 1–3 |

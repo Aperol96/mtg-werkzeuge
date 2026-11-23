@@ -140,3 +140,17 @@ def test_rauschen():
     band = D.rauschen({"sim": s}, {"sim": s})
     assert 0 < band < 0.005                      # bei n = 5000 liegt das Rauschen unter der Schwelle
     assert D.rauschen({"sim": dict(s, n=200)}, {"sim": dict(s, n=200)}) > band
+
+
+def test_wahl_wipe_zaehlt_im_token_deck(con):
+    """V1.10.1: Austere Command lässt Modi ohne eigene Tokens zu (Manawert 4 oder mehr) – zählt als Massen-Interaktion,
+    Wrath of God zerstört den Go-wide-Plan und zählt nicht."""
+    assert "massen" in D.rollen_im_plan(con, D.finde(con, "Austere Command"), "tokens")
+    assert "massen" not in D.rollen_im_plan(con, D.finde(con, "Wrath of God"), "tokens")
+
+
+def test_etb_payoff_fuer_jede_kreatur_nutzt_tokens(con):
+    """V1.10.1: „Whenever another creature you control … enters“ ist ein Token-Payoff; ein eigener ETB nicht."""
+    assert B._token_nutzer(karte(con, "Molten Gatekeeper"))
+    assert B._token_nutzer(karte(con, "Wispdrinker Vampire"))
+    assert not B._token_nutzer(karte(con, "Elvish Visionary"))

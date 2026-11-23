@@ -247,7 +247,13 @@ def _token_geber(k):
 def _token_nutzer(k):
     return _t(k, "anthem", "overrun", "token-doubler", "token-increaser", "synergy-token", "synergy-token-creature",
               "power-boost-to-all") or bool(re.search(r"tokens? you control|for each (creature )?token|"
-                                                       r"creatures you control get \+", k["tl"]))
+                                                       r"creatures you control get \+|" + RX_ETB_JEDE, k["tl"]))
+
+
+# ETB-Trigger für jede eigene Kreatur (Molten Gatekeeper, Wispdrinker Vampire) – jeder Token löst ihn aus;
+# „nontoken“ dazwischen passt nicht und bleibt draußen (V1.10.1)
+RX_ETB_JEDE = (r"whenever (a|another|one or more)( other)? creatures?( you control)?"
+               r"( with (power|toughness|mana value) \d+ or less)? enters?")
 
 
 def _opfer_geber(k):
@@ -520,6 +526,9 @@ def zerstoert_plan(k, archetyp):
     Eine solche Karte zählt nicht für ihre Rolle und wird nicht vorgeschlagen (08, Vorrangregel)."""
     if archetyp == "tokens" and re.search(r"\bnontoken creatures\b", k["tl"]):
         return False                        # Hour of Reckoning u. Ä. verschonen Tokens – im Token-Deck einseitig
+    if re.search(r"\bchoose (one|two|three)\b", k["tl"]) and re.search(
+            r"•[^•]*\bdestroy all (artifacts|enchantments)\b|•[^•]*\bmana value [4-9] or greater\b", k["tl"]):
+        return False                        # Wahl-Wipe (Austere Command u. Ä.): Modi ohne eigene Tokens wählbar
     return archetyp in GO_WIDE and symmetrischer_wipe(k)
 
 

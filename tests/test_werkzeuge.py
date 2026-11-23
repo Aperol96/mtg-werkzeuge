@@ -234,6 +234,8 @@ def test_tauschrunde_antworten_lesen():
         (1, "ja", None), (2, "nein", "Hunde bleiben"), (3, "später", None), (4, "empfehlung", None)]
     assert D.runde_antworten_lesen(["3=nein: zu teuer, 4=unsicher", "5 Empfehlung"]) == [
         (3, "nein", "zu teuer"), (4, "später", None), (5, "empfehlung", None)]
+    assert D.runde_antworten_lesen(["7n: Souls bleibt, Globe zu schwach"]) == [(7, "nein", "Souls bleibt, Globe zu schwach")]
+    assert D.runde_antworten_lesen(["1j, 2n,3s;"]) == [(1, "ja", None), (2, "nein", None), (3, "später", None)]
     with pytest.raises(SystemExit):
         D.runde_antworten_lesen(["3 vielleicht"])
 
@@ -256,8 +258,11 @@ def test_tauschrunde(arbeit):
     erg = open(os.path.join(arbeit, "out", "runde.txt"), encoding="utf-8").read()
     assert "1 Venerated Stormsinger" in erg and "1 Bone Devourer" in erg and "Grenzo" not in erg and "Blood Artist" not in erg
     assert erg.rstrip().endswith("1 Zurgo Stormrender") and "// Commander" in erg
+    out = ok(lauf(arbeit, "deckbau.py", "tauschrunde", "Testdeck", "--datei", "out/runde.json", "--paar-neu",
+                  "Bone Devourer -> Blood Artist", "--ohne-bild"))
+    assert "Neue Frage 3" in out
     out = ok(lauf(arbeit, "deckbau.py", "tauschrunde", "Testdeck", "--datei", "out/runde.json", "--stand"))
-    assert "✓ ja" in out and "✗ nein (E)" in out
+    assert "✓ ja" in out and "✗ nein (E)" in out and "Blood Artist" in out    # V1.10.1: Ersatzpaar ohne Absturz
 
 
 def test_bezug_kampfschaden_bei_angreifenden_tokens(con):

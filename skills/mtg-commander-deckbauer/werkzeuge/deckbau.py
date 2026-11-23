@@ -3225,10 +3225,11 @@ RUNDE_WORT = r"(?:später|spaeter|unsicher|empfehlung|empf|nein|ja|[jnsuye?])(?=
 
 
 def runde_antworten_lesen(texte):
-    """„3=ja“, „3 nein“, „1j 2n 3s 4e“ … -> [(nr, antwort, notiz)]; Notiz nach „:“ („2n: Hunde bleiben 3j“)."""
+    """„3=ja“, „3 nein“, „1j 2n 3s 4e“ … -> [(nr, antwort, notiz)]; Notiz nach „:“ („2n: Hunde bleiben, zu stark 3j“).
+    Getrennt wird nur vor der nächsten Nummer mit Antwort – Kommas in der Notiz bleiben stehen."""
     out = []
     for t in texte:
-        for teil in re.split(r"[,;]|\s+(?=\d+\s*[=: ]?\s*" + RUNDE_WORT + ")", t, flags=re.I):
+        for teil in re.split(r"(?:[,;]\s*|\s+)(?=\d+\s*[=: ]?\s*" + RUNDE_WORT + ")", t.strip().rstrip(",;"), flags=re.I):
             m = re.match(r"^\s*(\d+)\s*[=: ]?\s*(" + RUNDE_WORT + r")\s*(?::\s*(.*))?$", teil, re.I | re.S)
             if m:
                 out.append((int(m.group(1)), ANTWORT[m.group(2).lower()], (m.group(3) or "").strip() or None))
@@ -3296,6 +3297,19 @@ def runde_ergebnis(con, a, st, f, cards, alt_z, pfad):
         print("Keine Rolle unter dem Minimum durch die Antworten – Ergebnis wie ein Vorschlag weiter freigeben (08a).")
 
 
+def runde_bild(st, p, cards, pfad):
+    """Kartenbilder der Frage als PNG (RAUS links, REIN rechts) – zum Ansehen im Chat (SendUserFile)."""
+    try:
+        import kartenbilder as KB
+    except ImportError as e:
+        return f"Bild: nicht möglich ({e})"
+    slug = os.path.splitext(os.path.basename(pfad))[0]
+    ziel = os.path.join("out", "tauschrunde", f"{slug}-{p['nr']:02d}.png")
+    r = KB.tausch_bild([cards[o]["name"] for o in p["raus"]], [cards[o]["name"] for o in p["rein"]], ziel,
+                       f"Tausch {p['nr']}/{len(st['fragen'])} · {st['deck']}")
+    return f"Bild: {r}" if r else "Bild: Scryfall nicht erreichbar – nur Text"
+
+
 def cmd_tauschrunde(con, a):
     pfad = runde_pfad(a)
     if a.neu:
@@ -3334,12 +3348,15 @@ def cmd_tauschrunde(con, a):
         print(f"Tauschrunde {a.deck}: {len(st['fragen'])} Fragen"
               + (f" ({hinweis.lstrip(', ')})" if hinweis else
                  " (automatisch gebildet: Land↔Land, gleiche Hauptrolle, ähnliche MV; Standardländer als eine Frage)")
-              + f") · Empfehlung {'auf jeder Karte' if st['mit_empfehlung'] else 'erst auf Wunsch („Empfehlung“)'} · {pfad}")
+              + f" · Empfehlung {'auf jeder Karte' if st['mit_empfehlung'] else 'erst auf Wunsch („Empfehlung“)'} · {pfad}")
     else:
         st = runde_laden(pfad)
         if st.get("idee") and not IDEE:
             globals()["IDEE"] = st["idee"]
         f, cards, alt_z, _ = runde_kontext(con, st["deck"], st["neu"], st.get("thema"), st.get("bracket", 3))
+        for o in [o for p in st["fragen"] for o in p["raus"] + p["rein"] if o not in cards]:
+            cards[o] = card(con, o)
+            f["rollen_je"][o] = rollen_im_plan(con, cards[o], f["ak"]["ziel"])
     if a.paar_neu:
         l, r = (x.strip() for x in a.paar_neu.split("->", 1)) if "->" in a.paar_neu else ("", a.paar_neu.strip())
         g = {"raus": [finde(con, l)["oid"]] if l else [], "rein": [finde(con, r)["oid"]] if r else []}
@@ -3381,14 +3398,21 @@ def cmd_tauschrunde(con, a):
     if a.ergebnis:
         runde_ergebnis(con, a, st, f, cards, alt_z, pfad)
         return
+    def zeige(p):
+        print(runde_karte(con, f, cards, st, p, a.mit_empfehlung))
+        if not a.ohne_bild:
+            print(runde_bild(st, p, cards, pfad))
+
     if a.karte:
-        print(runde_karte(con, f, cards, st, st["fragen"][runde_nr_text(f"{a.karte}=", st)[0] - 1], a.mit_empfehlung))
+        zeige(st["fragen"][runde_nr_text(f"{a.karte}=", st)[0] - 1])
     elif a.alle:
-        print("\n\n".join(runde_karte(con, f, cards, st, p, a.mit_empfehlung) for p in st["fragen"] if not p["antwort"]))
+        for p in [p for p in st["fragen"] if not p["antwort"]]:
+            zeige(p)
+            print()
     elif not a.stand:
         offen = [p for p in st["fragen"] if not p["antwort"]]
         if offen:
-            print(runde_karte(con, f, cards, st, offen[0], a.mit_empfehlung))
+            zeige(offen[0])
             print(f"\n(noch {len(offen)} offen · später: {sum(p['antwort'] == 'später' for p in st['fragen'])})")
         else:
             print("Alle Fragen beantwortet – Ergebnis mit --ergebnis (später-Fragen bleiben gespeichert und lassen "
@@ -3524,6 +3548,9 @@ def parser():
                    "„1j 2n 3s 4e“ (mehrfach)")
     p.add_argument("--karte", type=int, help="diese Frage zeigen (sonst die nächste offene)")
     p.add_argument("--alle", action="store_true", help="alle offenen Karten auf einmal (Schnellrunde)")
+    p.add_argument("--bild", action="store_true", help=argparse.SUPPRESS)   # seit V1.10.1 Standard
+    p.add_argument("--ohne-bild", action="store_true",
+                   help="ohne Kartenbild (Standard: PNG je gezeigter Frage nach out/tauschrunde/ – per SendUserFile zeigen)")
     p.add_argument("--paar-neu", help="Ersatzpaar „Raus -> Rein“ anhängen (z. B. nach einem Nein)")
     p.add_argument("--stand", action="store_true", help="Übersicht aller Fragen und Antworten")
     p.add_argument("--ergebnis", action="store_true", help="Entwurf aus Soll-Stand + angenommenen Tauschen schreiben")

@@ -548,6 +548,62 @@ class Bilder:
         return datei
 
 
+
+def tausch_bild(raus, rein, ziel, titel="", cache="cache/bilder"):
+    """Tauschpaar als ein PNG (V1.10, Tauschrunde): links RAUS, rechts REIN, Kartenbilder von Scryfall (große Fassung).
+    raus/rein: Listen von Kartennamen (Wiederholungen = Anzahl). -> Pfad oder None (ohne Bilder)."""
+    from collections import Counter as _C
+    seiten = [[{"name": n, "anzahl": q} for n, q in _C(raus).items()], [{"name": n, "anzahl": q} for n, q in _C(rein).items()]]
+    alle = seiten[0] + seiten[1]
+    if not alle:
+        return None
+    try:
+        scryfall(alle)
+    except (urllib.error.URLError, OSError, TimeoutError):
+        return None
+    b = Bilder(cache)
+    b.vorladen(alle, gross=alle)
+    kw, kh, rand, kopf = 488, 680, 24, 70
+    spalten = [max(1, len(s)) for s in seiten]
+    breite = rand + sum(n * (kw + rand) for n in spalten) + rand * 2
+    hoehe = kopf + kh + rand * 2 + (40 if titel else 0)
+    img = Image.new("RGB", (breite, hoehe), (247, 241, 227))
+    d = ImageDraw.Draw(img)
+    try:
+        f_kopf = ImageFont.truetype(str(DV / "DejaVuSans-Bold.ttf"), 34)
+        f_klein = ImageFont.truetype(str(DV / "DejaVuSans.ttf"), 26)
+    except OSError:
+        f_kopf = f_klein = ImageFont.load_default()
+    y0 = rand
+    if titel:
+        d.text((rand, y0), titel, fill=(60, 40, 20), font=f_klein)
+        y0 += 40
+    x = rand
+    for i, (seite, farbe, wort) in enumerate(((seiten[0], (170, 30, 30), "RAUS"), (seiten[1], (30, 120, 50), "REIN"))):
+        d.text((x, y0), wort, fill=farbe, font=f_kopf)
+        for k in seite or [None]:
+            if k is not None:
+                try:
+                    p = b.pfad(k, "large")
+                    im = Image.open(p).convert("RGB")
+                    im.thumbnail((kw, kh))
+                    img.paste(im, (x, y0 + kopf - 20))
+                except Exception:
+                    d.rectangle([x, y0 + kopf - 20, x + kw, y0 + kopf - 20 + kh], outline=farbe, width=3)
+                    d.text((x + 12, y0 + kopf), k["name"], fill=farbe, font=f_klein)
+                if k["anzahl"] > 1:
+                    d.text((x + 12, y0 + kopf + kh - 70), f"× {k['anzahl']}", fill=(255, 255, 255), font=f_kopf,
+                           stroke_width=3, stroke_fill=(0, 0, 0))
+            else:
+                d.text((x + 12, y0 + kopf + 20), "–", fill=farbe, font=f_kopf)
+            x += kw + rand
+        if i == 0:
+            d.line([x - rand // 2 + rand, y0, x - rand // 2 + rand, hoehe - rand], fill=(180, 160, 120), width=3)
+            x += rand * 2
+    Path(ziel).parent.mkdir(parents=True, exist_ok=True)
+    img.save(ziel, optimize=True)
+    return str(ziel)
+
 def platzhalter(k, w=488, h=680):
     c = k.get("scry") or {}
     farbe, _ = box(c, k["name"])
