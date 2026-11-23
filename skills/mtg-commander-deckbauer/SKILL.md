@@ -3,7 +3,7 @@ name: mtg-commander-deckbauer
 description: Magic-Commander-Decks aus der eigenen Sammlung bauen oder verbessern, Bestand führen (CSV aus Moxfield, ManaBox oder anderen Programmen), Verkaufsliste erstellen, Regel- und Bracket-Fragen klären – deutsch, Preise in Euro, mit Deck-PDFs.
 ---
 
-# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.11)
+# MTG Commander-Deckbauer und Sammlungsverwalter (V1.9.12)
 
 Nutze diesen Skill, wenn jemand ein Commander-Deck bauen, analysieren oder upgraden will, seinen Bestand führen oder Karten verkaufen möchte oder eine Regel- bzw. Formatfrage zu Commander hat. Sprache: Deutsch; Kartennamen als englischer Oracle-Name; Preise in EUR (Cardmarket über Scryfall).
 
@@ -40,7 +40,7 @@ Die Werkzeuge rechnen intern im Moxfield-CSV-Format: Moxfield-CSV direkt, ManaBo
 
 1. **Gespräch:** Fragenplan (Pflicht · bedingt · optional, je Frage eine Empfehlung und „Weiß nicht – entscheide du“); bei bestehenden Decks `deckbau.py passung <deck>`; am Ende Steckbrief bzw. Upgrade-Richtung bestätigen. Danach einmal fragen, ob ein **Gegenlauf** mit drei Konkurrenz-Agenten laufen soll (Ressourcenhinweis, `08a`, Abschnitt 5).
 2. **Recherche:** neues Deck `deckbau.py kandidaten <Commander> --weg 1|2`; Upgrade `deckbau.py upgrade <deck> --stufe 0|1`; Synergie jenseits von EDHREC `deckbau.py synergie`; Qualität `deckbau.py pruefen <entwurf>`; Definition of Done `deckbau.py abnahme <entwurf> --basis <deck>`.
-3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme. Der Nutzer passt an – Anpassungsrunden zeigen nur Änderungen.
+3. **Vorschlag:** Tauschpaare „raus → rein“ mit Grund aus dem Oracle-Text (`deckbau.py oracle`), Kompromiss-Stufe bzw. Preis und Klasse A–D, Rollen und Kernpakete vorher → nachher, **Bracket-Zeile** und Abnahme. Auf Ja/Nein-Frage als **Tauschrunde** (`deckbau.py tauschrunde`, `08a`, Abschnitt 6): je Tausch eine Karte, Antwort ja · nein · unsicher/später · Empfehlung. Der Nutzer passt an – Anpassungsrunden zeigen nur Änderungen.
 4. **Nach Freigabe:** auf Nachfrage Fazit- und Deck-PDF (`deckbau.py fazit`, `kartenbilder.py lieferung`), Einfügeblock für die externe Datenbank des Nutzers; gebucht wird erst, wenn das Deck physisch gebaut ist.
 
 Ohne claude.ai-Projekt gibt es keinen dauerhaften Speicher: Gib dem Nutzer am Ende geänderte Dateien (Buchungen, Decklisten) zum Aufheben mit und sag ihm, dass er sie beim nächsten Mal wieder hochlädt.

@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.9.11** (09.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.9.12** (23.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -178,7 +178,7 @@ flowchart TD
 
 1. **A · Gespräch:** Claude liest zuerst, was es schon weiß (Deckliste, offene Ideen, freie Karten), und prüft bei bestehenden Decks die **Passung**: Trägt der Commander das Ziel, oder passt ein anderer Commander aus Deck, Sammlung oder als günstiger Kauf deutlich besser? Dann der **Fragenplan** – keine feste Zahl an Fragen, sondern Pflichtfragen, bedingte und optionale Fragen, jede mit Empfehlung und „Weiß nicht – entscheide du“. Am Ende bestätigst du den **Steckbrief** (neues Deck) bzw. die **Upgrade-Richtung**, und Claude fragt einmal nach dem [Gegenlauf](#der-gegenlauf-zwei-fremde-agenten-bauen-mit).
 2. **B · Recherche und Vorschlag:** Die Recherche bekommt alle Ressourcen, die sie braucht. Die Werkzeuge füllen Ramp, Card Draw, Removal, Board Wipes, Protection und Lands bis zum Minimum des Archetyps auf – auch wenn du sie nicht erwähnst –, bilden Tauschpaare und nehmen nichts Tragendes heraus (Raus-Sperren). Fällt der Entwurf durch die [Abnahme](#die-abnahme-wann-ein-deck-fertig-ist), bessert Claude nach, bevor du ihn siehst.
-3. **C · Anpassung:** Du änderst, so oft du willst; jede Runde zeigt nur die Änderungen. Endet der Chat ohne Freigabe, wird der Stand als **Idee** gesichert und die Karten werden vorgemerkt.
+3. **C · Anpassung:** Du änderst, so oft du willst; jede Runde zeigt nur die Änderungen. Auf Wunsch als **Tauschrunde** (Frage-Antwort-Spiel): Claude zeigt jeden Tausch einzeln als Karte mit Oracle-Text, du antwortest mit ja, nein, unsicher/später oder „Empfehlung“ – am Ende entsteht der Entwurf aus deinen Ja-Antworten (`deckbau.py tauschrunde`). Endet der Chat ohne Freigabe, wird der Stand als **Idee** gesichert und die Karten werden vorgemerkt.
 4. **D · Lieferung:** Nach deiner Freigabe fragt Claude kurz, ob du PDFs und die Import-Liste willst.
 5. **E · Physischer Umbau:** Du baust das Deck mit echten Karten um und meldest „gebaut“ – mit Abweichungen, falls eine Karte fehlte oder ein Kauf noch unterwegs ist.
 6. **F · Buchung:** Erst jetzt bucht Claude. So stimmt der Bestand mit deinem Tisch überein. Danach bekommst du die Liste für deine externe Datenbank.
@@ -346,6 +346,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
+| 23.11.2026 | V1.9.12: Tauschrunde – jeden Tausch einzeln als Karte entscheiden (ja · nein · unsicher/später · Empfehlung), fortsetzbar, Ergebnis-Entwurf aus den Ja-Antworten (`deckbau.py tauschrunde`) | – |
 | 10.11.2026 | V1.9.11: Gegenlauf mit drei Konkurrenten (neu: mtg-edh-upgrade); Auftrag mit Wortlaut (`--wortlaut`) und Zusammenfassung (`--ziel`) der Wünsche, `--behalten` | – |
 | 10.11.2026 | V1.9.10: `upgrade --ziel` – ausdrückliche Wünsche als Oracle-Muster gezielt gesucht (auch ohne EDHREC-Eintrag), Abschnitt „Ziel-Abgleich“; Kernpakete reihum gefüllt | – |
 | 09.11.2026 | V1.9.9: Bracket-Wächter nennt neue Combos mit 3 oder mehr Karten als Hinweis (kein Bracket-Wechsel, aber im Vorschlag nennen) – vorher blieben sie stumm | – |

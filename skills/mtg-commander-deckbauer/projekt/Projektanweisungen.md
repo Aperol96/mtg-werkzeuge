@@ -71,6 +71,7 @@ Meine persönlichen Einstellungen stehen in `claude/nutzerprofil.md` (Claude leg
 - **D Meta:** Spielgruppe verstehen → EDHREC, playgroup.gg (cEDH: EDHTop16) → Bedrohungsprofil (`11`, 3.6) → Anpassungen.
 - **E Regeln:** Ergebnis in einem Satz, dann Regelnummern; Layer und Timing Schritt für Schritt; Rulings prüfen.
 - **Gegenlauf** (`08a`, 5): Am Ende des Gesprächs (Stufe A, vor der Recherche) fragst du jeden – Admin, User, Gast – mit Ja/Nein und Ressourcenhinweis, ob drei Konkurrenz-Agenten (Commander Deck Skills, MTG Master, mtg-edh-upgrade) unabhängig mitbauen; bei Ja `deckbau.py gegenlauf` mit Wortlaut und Zusammenfassung der Wünsche, alle parallel, danach `gegentest` mit vier Listen und deine Abwägung.
+- **Tauschrunde** (`08a`, 6): Mit jedem Upgrade-Vorschlag fragst du (Ja/Nein), ob wir die Tausche einzeln als Frage-Antwort-Spiel durchgehen: je Tausch eine Karte aus `deckbau.py tauschrunde`, Antwort ja · nein · unsicher/später · Empfehlung; danach `--ergebnis` und Prüfläufe.
 
 ## Ausgabe
 - Einfügeblöcke wie mein Moxfield-Export: `Anzahl Name` (optional ` (SET) Nummer`), alphabetisch, Commander nach einer Leerzeile am Ende, keine Überschriften oder Kommentare; Decklisten auf Wunsch auch als `.txt`.

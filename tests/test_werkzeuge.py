@@ -224,3 +224,37 @@ def test_bracket_befehl(arbeit):
     out = ok(lauf(arbeit, "deckbau.py", "bracket", "Testdeck", "--neu", "out/bracket_entwurf.txt", "--ziel", "3",
                   "--ausgang", "2"))
     assert "gewollter Umbau" in out and "hält das Ziel-Bracket ein" in out
+
+
+def test_tauschrunde_antworten_lesen():
+    """V1.9.12: Antworten in Lang- und Kurzform, Notiz nach „:“, Empfehlung, Fehler bei Unbekanntem."""
+    import pytest
+    import deckbau as D
+    assert D.runde_antworten_lesen(["1j 2n: Hunde bleiben 3s 4e"]) == [
+        (1, "ja", None), (2, "nein", "Hunde bleiben"), (3, "später", None), (4, "empfehlung", None)]
+    assert D.runde_antworten_lesen(["3=nein: zu teuer, 4=unsicher", "5 Empfehlung"]) == [
+        (3, "nein", "zu teuer"), (4, "später", None), (5, "empfehlung", None)]
+    with pytest.raises(SystemExit):
+        D.runde_antworten_lesen(["3 vielleicht"])
+
+
+def test_tauschrunde(arbeit):
+    """V1.9.12: Frage-Antwort-Runde – Karte mit Oracle-Text, Empfehlung erst auf Wunsch, Ergebnis-Entwurf."""
+    s = open(os.path.join(arbeit, "decks", "testdeck.txt"), encoding="utf-8").read()
+    s = s.replace("1 Grenzo, Havoc Raiser\n", "1 Venerated Stormsinger\n").replace("1 Bone Devourer\n", "1 Blood Artist\n")
+    open(os.path.join(arbeit, "out", "runde_vorschlag.txt"), "w", encoding="utf-8").write(s)
+    open(os.path.join(arbeit, "out", "runde_paare.txt"), "w", encoding="utf-8").write(
+        "# Paare\nGrenzo, Havoc Raiser -> Venerated Stormsinger | Drain bei jedem Tod\n")
+    start = ["tauschrunde", "Testdeck", "--neu", "out/runde_vorschlag.txt", "--datei", "out/runde.json"]
+    out = ok(lauf(arbeit, "deckbau.py", *start, "--paare", "out/runde_paare.txt", "--empfehlung", "2=nein: Test"))
+    assert "2 Fragen" in out and "➖ RAUS" in out and "Grenzo, Havoc Raiser" in out and "Drain bei jedem Tod" in out
+    assert "Empfehlung:" not in out and "Antwort: ja · nein · unsicher/später · Empfehlung" in out
+    assert lauf(arbeit, "deckbau.py", *start).returncode != 0          # laufende Runde wird nicht überschrieben
+    out = ok(lauf(arbeit, "deckbau.py", "tauschrunde", "Testdeck", "--datei", "out/runde.json", "--antwort", "1j 2e",
+                  "--ergebnis"))
+    assert "· ✗ nein (Empfehlung: Test)" in out and "1 angenommen · 1 abgelehnt" in out
+    erg = open(os.path.join(arbeit, "out", "runde.txt"), encoding="utf-8").read()
+    assert "1 Venerated Stormsinger" in erg and "1 Bone Devourer" in erg and "Grenzo" not in erg and "Blood Artist" not in erg
+    assert erg.rstrip().endswith("1 Zurgo Stormrender") and "// Commander" in erg
+    out = ok(lauf(arbeit, "deckbau.py", "tauschrunde", "Testdeck", "--datei", "out/runde.json", "--stand"))
+    assert "✓ ja" in out and "✗ nein (E)" in out

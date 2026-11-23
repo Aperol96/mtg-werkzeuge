@@ -27,6 +27,8 @@ Befehle (Details: python3 deckbau.py <befehl> --help)
   oracle <Karte …> | --alt --neu Oracle-Text – Pflicht vor jedem Vorschlag
   alternativen <Karte>           günstigere Karten mit gleicher Rolle (frei zuerst)
   verkauf                        Verkaufsprüfung der Sammlung (Kat. 1, Kat. 2, Kat. 3 nicht verkaufen)
+  tauschrunde <deck> --neu E     Frage-Antwort-Runde (V1.9.12): jeder Tausch als Karte, Antwort ja/nein/später/
+                                 Empfehlung, Ergebnis-Entwurf aus den angenommenen Tauschen (--ergebnis)
 
 --ersetzt <deck>: Karten dieses Decks gelten für den Entwurf als vorhanden (Upgrade eines bestehenden Decks).
 --idee I-nnn: Vormerkungen dieser Idee (claude/sammlung/vormerkungen.csv) gelten für den Entwurf als frei.
@@ -3034,6 +3036,361 @@ def cmd_fazit(con, a):
               "Datei mit „Raus -> Rein“ je Zeile und --paare <datei>.")
 
 
+# ----------------------------------------------------------------- tauschrunde (V1.9.12: Frage-Antwort-Spiel je Tausch)
+ANTWORT = {"j": "ja", "ja": "ja", "y": "ja", "n": "nein", "nein": "nein", "s": "später", "später": "später",
+           "spaeter": "später", "u": "später", "unsicher": "später", "?": "später",
+           "e": "empfehlung", "empf": "empfehlung", "empfehlung": "empfehlung"}
+ANTWORT_TXT = {"ja": "✓ ja", "nein": "✗ nein", "später": "… später", None: "offen"}
+
+
+def runde_pfad(a):
+    if a.datei:
+        return a.datei
+    slug = re.sub(r"[^a-z0-9]+", "-", M.fold(a.deck).lower()).strip("-") or "deck"
+    return os.path.join("ideen", f"tauschrunde-{slug}.json")
+
+
+def runde_kontext(con, alt_ref, neu_pfad, thema=None, bracket=3):
+    """Soll-Stand und Entwurf mit allem, was eine Tauschkarte braucht (Rollen, Kennzahlen, EDHREC, Status)."""
+    pfad_a, did = deck_aus_ref(con, alt_ref)
+    cmdr_a, main_a, _, _ = lies_deck(con, pfad_a)
+    cmdr, main, unbekannt, _ = lies_deck(con, neu_pfad)
+    if unbekannt:
+        print("nicht erkannt im Entwurf: " + ", ".join(unbekannt))
+    cmdr = cmdr or cmdr_a
+    cname = cname_von(cmdr)
+    data, epfad = edhrec_commander(cname, bracket)
+    ak = archetyp_kontext(con, cmdr, main, did, thema)
+    f = {"upgrade": True, "did": did, "cname": cname, "ckurz": kurzname(cname), "edh": edh_karten(data),
+         "prof": profil_fuer(con, [c for _, c in cmdr], data), "ak": ak, "soll": ak["soll"], "epfad": epfad,
+         "ci": "".join(x for x in "WUBRG" if x in set("".join(c["ci"] for _, c in cmdr))),
+         "cmdr": cmdr, "pfad_a": pfad_a}
+    alt_z, neu_z, cards = Counter(), Counter(), {}
+    for q, c in main_a:
+        alt_z[c["oid"]] += q
+        cards[c["oid"]] = c
+    for q, c in main:
+        neu_z[c["oid"]] += q
+        cards[c["oid"]] = c
+    f["rollen_je"] = {o: rollen_im_plan(con, c, ak["ziel"]) for o, c in cards.items()}
+    f["k_alt"] = kennzahlen(con, cmdr, main_a, ak["ziel"])
+    f["k_neu"] = kennzahlen(con, cmdr, main, ak["ziel"])
+    f["beim_deck"] = {r[3] for r in (M.deck_zeitstempel(con, did)[1] if did else None) or []}
+    ctx = {"edh": f["edh"], "im_deck": set(cards), "ci": set(f["ci"]), "prof": f["prof"], "ak": ak, "did": did}
+    kauf_alt = kauf_alternativen(con, ctx)
+    f["status"] = lambda c: fazit_status(con, f, c, kauf_alt)
+    return f, cards, alt_z, neu_z
+
+
+def runde_paare_lesen(con, pfad):
+    """Paardatei für die Runde: „Raus -> Rein“, je Seite mehrere Karten mit „+“ (auch „2 Plains“), Grund nach „|“
+    oder „#“ („Plains + Plains -> Mountain + Gateway Plaza | rote Quellen 18 → 21“). -> [{raus, rein, grund}]"""
+    def seite(t):
+        oids = []
+        for n in (x.strip() for x in t.split(" + ")):
+            m = re.match(r"^(\d+)\s*[x×]?\s+(.+)$", n)
+            q, name = (int(m.group(1)), m.group(2)) if m else (1, n)
+            if name:
+                oids += [finde(con, name)["oid"]] * q
+        return oids
+    out = []
+    for z in open(pfad, encoding="utf-8"):
+        z = z.strip()
+        if not z or z.startswith("#") or "->" not in z:
+            continue
+        teil, *grund = re.split(r"\s+[|#]\s*", z, maxsplit=1)
+        l, r = (x.strip() for x in teil.split("->", 1))
+        out.append({"raus": seite(l), "rein": seite(r), "grund": (grund[0].strip() if grund else "") or None})
+    return out
+
+
+def runde_gruppen(paare, cards):
+    """Tauschpaare -> Fragen; reine Standardland-Tausche werden zu einer Frage zusammengefasst."""
+    fragen, basics = [], {"raus": [], "rein": []}
+    for o_r, o_n in paare:
+        if all(o is None or basic(cards[o]) for o in (o_r, o_n)):
+            basics["raus"] += [o_r] if o_r else []
+            basics["rein"] += [o_n] if o_n else []
+        else:
+            fragen.append({"raus": [o_r] if o_r else [], "rein": [o_n] if o_n else []})
+    if basics["raus"] or basics["rein"]:
+        fragen.append(basics)
+    return fragen
+
+
+def runde_namen(oids, cards):
+    z = Counter(cards[o]["name"] for o in oids)
+    return " + ".join((f"{q}× " if q > 1 else "") + n for n, q in z.items()) or "–"
+
+
+def runde_stand_zaehlen(con, f, cards, alt_z, st, nimm):
+    """Kennzahlen des Soll-Stands mit allen Fragen, für die nimm(frage) wahr ist."""
+    z = Counter(alt_z)
+    for p in st["fragen"]:
+        if nimm(p):
+            for o in p["raus"]:
+                z[o] -= 1
+            for o in p["rein"]:
+                z[o] += 1
+    for o in [o for p in st["fragen"] for o in p["raus"] + p["rein"]]:
+        if o not in cards:
+            cards[o] = card(con, o)
+    main = [(q, cards[o]) for o, q in z.items() if q > 0]
+    return z, kennzahlen(con, f["cmdr"], main, f["ak"]["ziel"])
+
+
+def runde_wirkung(f, p):
+    """Rollen-Änderung durch genau diese Frage, gemessen am Soll-Stand."""
+    d = Counter()
+    for o in p["raus"]:
+        for r in f["rollen_je"].get(o, []):
+            d[r] -= 1
+    for o in p["rein"]:
+        for r in f["rollen_je"].get(o, []):
+            d[r] += 1
+    teile = []
+    for k in KERN:
+        if d[k]:
+            mn = f["soll"][k][0]
+            neu = f["k_alt"][k] + d[k]
+            teile.append(f"{ROLLE_NAME[k]} {f['k_alt'][k]} → {neu}" + (f" (Minimum {mn})" if neu < mn or f["k_alt"][k] < mn else ""))
+    return " · ".join(teile) or "keine Kernrolle ändert sich (Plan/Synergie)"
+
+
+def runde_karte(con, f, cards, st, p, zeige_empf=False):
+    n = len(st["fragen"])
+    rr = lambda oids: ", ".join(dict.fromkeys(rollen_name(haupt_rolle(f["rollen_je"].get(o, []), cards[o])) for o in oids)) or "–"
+    L = [f"━━ Tausch {p['nr']}/{n} · {rr(p['raus'])} → {rr(p['rein'])} · {ANTWORT_TXT[p['antwort']]}"]
+    for kopf, oids in (("➖ RAUS", p["raus"]), ("➕ REIN", p["rein"])):
+        L.append(kopf + ("  –" if not oids else ""))
+        for o in dict.fromkeys(oids):
+            c = cards[o]
+            q = oids.count(o)
+            if basic(c):
+                L.append(f"  {q}× {c['name']} (Standardland)")
+                continue
+            L.append("  " + oracle_block(con, c).replace("\n", "\n  "))
+            b = bewerte(con, f["prof"], f["edh"], c)
+            info = [rollen_txt(f["rollen_je"].get(o) or []).replace(",", ", "), edh_txt(b["v"], f["ckurz"])]
+            if b["gruende"]:
+                info.append(f"Bezug zu {f['ckurz']} {de(b['bezug'])} ({', '.join(b['gruende'][:2])})")
+            if kopf.startswith("➕"):
+                info.append(f["status"](c))
+            L.append("    → " + " · ".join(info))
+    L.append(f"Wirkung (nur dieser Tausch): {runde_wirkung(f, p)}")
+    gc = [cards[o]["name"] for o in p["rein"] if cards[o]["gc"]]
+    gc_raus = [cards[o]["name"] for o in p["raus"] if cards[o]["gc"]]
+    if gc or gc_raus:
+        L.append("Bracket: " + " · ".join(([f"+ Game Changer {', '.join(gc)}"] if gc else [])
+                                          + ([f"− Game Changer {', '.join(gc_raus)}"] if gc_raus else [])))
+    if p.get("grund"):
+        L.append(f"Warum im Vorschlag: {p['grund']}")
+    if zeige_empf or st.get("mit_empfehlung"):
+        L.append(f"Empfehlung: {p['empfehlung']}" + (f" – {p['empf_grund']}" if p.get("empf_grund") else ""))
+    if p["antwort"]:
+        L.append(f"Antwort: {ANTWORT_TXT[p['antwort']]}" + (" (nach Empfehlung)" if p.get("quelle") == "Empfehlung" else "")
+                 + (f" – {p['notiz']}" if p.get("notiz") else ""))
+    else:
+        L.append("Antwort: ja · nein · unsicher/später · Empfehlung")
+    return "\n".join(L)
+
+
+def runde_laden(pfad):
+    if not os.path.exists(pfad):
+        sys.exit(f"keine Tauschrunde unter {pfad} – zuerst mit --neu <entwurf> starten")
+    return json.load(open(pfad, encoding="utf-8"))
+
+
+def runde_speichern(pfad, st):
+    os.makedirs(os.path.dirname(pfad) or ".", exist_ok=True)
+    json.dump(st, open(pfad, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+
+def runde_nr_text(wert, st):
+    """„3=Text“ -> (3, „Text“); ohne Nummer -> (None, Text)."""
+    m = re.match(r"^\s*(\d+)\s*[=:]\s*(.*)$", wert, re.S)
+    if not m:
+        return None, wert.strip()
+    nr = int(m.group(1))
+    if not 1 <= nr <= len(st["fragen"]):
+        sys.exit(f"Tausch {nr} gibt es nicht (1–{len(st['fragen'])})")
+    return nr, m.group(2).strip()
+
+
+RUNDE_WORT = r"(?:später|spaeter|unsicher|empfehlung|empf|nein|ja|[jnsuye?])(?=[\s:=,;]|$)"
+
+
+def runde_antworten_lesen(texte):
+    """„3=ja“, „3 nein“, „1j 2n 3s 4e“ … -> [(nr, antwort, notiz)]; Notiz nach „:“ („2n: Hunde bleiben 3j“)."""
+    out = []
+    for t in texte:
+        for teil in re.split(r"[,;]|\s+(?=\d+\s*[=: ]?\s*" + RUNDE_WORT + ")", t, flags=re.I):
+            m = re.match(r"^\s*(\d+)\s*[=: ]?\s*(" + RUNDE_WORT + r")\s*(?::\s*(.*))?$", teil, re.I | re.S)
+            if m:
+                out.append((int(m.group(1)), ANTWORT[m.group(2).lower()], (m.group(3) or "").strip() or None))
+            elif teil.strip():
+                sys.exit(f"Antwort nicht erkannt: „{teil.strip()}“ – Form „3=ja“, „3=nein: Grund“, „3=später“, "
+                         "„3=empfehlung“ oder kurz „1j 2n 3s 4e“")
+    if not out:
+        sys.exit("Antwort nicht erkannt – Form „3=ja“, „3=nein: Grund“, „3=später“, „3=empfehlung“ oder kurz „1j 2n 3s 4e“")
+    return out
+
+
+def runde_warnungen(f, k, label):
+    return [f"⚠ {label}: {ROLLE_NAME[x]} {k[x]} statt mindestens {f['soll'][x][0]}"
+            for x in KERN if k[x] < f["soll"][x][0] and k[x] < f["k_neu"][x]]
+
+
+def runde_ergebnis(con, a, st, f, cards, alt_z, pfad):
+    ja = lambda p: p["antwort"] == "ja"
+    z, k = runde_stand_zaehlen(con, f, cards, alt_z, st, ja)
+    _, k_v = runde_stand_zaehlen(con, f, cards, alt_z, st, lambda p: True)
+    druck = {}
+    for datei in (st["neu"], f["pfad_a"]):
+        for _, rows in M.parse_deck(datei):
+            for _, name, s, cn in rows:
+                o = M.resolve_name(con, name) if name else None
+                if o and o not in druck:
+                    druck[o] = name + (f" ({s.upper()}) {cn}" if s else "")
+    zaehl = Counter(p["antwort"] for p in st["fragen"])
+    heute = time.strftime("%Y-%m-%d")
+    out = a.out or os.path.splitext(pfad)[0] + ".txt"
+    if os.path.abspath(out) in (os.path.abspath(st["neu"]), os.path.abspath(f["pfad_a"])):
+        sys.exit(f"{out} ist der Vorschlag bzw. Soll-Stand – anderes Ziel mit --out wählen")
+    for o in [o for o, q in z.items() if q < 0]:
+        print(f"⚠ {cards[o]['name']} geht in mehreren angenommenen Tauschen raus, ist aber nur {alt_z[o]}× im Deck"
+              " – eine Antwort korrigieren")
+    zeilen = [f"// Tauschrunde: {st['deck']} · Stand {heute} · angenommen {zaehl['ja']} von {len(st['fragen'])}"
+              f" (nein {zaehl['nein']}, später {zaehl['später']}, offen {zaehl[None]}) · Vorschlag {st['neu']}"]
+    zeilen += sorted((f"{q} {druck.get(o, cards[o]['name'])}" for o, q in z.items() if q > 0), key=M.fold)
+    zeilen += ["", "// Commander"] + [f"{q} {druck.get(c['oid'], c['name'])}" for q, c in f["cmdr"]]
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    open(out, "w", encoding="utf-8").write("\n".join(zeilen) + "\n")
+    print(f"Ergebnis der Tauschrunde {st['deck']}: {zaehl['ja']} angenommen · {zaehl['nein']} abgelehnt · "
+          f"{zaehl['später']} später · {zaehl[None]} offen → {out} ({sum(q for q in z.values() if q > 0) + len(f['cmdr'])} Karten)")
+    rows = [(ROLLE_NAME[x], f["k_alt"][x], k[x], k_v[x], f"{f['soll'][x][0]}–{f['soll'][x][1]}") for x in KERN]
+    rows += [("Ø MV", de(f["k_alt"]["_mv"]), de(k["_mv"]), de(k_v["_mv"]), "≤ 3,5"),
+             ("Game Changer", f["k_alt"]["_gc"], k["_gc"], k_v["_gc"], "≤ 3 (Bracket 3)")]
+    M.table(rows, ["Kennzahl", "Soll-Stand", "Ergebnis", "ganzer Vorschlag", "Richtwert"])
+    for titel, art in (("Abgelehnt (Karte bleibt)", "nein"), ("Später (bleibt in der Runde)", "später"), ("Offen", None)):
+        liste = [p for p in st["fragen"] if p["antwort"] == art]
+        if liste:
+            print(f"\n{titel}:")
+            for p in liste:
+                print(f"  {p['nr']}. {runde_namen(p['raus'], cards)} → {runde_namen(p['rein'], cards)}"
+                      + (f" – {p['notiz']}" if p.get("notiz") else ""))
+    warn = runde_warnungen(f, k, "Ergebnis")
+    for w in warn:
+        print(w + " – Ersatz suchen: deckbau.py alternativen \"<Karte>\" (frei zuerst), dann --paar-neu")
+    abgelehnt = [o for p in st["fragen"] if p["antwort"] == "nein" for o in p["rein"] if not basic(cards[o])]
+    if abgelehnt:
+        print("Vormerkungen lösen (falls vorgemerkt): " + ", ".join(cards[o]["name"] for o in dict.fromkeys(abgelehnt)))
+    idee = f" --idee {IDEE}" if IDEE else ""
+    print(f"\nWeiter: deckbau.py pruefen {out} --ersetzt \"{st['deck']}\"{idee} · deckbau.py bracket \"{st['deck']}\" "
+          f"--neu {out}{idee} · deckbau.py abnahme {out}{idee}")
+    if not warn and zaehl["später"] + zaehl[None] == 0:
+        print("Keine Rolle unter dem Minimum durch die Antworten – Ergebnis wie ein Vorschlag weiter freigeben (08a).")
+
+
+def cmd_tauschrunde(con, a):
+    pfad = runde_pfad(a)
+    if a.neu:
+        if os.path.exists(pfad) and not a.neu_start:
+            sys.exit(f"Tauschrunde {pfad} läuft schon – weitermachen ohne --neu, neu beginnen mit --neu-start")
+        f, cards, alt_z, neu_z = runde_kontext(con, a.deck, a.neu, a.thema, a.bracket)
+        raus = [o for o in alt_z for _ in range(alt_z[o] - neu_z[o])]
+        rein = [o for o in neu_z for _ in range(neu_z[o] - alt_z[o])]
+        gruppen, hinweis = [], ""
+        if a.paare:
+            gruppen = runde_paare_lesen(con, a.paare)
+            rest_r, rest_n = Counter(raus), Counter(rein)
+            for g in gruppen:
+                for o in g["raus"]:
+                    if rest_r[o] <= 0:
+                        print(f"⚠ Paardatei: {card(con, o)['name']} geht laut Entwurf nicht raus – Zeile prüfen")
+                    rest_r[o] -= 1
+                for o in g["rein"]:
+                    if rest_n[o] <= 0:
+                        print(f"⚠ Paardatei: {card(con, o)['name']} kommt laut Entwurf nicht rein – Zeile prüfen")
+                    rest_n[o] -= 1
+            raus, rein = list((+rest_r).elements()), list((+rest_n).elements())
+            hinweis = ", Paare aus Datei" + (f" + {len(raus) + len(rein)} Karten automatisch ergänzt" if raus or rein else "")
+        for o in [o for o in raus + rein + [o for g in gruppen for o in g["raus"] + g["rein"]] if o not in cards]:
+            cards[o] = card(con, o)
+            f["rollen_je"][o] = rollen_im_plan(con, cards[o], f["ak"]["ziel"])
+        paare = paare_bilden(raus, rein, f["rollen_je"], cards) if raus or rein else []
+        gruppen += runde_gruppen(paare, cards)
+        if not gruppen:
+            sys.exit("Entwurf und Soll-Stand sind gleich – keine Tausche")
+        st = {"deck": a.deck, "neu": a.neu, "thema": a.thema, "bracket": a.bracket, "idee": IDEE,
+              "erstellt": time.strftime("%Y-%m-%d %H:%M"), "mit_empfehlung": bool(a.mit_empfehlung), "fragen": []}
+        for i, g in enumerate(gruppen, 1):
+            st["fragen"].append({"nr": i, "raus": g["raus"], "rein": g["rein"], "grund": g.get("grund"), "empfehlung": "ja",
+                                 "empf_grund": None, "antwort": None, "quelle": None, "notiz": None, "zeit": None})
+        print(f"Tauschrunde {a.deck}: {len(st['fragen'])} Fragen"
+              + (f" ({hinweis.lstrip(', ')})" if hinweis else
+                 " (automatisch gebildet: Land↔Land, gleiche Hauptrolle, ähnliche MV; Standardländer als eine Frage)")
+              + f") · Empfehlung {'auf jeder Karte' if st['mit_empfehlung'] else 'erst auf Wunsch („Empfehlung“)'} · {pfad}")
+    else:
+        st = runde_laden(pfad)
+        if st.get("idee") and not IDEE:
+            globals()["IDEE"] = st["idee"]
+        f, cards, alt_z, _ = runde_kontext(con, st["deck"], st["neu"], st.get("thema"), st.get("bracket", 3))
+    if a.paar_neu:
+        l, r = (x.strip() for x in a.paar_neu.split("->", 1)) if "->" in a.paar_neu else ("", a.paar_neu.strip())
+        g = {"raus": [finde(con, l)["oid"]] if l else [], "rein": [finde(con, r)["oid"]] if r else []}
+        for o in g["raus"] + g["rein"]:
+            cards[o] = card(con, o)
+            f["rollen_je"][o] = rollen_im_plan(con, cards[o], f["ak"]["ziel"])
+        st["fragen"].append({"nr": len(st["fragen"]) + 1, **g, "grund": None, "empfehlung": "ja", "empf_grund": None,
+                             "antwort": None, "quelle": None, "notiz": "Ersatzpaar", "zeit": None})
+        print(f"Neue Frage {len(st['fragen'])}: {runde_namen(g['raus'], cards)} → {runde_namen(g['rein'], cards)}")
+    for wert in a.grund or []:
+        nr, txt = runde_nr_text(wert, st)
+        st["fragen"][(nr or len(st["fragen"])) - 1]["grund"] = txt
+    for wert in a.empfehlung or []:
+        nr, txt = runde_nr_text(wert, st)
+        e, _, g = txt.partition(":")
+        e = ANTWORT.get(e.strip().lower())
+        if not nr or e not in ("ja", "nein"):
+            sys.exit("--empfehlung braucht die Form „6=nein: Grund“ oder „6=ja: Grund“")
+        st["fragen"][nr - 1].update(empfehlung=e, empf_grund=g.strip() or None)
+    for nr, ant, notiz in runde_antworten_lesen(a.antwort) if a.antwort else []:
+        if not 1 <= nr <= len(st["fragen"]):
+            sys.exit(f"Tausch {nr} gibt es nicht (1–{len(st['fragen'])})")
+        p = st["fragen"][nr - 1]
+        quelle = None
+        if ant == "empfehlung":
+            ant, quelle = p["empfehlung"], "Empfehlung"
+        p.update(antwort=ant, quelle=quelle, notiz=notiz or p.get("notiz"), zeit=time.strftime("%Y-%m-%d %H:%M"))
+        print(f"Tausch {nr}: {runde_namen(p['raus'], cards)} → {runde_namen(p['rein'], cards)} · {ANTWORT_TXT[ant]}"
+              + (f" (Empfehlung: {p['empf_grund'] or 'so im Vorschlag'})" if quelle else ""))
+        if ant == "nein":
+            _, k = runde_stand_zaehlen(con, f, cards, alt_z, st, lambda q: q["antwort"] != "nein")
+            for w in runde_warnungen(f, k, "ohne die abgelehnten Tausche"):
+                print("  " + w + " – Ersatz anbieten (deckbau.py alternativen, dann --paar-neu)")
+    runde_speichern(pfad, st)
+    if a.stand:
+        M.table([(p["nr"], runde_namen(p["raus"], cards), runde_namen(p["rein"], cards),
+                  ANTWORT_TXT[p["antwort"]] + (" (E)" if p.get("quelle") else ""), p.get("notiz") or "")
+                 for p in st["fragen"]], ["#", "raus", "rein", "Antwort", "Notiz"])
+    if a.ergebnis:
+        runde_ergebnis(con, a, st, f, cards, alt_z, pfad)
+        return
+    if a.karte:
+        print(runde_karte(con, f, cards, st, st["fragen"][runde_nr_text(f"{a.karte}=", st)[0] - 1], a.mit_empfehlung))
+    elif a.alle:
+        print("\n\n".join(runde_karte(con, f, cards, st, p, a.mit_empfehlung) for p in st["fragen"] if not p["antwort"]))
+    elif not a.stand:
+        offen = [p for p in st["fragen"] if not p["antwort"]]
+        if offen:
+            print(runde_karte(con, f, cards, st, offen[0], a.mit_empfehlung))
+            print(f"\n(noch {len(offen)} offen · später: {sum(p['antwort'] == 'später' for p in st['fragen'])})")
+        else:
+            print("Alle Fragen beantwortet – Ergebnis mit --ergebnis (später-Fragen bleiben gespeichert und lassen "
+                  "sich mit --karte <Nr> wieder aufrufen)")
+
+
 # ----------------------------------------------------------------- Kommandozeile
 def parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -3149,6 +3506,27 @@ def parser():
     p.add_argument("--ordner")
     p.add_argument("--bracket", type=int, default=3)
     p.add_argument("--idee", **idee)
+    p = sp.add_parser("tauschrunde", help="Frage-Antwort-Runde: jeden Tausch einzeln mit ja/nein/später/Empfehlung "
+                      "entscheiden (08, Stufe C)")
+    p.add_argument("deck", help="Deckname oder Soll-Stand")
+    p.add_argument("--neu", help="Entwurf – startet die Runde (Tauschpaare aus Soll-Stand ↔ Entwurf)")
+    p.add_argument("--neu-start", action="store_true", help="laufende Runde verwerfen und mit --neu neu beginnen")
+    p.add_argument("--paare", help="Datei „Raus -> Rein“ je Zeile; sonst automatisch (Land↔Land, gleiche Hauptrolle)")
+    p.add_argument("--grund", action="append", help="„Nr=Text“: warum der Tausch im Vorschlag steht (mehrfach)")
+    p.add_argument("--empfehlung", action="append", help="„Nr=nein: Grund“ bzw. „Nr=ja: Grund“ (Standard: ja)")
+    p.add_argument("--mit-empfehlung", action="store_true", help="Empfehlung gleich auf der Karte zeigen")
+    p.add_argument("--antwort", action="append", help="„3=ja“, „3=nein: Grund“, „3=später“, „3=empfehlung“ oder "
+                   "„1j 2n 3s 4e“ (mehrfach)")
+    p.add_argument("--karte", type=int, help="diese Frage zeigen (sonst die nächste offene)")
+    p.add_argument("--alle", action="store_true", help="alle offenen Karten auf einmal (Schnellrunde)")
+    p.add_argument("--paar-neu", help="Ersatzpaar „Raus -> Rein“ anhängen (z. B. nach einem Nein)")
+    p.add_argument("--stand", action="store_true", help="Übersicht aller Fragen und Antworten")
+    p.add_argument("--ergebnis", action="store_true", help="Entwurf aus Soll-Stand + angenommenen Tauschen schreiben")
+    p.add_argument("--out", help="Ergebnis-Datei (Standard: neben der Runde, .txt)")
+    p.add_argument("--datei", help="Datei der Runde (Standard: ideen/tauschrunde-<deck>.json)")
+    p.add_argument("--thema")
+    p.add_argument("--bracket", type=int, default=3)
+    p.add_argument("--idee", **idee)
     p = sp.add_parser("oracle", help="Oracle-Text (Pflicht vor jedem Vorschlag)")
     p.add_argument("karten", nargs="*")
     p.add_argument("--alt")
@@ -3165,7 +3543,8 @@ def parser():
 BEFEHLE = {"commander": cmd_commander, "commander-suche": cmd_commander_suche, "synergie": cmd_synergie,
            "kandidaten": cmd_kandidaten, "pruefen": cmd_pruefen, "abnahme": cmd_abnahme, "erklaerung": cmd_erklaerung,
            "alternativen": cmd_alternativen, "upgrade": cmd_upgrade, "oracle": cmd_oracle, "passung": cmd_passung,
-           "fazit": cmd_fazit, "verkauf": cmd_verkauf, "bracket": cmd_bracket, "gegentest": cmd_gegentest, "gegenlauf": cmd_gegenlauf}
+           "fazit": cmd_fazit, "verkauf": cmd_verkauf, "bracket": cmd_bracket, "gegentest": cmd_gegentest, "gegenlauf": cmd_gegenlauf,
+           "tauschrunde": cmd_tauschrunde}
 
 
 def main(argv=None):
