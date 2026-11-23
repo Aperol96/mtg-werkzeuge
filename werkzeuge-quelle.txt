@@ -1,2 +1,2 @@
-MTG-QUELLE werkzeuge v1 · Stand 2026-11-23 · https://raw.githubusercontent.com/Aperol96/mtg-werkzeuge/3afcf88c3814b751e269e0127c035236abdadf1b/skills/mtg-commander-deckbauer/werkzeugkiste.txt · sha256 b8547e92e6bf2454c0b589afa82e347414616277a2b6ed56c1e66ba4f474c7d3
-Werkzeugkiste V1.10 (Werkzeuge, Methodik doku/, Vorlage vorlage-daten/) auf GitHub, fester Commit 3afcf88 (main, 23.11.2026). Diese Datei ins Projekt legen bzw. bei neuen Versionen ersetzen; Startbefehl: 05a_Sitzungsstart.
+MTG-QUELLE werkzeuge v1 · Stand 2026-11-23 · https://raw.githubusercontent.com/Aperol96/mtg-werkzeuge/b42bcc35d37919b42ac5ce73715d1f6a002b326e/skills/mtg-commander-deckbauer/werkzeugkiste.txt · sha256 be4ae2059b69a33e695fa708f2932dd16bc079268422205d76b410f88606abce
+Werkzeugkiste V1.10 (Werkzeuge, Methodik doku/, Vorlage vorlage-daten/) auf GitHub, fester Commit b42bcc3 (main, 23.11.2026). Diese Datei ins Projekt legen bzw. bei neuen Versionen ersetzen; Startbefehl: 05a_Sitzungsstart.
