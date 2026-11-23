@@ -1,6 +1,6 @@
 # Format-Stand – Commander (vor Nutzung live prüfen)
 
-**Stand:** 29.10.2026 (ausgelagert aus `01_Quellen-Framework`, Abschnitt 7, V1.6) · Pflege: nach jeder Banned-&-Restricted-Ankündigung und jedem Brackets-Update; die Werkzeuge lesen Game Changer und Banlist aus den Scryfall-Daten des Tages (`mtg.sqlite`).
+**Stand:** 29.10.2026 · Pflege: nach jeder Banned-&-Restricted-Ankündigung und jedem Brackets-Update; die Werkzeuge lesen Game Changer und Banlist aus den Scryfall-Daten des Tages (`mtg.sqlite`).
 
 **Live verifiziert 25.10.2026 per Scryfall-API:** `is:gamechanger` = 53 Karten, `banned:commander` = 83 Karten – beide deckungsgleich mit den Listen unten. **Erneut bestätigt 29.10.2026** (Scryfall-Bulk vom 29.10., 09:05 UTC, in der Datenbank `mtg.sqlite`): 53 / 83. Brackets-Stand vom 25.10.2026.
 

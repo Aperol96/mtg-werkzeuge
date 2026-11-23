@@ -1,53 +1,93 @@
 #!/usr/bin/env python3
-"""protokoll.py – Änderungsprotokoll, Ideenliste und Deckregister lesen und pflegen, ohne sie ganz zu lesen (V1.6).
+"""protokoll.py – Protokolle, Ideen, Kaufliste und Vormerkungen lesen und pflegen, ohne die Dateien ganz zu lesen.
 
-Die Dateien kommen mit dem Datenpaket in den Arbeitsordner (projekt/…). Claude liest nur, was die Aufgabe braucht,
-und schreibt Einträge mit diesem Werkzeug; danach `paket.py geaendert` → project_write(local_path=…) → Datenpaket neu.
+Alle Dateien liegen im Daten-Repo (Arbeitsordner: projekt/ → protokolle/, data/ → sammlung/). Claude liest nur, was die
+Aufgabe braucht, schreibt mit diesem Werkzeug und sichert am Ende der Schreibrunde mit einem `git push` (05a, Abschnitt 6).
 
-Dateien (Projektpfad → Arbeitsordner)
-  claude/09_Aenderungsprotokoll.md   projekt/09_Aenderungsprotokoll.md   Bestand, Decks, Ideen, Entscheidungen, Hinweise
-  claude/09a_Programm-Protokoll.md   projekt/09a_Programm-Protokoll.md   Werkzeug-Einträge (nur Admin)
-  claude/10_Geplante-Kaeufe-und-Ideen.md  projekt/10_…                   Ideen, Verkäufe, Kaufliste, Moxfield nachziehen
-  claude/04_Deckregister.md          projekt/04_Deckregister.md          Übersicht der Decks
+Dateien
+  projekt/09_Aenderungsprotokoll.md     Bestand, Decks, Ideen, Entscheidungen, Hinweise
+  projekt/10_Geplante-Kaeufe-und-Ideen.md  Ideen, geplante Verkäufe, „In Moxfield nachziehen“
+  projekt/04_Deckregister.md            Übersicht der Decks
+  data/kaufliste.csv                    Kaufliste (einzige Quelle; Spalten Idee, Name, Anzahl, Art, Preis, Stand, Status, Hinweis)
+  data/vormerkungen.csv                 Vormerkungen (einzige Quelle; Idee, Name, Anzahl, Datum, Hinweis – liest mtg_db.py)
+  admin/09a_Programm-Protokoll.md, admin/14_Projekt-Aufwand.md   nur Admin (Typ „Werkzeug“ geht nach 09a)
+  ideen/<deck>-primer.md                Deck-Primer (Nachschlagewerk zum Deck)
 
 Befehle
-  zeigen [--deck <Name>] [--typ <Typ>] [--suche <Text>] [--letzte N] [--datei 09|09a]
-        Einträge (neueste zuerst), gefiltert. Ohne Filter die letzten 5.
-  neu --typ <Typ> --thema <Deck/Thema> --zeile "<Text>" [--zeile …] [--datum JJJJ-MM-TT] [--datei 09|09a]
-        Eintrag oben unter „## Einträge“ einfügen. Typ „Werkzeug“ geht automatisch nach 09a.
-  offen [--deck <Name>]
-        Offene Ideen, geplante Verkäufe, Kaufliste, Vormerkungen und „In Moxfield nachziehen“ aus 10 – kompakt.
-  idee-neu --deck <Deck> --inhalt <Text> --status <Status> [--details <Pfad>]   → nächste ID I-nnn
-  idee-status <ID> <Status>          Status einer Idee oder eines Verkaufs (I-nnn, V-nnn) ändern
-  idee-entfernen <ID>                Idee/Verkauf samt ihrer Kauf- und Vormerkungszeilen aus 10 entfernen
-                                     (Vormerkungen in claude/sammlung/vormerkungen.csv entfernt mtg_db/Claude getrennt)
-  nachziehen --was <Text> --aufgabe <Text>      Zeile „In Moxfield nachziehen / Wartung“ anlegen
-  nachziehen-erledigt <Teiltext>               passende Zeile entfernen
-  register [--deck <Name>]           Zeile(n) des Deckregisters
-  aufwand [--seit JJJJ-MM-TT] [--eintragen "<Was>"] [--willkommen <projektanweisungen.md>]
-        Aufwand dieser Sitzung aus den Claude-Code-Transkripten (aktive Zeit, Token, API-Gegenwert in €);
-        mit --eintragen als Zeile in 14_Projekt-Aufwand.md (nur Admin), mit --willkommen den Vermerk 🕒 in der
-        Willkommensnachricht neu setzen. In claude.ai-Chats ohne Transkript: Zeile von Hand („nicht gemessen“).
+  zeigen [--deck D] [--typ T] [--suche S] [--letzte N] [--datei 09|09a]   Einträge (neueste zuerst)
+  neu --typ <Typ> --thema <Deck/Thema> --zeile "…" [--zeile …] [--datum JJJJ-MM-TT]   Eintrag oben einfügen
+  offen [--deck D]                  Ideen, Verkäufe, Kaufliste, Vormerkungen, „In Moxfield nachziehen“ – kompakt
+  idee-neu --deck D --inhalt T --status S [--details P]   → nächste ID I-nnn (Status aus STATUS_IDEE)
+  idee-status <ID> <Status>         Status einer Idee bzw. eines Verkaufs (feste Werte, Zusatz nach „ · “ erlaubt)
+  idee-entfernen <ID>               Idee samt Kaufzeilen und Vormerkungen entfernen
+  kauf-neu --idee ID --karte K [--anzahl N] [--preis 1,23] [--art Kauf|Standardland] [--hinweis T]
+  kauf-status --idee ID <geplant|bestellt|angekommen> [--karte K]     Kaufzeilen einer Idee (oder einer Karte)
+  kauf-entfernen --idee ID [--karte K]
+  vormerken --idee ID --karte K [--anzahl N] [--hinweis T]  ·  vormerkung-entfernen --idee ID [--karte K]
+  nachziehen --was T --aufgabe T  ·  nachziehen-erledigt <Teiltext>
+  register [--deck D]               Zeile(n) des Deckregisters
+  primer [--deck D]                 Primer je Deck und ob er älter ist als der Soll-Stand
+  aufwand [--seit …] [--eintragen "<Was>"]   Aufwand der Sitzung (nur Admin; Claude-Code-Transkripte)
 """
 import argparse
+import csv
+import glob
 import os
 import re
 import sys
 import time
+from collections import Counter
 
 ORDNER = "projekt"
+SAMMLUNG = "data"
+ADMIN = "admin"
 DATEIEN = {"09": "09_Aenderungsprotokoll.md", "09a": "09a_Programm-Protokoll.md",
            "10": "10_Geplante-Kaeufe-und-Ideen.md", "04": "04_Deckregister.md", "14": "14_Projekt-Aufwand.md"}
 TYPEN_09 = ["Kauf", "Verkauf", "Import", "Abgleich", "Deck neu", "Deck geändert", "Idee", "Entscheidung", "Hinweis"]
 TYPEN_09A = ["Werkzeug"]
+STATUS_IDEE = ["wartet auf Freigabe", "freigegeben – Aufbau offen", "teilweise gebaut", "bestellt – Ankunft offen",
+               "gebaut – Buchen offen", "zurückgestellt"]
+STATUS_VERKAUF = ["geplant", "eingestellt", "teilweise verkauft"]
+STATUS_KAUF = ["geplant", "bestellt", "angekommen"]
+KAUF_SPALTEN = ["Idee", "Name", "Anzahl", "Art", "Preis", "Stand", "Status", "Hinweis"]
+VORM_SPALTEN = ["Idee", "Name", "Anzahl", "Datum", "Hinweis"]
 RX_EINTRAG = re.compile(r"^### (\d{4}-\d{2}-\d{2}) · ([^·]+?) · (.+)$")
 
 
 def pfad(kurz, ordner=None):
-    p = os.path.join(ordner or ORDNER, DATEIEN[kurz])
+    ordner = ordner or (ADMIN if kurz in ("09a", "14") and os.path.isdir(ADMIN) else ORDNER)
+    p = os.path.join(ordner, DATEIEN[kurz])
     if not os.path.exists(p):
-        sys.exit(f"{p} fehlt – Datenpaket auspacken (paket.py auspacken …)")
+        sys.exit(f"{p} fehlt – Daten-Repo klonen und verknüpfen (05a, Abschnitt 3)")
     return p
+
+
+def status_pruefen(status, erlaubt):
+    """Feste Status-Werte; ein Zusatz nach „ · “ ist erlaubt („bestellt – Ankunft offen · Rest mit der Bestellung“)."""
+    kern = status.split(" · ")[0].strip()
+    if kern not in erlaubt:
+        sys.exit(f"Status „{status}“ – erlaubt: {' | '.join(erlaubt)} (Zusatz nach „ · “)")
+    return status
+
+
+def csv_lesen(datei, spalten):
+    p = os.path.join(SAMMLUNG, datei)
+    if not os.path.exists(p):
+        return []
+    with open(p, encoding="utf-8-sig", newline="") as fh:
+        return [{k: (r.get(k) or "").strip() for k in spalten} for r in csv.DictReader(fh) if (r.get("Name") or "").strip()]
+
+
+def csv_schreiben(datei, spalten, zeilen):
+    p = os.path.join(SAMMLUNG, datei)
+    with open(p, "w", encoding="utf-8", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=spalten, lineterminator="\n")
+        w.writeheader()
+        w.writerows(zeilen)
+
+
+def passt(zeile, idee=None, karte=None):
+    return (not idee or zeile["Idee"] == idee) and (not karte or norm(zeile["Name"]) == norm(karte))
 
 
 def lies(kurz):
@@ -129,20 +169,42 @@ def tabellenzeilen(text, titel):
 
 def cmd_offen(a):
     text = lies("10")
-    ids = set()
+    kauf, vorm = csv_lesen("kaufliste.csv", KAUF_SPALTEN), csv_lesen("vormerkungen.csv", VORM_SPALTEN)
+    ids = None
     if a.deck:                                   # Ideen des Decks – ihre Kauf- und Vormerkungszeilen gehören dazu
-        for titel in ("Offene Ideen", "Geplante Verkäufe"):
-            ids |= {x.split("|")[1].strip() for x in tabellenzeilen(text, titel) if norm(a.deck) in norm(x)}
-    for titel in ("Offene Ideen", "Geplante Verkäufe", "Kaufliste", "Aus der Sammlung vorgemerkt",
-                  "In Moxfield nachziehen"):
-        z = tabellenzeilen(text, titel)
-        if a.deck:
-            z = [x for x in z if norm(a.deck) in norm(x) or x.split("|")[1].strip() in ids]
-        z = [x for x in z if not re.match(r"^\|\s*–\s*\|", x)]
+        ids = {x.split("|")[1].strip() for t in ("Offene Ideen", "Geplante Verkäufe")
+               for x in tabellenzeilen(text, t) if norm(a.deck) in norm(x)}
+    for titel in ("Offene Ideen", "Geplante Verkäufe"):
+        z = [x for x in tabellenzeilen(text, titel) if not re.match(r"^\|\s*–\s*\|", x)]
+        if ids is not None:
+            z = [x for x in z if x.split("|")[1].strip() in ids]
         print(f"{titel}: " + ("–" if not z else ""))
         for x in z:
             zellen = [c.strip() for c in x.strip("|").split("|")]
             print("  " + " · ".join(c[:160] for c in zellen if c and c != "–"))
+    k = [r for r in kauf if ids is None or r["Idee"] in ids]
+    summe = sum(float(r["Preis"].replace(",", ".") or 0) * int(r["Anzahl"] or 1) for r in k if r["Preis"])
+    print(f"Kaufliste ({SAMMLUNG}/kaufliste.csv): " + ("–" if not k else f"{len(k)} Zeilen · ab {summe:.2f} €".replace(".", ",")))
+    for idee in dict.fromkeys(r["Idee"] for r in k):
+        zz = [r for r in k if r["Idee"] == idee]
+        st = Counter(r["Status"] or "geplant" for r in zz)
+        print(f"  {idee}: " + " · ".join(f"{n} {s_}" for s_, n in st.items()) + " – "
+              + ", ".join(f"{r['Name']}" + (f" ×{r['Anzahl']}" if r["Anzahl"] not in ("", "1") else "") for r in zz[:12])
+              + (" …" if len(zz) > 12 else ""))
+    v = [r for r in vorm if (ids is None or r["Idee"] in ids)]
+    print(f"Vormerkungen ({SAMMLUNG}/vormerkungen.csv): " + ("–" if not v else ""))
+    for idee in dict.fromkeys(r["Idee"] for r in v):
+        zz = [r for r in v if r["Idee"] == idee]
+        if idee.startswith("V-"):
+            print(f"  {idee}: {len(zz)} Karten (weich – geplanter Verkauf, bleiben frei)")
+        else:
+            print(f"  {idee}: " + ", ".join(r["Name"] for r in zz))
+    z = [x for x in tabellenzeilen(text, "In Moxfield nachziehen") if not re.match(r"^\|\s*–\s*\|", x)]
+    if a.deck:
+        z = [x for x in z if norm(a.deck) in norm(x)]
+    print("In Moxfield nachziehen: " + ("–" if not z else ""))
+    for x in z:
+        print("  " + " · ".join(c.strip() for c in x.strip("|").split("|") if c.strip() and c.strip() != "–"))
 
 
 def naechste_id(text, praefix):
@@ -165,6 +227,7 @@ def zeile_einfuegen(text, titel, zeile):
 
 
 def cmd_idee_neu(a):
+    status_pruefen(a.status, STATUS_IDEE)
     text = lies("10")
     iid = naechste_id(text, "I")
     zeile = (f"| {iid} | {time.strftime('%d.%m.%Y')} | {a.deck} | {a.inhalt.replace('|', '/')} | {a.status} | "
@@ -179,6 +242,7 @@ def cmd_idee_status(a):
     for i, z in enumerate(zeilen):
         zellen = z.split("|")
         if len(zellen) > 6 and zellen[1].strip() == a.id and z.startswith("|"):
+            status_pruefen(a.status, STATUS_VERKAUF if a.id.startswith("V-") else STATUS_IDEE)
             zellen[-3] = f" {a.status} "
             zeilen[i] = "|".join(zellen)
             schreibe("10", "\n".join(zeilen) + "\n")
@@ -192,10 +256,116 @@ def cmd_idee_entfernen(a):
     raus = [z for z in text.splitlines() if z.startswith("|") and z.split("|")[1].strip() == a.id]
     if not raus:
         sys.exit(f"{a.id} nicht gefunden")
-    text = "\n".join(z for z in text.splitlines() if z not in raus) + "\n"
-    schreibe("10", text)
-    print(f"{a.id}: {len(raus)} Zeilen entfernt (Idee, Kauf- und Vormerkungszeilen). Vormerkungen in "
-          "claude/sammlung/vormerkungen.csv getrennt entfernen.")
+    schreibe("10", "\n".join(z for z in text.splitlines() if z not in raus) + "\n")
+    n = {}
+    for datei, sp in (("kaufliste.csv", KAUF_SPALTEN), ("vormerkungen.csv", VORM_SPALTEN)):
+        alle = csv_lesen(datei, sp)
+        rest = [r for r in alle if r["Idee"] != a.id]
+        n[datei] = len(alle) - len(rest)
+        if n[datei]:
+            csv_schreiben(datei, sp, rest)
+    print(f"{a.id}: aus 10 entfernt · {n['kaufliste.csv']} Kaufzeilen · {n['vormerkungen.csv']} Vormerkungen")
+
+
+def preis_norm(t):
+    return (t or "").replace("€", "").strip().replace(".", ",")
+
+
+def cmd_kauf_neu(a):
+    alle = csv_lesen("kaufliste.csv", KAUF_SPALTEN)
+    for k in a.karte:
+        if any(passt(r, a.idee, k) for r in alle):
+            print(f"schon in der Kaufliste: {a.idee} {k}")
+            continue
+        alle.append({"Idee": a.idee, "Name": k, "Anzahl": str(a.anzahl), "Art": a.art, "Preis": preis_norm(a.preis),
+                     "Stand": time.strftime("%Y-%m-%d") if a.preis else "", "Status": "geplant", "Hinweis": a.hinweis or ""})
+        print(f"Kaufliste + {a.idee} · {a.anzahl}× {k}" + (f" · {preis_norm(a.preis)} €" if a.preis else ""))
+    csv_schreiben("kaufliste.csv", KAUF_SPALTEN, alle)
+
+
+def cmd_kauf_status(a):
+    status_pruefen(a.status, STATUS_KAUF)
+    alle = csv_lesen("kaufliste.csv", KAUF_SPALTEN)
+    n = 0
+    for r in alle:
+        if passt(r, a.idee, a.karte):
+            r["Status"] = a.status + (f" {time.strftime('%Y-%m-%d')}" if a.status != "geplant" else "")
+            n += 1
+    if not n:
+        sys.exit("keine passende Kaufzeile")
+    csv_schreiben("kaufliste.csv", KAUF_SPALTEN, alle)
+    print(f"{n} Kaufzeilen: {a.status}")
+
+
+def entfernen(datei, spalten, idee, karte):
+    alle = csv_lesen(datei, spalten)
+    rest = [r for r in alle if not passt(r, idee, karte)]
+    csv_schreiben(datei, spalten, rest)
+    print(f"{datei}: {len(alle) - len(rest)} Zeilen entfernt ({idee}{' · ' + karte if karte else ''})")
+
+
+def cmd_kauf_entfernen(a):
+    entfernen("kaufliste.csv", KAUF_SPALTEN, a.idee, a.karte)
+
+
+def cmd_vormerken(a):
+    alle = csv_lesen("vormerkungen.csv", VORM_SPALTEN)
+    for k in a.karte:
+        if any(passt(r, a.idee, k) for r in alle):
+            print(f"schon vorgemerkt: {a.idee} {k}")
+            continue
+        alle.append({"Idee": a.idee, "Name": k, "Anzahl": str(a.anzahl), "Datum": time.strftime("%Y-%m-%d"),
+                     "Hinweis": a.hinweis or ""})
+        print(f"vorgemerkt: {a.idee} · {a.anzahl}× {k}")
+    csv_schreiben("vormerkungen.csv", VORM_SPALTEN, alle)
+    print("Konflikte (mehr vorgemerkt als frei) meldet der nächste Datenbank-Bau.")
+
+
+def cmd_vormerkung_entfernen(a):
+    entfernen("vormerkungen.csv", VORM_SPALTEN, a.idee, a.karte)
+
+
+def git_datum(datei):
+    import subprocess
+    try:
+        r = subprocess.run(["git", "-C", os.path.dirname(os.path.realpath(datei)), "log", "-1", "--format=%cs", "--",
+                            os.path.realpath(datei)], capture_output=True, text=True, timeout=20)
+        if r.stdout.strip():
+            return r.stdout.strip()
+    except Exception:
+        pass
+    return time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(datei)))
+
+
+def cmd_primer(a):
+    """Primer = Nachschlagewerk zum Deck: vorhanden? Stand gegen die letzte Änderung des Soll-Stands."""
+    zeilen, gesehen = 0, set()
+    for d in sorted(os.listdir("decks")) if os.path.isdir("decks") else []:
+        if not d.endswith(".txt"):
+            continue
+        slug = d[:-4]
+        kopf = open(os.path.join("decks", d), encoding="utf-8").readline()
+        teile = [t.strip() for t in kopf.split("|")]
+        name = teile[1] if len(teile) > 2 else slug
+        if a.deck and norm(a.deck) not in norm(name) and norm(a.deck) not in norm(slug):
+            continue
+        zeilen += 1
+        pr = os.path.join("ideen", f"{slug}-primer.md")
+        gesehen.add(pr)
+        if not os.path.exists(pr):
+            print(f"{name}: kein Primer – Deck aus Soll-Stand und Werkzeugen erschließen; nach dem Upgrade Primer anlegen")
+            continue
+        m = re.search(r"Stand (\d{2})\.(\d{2})\.(\d{4})", open(pr, encoding="utf-8").read(600))
+        stand = f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else git_datum(pr)
+        deck = git_datum(os.path.join("decks", d))
+        print(f"{name}: {pr} (Stand {stand})" + (f" ⚠ Soll-Stand geändert am {deck} – Primer prüfen und nachziehen"
+                                                  if deck > stand else " · aktuell"))
+    for pr in sorted(glob.glob(os.path.join("ideen", "*-primer.md"))):
+        if pr not in gesehen and (not a.deck or norm(a.deck).replace(" ", "-").replace(",", "") in pr):
+            zeilen += 1
+            print(f"{os.path.basename(pr)[:-10]}: {pr} (Idee ohne Soll-Stand)")
+    if not zeilen:
+        print("kein passendes Deck")
 
 
 def cmd_nachziehen(a):
@@ -318,8 +488,6 @@ def cmd_aufwand(a):
         text = summen_setzen(text)
         schreibe("14", text)
         print(f"14: Zeile eingetragen – {zeile}")
-        if a.willkommen:
-            willkommen_setzen(a.willkommen, text)
 
 
 def summen_setzen(text):
@@ -339,23 +507,12 @@ def summen_setzen(text):
     return re.sub(r"^\*\*Summe:\*\*.*$", neu, text, flags=re.M)
 
 
-def willkommen_setzen(pfad, text):
-    """Vermerk 🕒 am Ende der Willkommensnachricht aus der Summenzeile von 14 setzen."""
-    m = re.search(r"^\*\*Summe:\*\* (.*)$", text, flags=re.M)
-    if not m:
-        return
-    stand = time.strftime("%d.%m.%Y")
-    vermerk = f"> 🕒 *Bisher in diesem Projekt: {m.group(1)} (Stand {stand})*"
-    w = open(pfad, encoding="utf-8").read()
-    w2 = re.sub(r"^> 🕒 .*$", vermerk, w, flags=re.M)
-    open(pfad, "w", encoding="utf-8").write(w2)
-    print(f"Willkommensnachricht in {pfad}: {vermerk}" if w2 != w else f"!! kein Vermerk 🕒 in {pfad} gefunden")
-
-
 def main(argv=None):
-    global ORDNER
+    global ORDNER, SAMMLUNG, ADMIN
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--ordner", default=ORDNER, help="Ordner mit den Projektdateien (Standard: projekt)")
+    ap.add_argument("--ordner", default=ORDNER, help="Ordner mit 04/09/10 (Standard: projekt)")
+    ap.add_argument("--sammlung", default=SAMMLUNG, help="Ordner mit kaufliste.csv und vormerkungen.csv (Standard: data)")
+    ap.add_argument("--admin", default=ADMIN, help="Ordner mit 09a und 14 (Standard: admin)")
     sp = ap.add_subparsers(dest="cmd", required=True)
     p = sp.add_parser("zeigen")
     p.add_argument("--deck")
@@ -381,6 +538,30 @@ def main(argv=None):
     p.add_argument("status")
     p = sp.add_parser("idee-entfernen")
     p.add_argument("id")
+    p = sp.add_parser("kauf-neu")
+    p.add_argument("--idee", required=True)
+    p.add_argument("--karte", action="append", required=True)
+    p.add_argument("--anzahl", type=int, default=1)
+    p.add_argument("--preis")
+    p.add_argument("--art", default="Kauf", choices=["Kauf", "Standardland"])
+    p.add_argument("--hinweis")
+    p = sp.add_parser("kauf-status")
+    p.add_argument("--idee", required=True)
+    p.add_argument("status", choices=STATUS_KAUF)
+    p.add_argument("--karte")
+    p = sp.add_parser("kauf-entfernen")
+    p.add_argument("--idee", required=True)
+    p.add_argument("--karte")
+    p = sp.add_parser("vormerken")
+    p.add_argument("--idee", required=True)
+    p.add_argument("--karte", action="append", required=True)
+    p.add_argument("--anzahl", type=int, default=1)
+    p.add_argument("--hinweis")
+    p = sp.add_parser("vormerkung-entfernen")
+    p.add_argument("--idee", required=True)
+    p.add_argument("--karte")
+    p = sp.add_parser("primer")
+    p.add_argument("--deck")
     p = sp.add_parser("nachziehen")
     p.add_argument("--was", required=True)
     p.add_argument("--aufgabe", required=True)
@@ -392,12 +573,13 @@ def main(argv=None):
     p.add_argument("--seit")
     p.add_argument("--transkripte", help="Glob-Muster der Transkripte (Standard: alle unter ~/.claude/projects)")
     p.add_argument("--eintragen", help="Kurzbeschreibung der Sitzung für 14_Projekt-Aufwand.md")
-    p.add_argument("--willkommen", help="Projektanweisungen (projektanweisungen.md): Vermerk 🕒 neu setzen")
     a = ap.parse_args(argv)
-    ORDNER = a.ordner
+    ORDNER, SAMMLUNG, ADMIN = a.ordner, a.sammlung, a.admin
     {"zeigen": cmd_zeigen, "neu": cmd_neu, "offen": cmd_offen, "idee-neu": cmd_idee_neu, "idee-status": cmd_idee_status,
      "idee-entfernen": cmd_idee_entfernen, "nachziehen": cmd_nachziehen, "nachziehen-erledigt": cmd_nachziehen_erledigt,
-     "register": cmd_register, "aufwand": cmd_aufwand}[a.cmd](a)
+     "register": cmd_register, "aufwand": cmd_aufwand, "kauf-neu": cmd_kauf_neu, "kauf-status": cmd_kauf_status,
+     "kauf-entfernen": cmd_kauf_entfernen, "vormerken": cmd_vormerken, "vormerkung-entfernen": cmd_vormerkung_entfernen,
+     "primer": cmd_primer}[a.cmd](a)
 
 
 if __name__ == "__main__":

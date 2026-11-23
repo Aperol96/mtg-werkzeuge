@@ -2,7 +2,7 @@
 import os
 import shutil
 
-from conftest import DATEN, lauf
+from conftest import DATEN, WERKZEUGE, lauf
 
 P09 = """# Änderungsprotokoll
 
@@ -116,9 +116,17 @@ def test_protokoll(tmp_path):
              "wartet auf Freigabe")
     assert "I-002" in r.stdout
     assert lauf(tmp_path, "protokoll.py", "idee-status", "I-002", "freigegeben – Aufbau offen").returncode == 0
+    assert lauf(tmp_path, "protokoll.py", "idee-status", "I-002", "irgendwas").returncode != 0      # feste Status
+    (tmp_path / "data").mkdir()
+    assert lauf(tmp_path, "protokoll.py", "kauf-neu", "--idee", "I-001", "--karte", "Plains", "--anzahl", "2",
+                "--art", "Standardland", "--preis", "0,02").returncode == 0
+    assert lauf(tmp_path, "protokoll.py", "vormerken", "--idee", "I-001", "--karte", "Sol Ring").returncode == 0
+    assert lauf(tmp_path, "protokoll.py", "kauf-status", "--idee", "I-001", "bestellt").returncode == 0
     r = lauf(tmp_path, "protokoll.py", "offen", "--deck", "Testdeck")
-    assert "freigegeben – Aufbau offen" in r.stdout and "Plains" in r.stdout
+    assert "wartet auf Freigabe" in r.stdout and "Plains" in r.stdout and "1 bestellt" in r.stdout and "Sol Ring" in r.stdout
     assert lauf(tmp_path, "protokoll.py", "idee-entfernen", "I-001").returncode == 0
+    assert "I-001" not in (tmp_path / "data/kaufliste.csv").read_text(encoding="utf-8")
+    assert "I-001" not in (tmp_path / "data/vormerkungen.csv").read_text(encoding="utf-8")
     text = (tmp_path / "projekt/10_Geplante-Kaeufe-und-Ideen.md").read_text(encoding="utf-8")
     assert "I-001" not in text and "I-002" in text
     assert lauf(tmp_path, "protokoll.py", "nachziehen", "--was", "Deck Testdeck", "--aufgabe", "TXT importieren").returncode == 0
@@ -201,3 +209,24 @@ def test_moxfield_export_basis_teile(arbeit):
     ein, _ = netto_bestand([os.path.join(DATEN, "sammlung.csv")], str(arbeit / "fehlt.csv"))
     aus, _ = netto_bestand(sorted(str(p) for p in (arbeit / "bt").glob("basis*.csv")), str(arbeit / "fehlt.csv"))
     assert sum(int(r["Count"]) for r in ein) == sum(int(r["Count"]) for r in aus) > 0
+
+
+def test_werkzeugkiste_mit_doku_und_vorlage(tmp_path):
+    """V1.9.12: Die Kiste bringt Methodik (doku/) und Daten-Vorlage (vorlage-daten/) mit – eine Quelle für alles."""
+    import paket as P
+    q = tmp_path / "quelle"
+    q.mkdir()
+    for n in P.WERKZEUGE:
+        shutil.copy(os.path.join(WERKZEUGE, n), q / n)
+    (q / "doku").mkdir()
+    (q / "doku/08_Test.md").write_text("# Test\n", encoding="utf-8")
+    (q / "vorlage-daten/sammlung").mkdir(parents=True)
+    (q / "vorlage-daten/sammlung/kaufliste.csv").write_text("Idee,Name\n", encoding="utf-8")
+    ziel = tmp_path / "arbeit"
+    ziel.mkdir()
+    r = lauf(ziel, "paket.py", "packen", "--art", "werkzeuge", "--quelle", str(q), "--out", str(tmp_path / "k.txt"), "--nutzer")
+    assert r.returncode == 0, r.stdout + r.stderr
+    r = lauf(ziel, "paket.py", "auspacken", str(tmp_path / "k.txt"), "--ziel", str(ziel))
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (ziel / "doku/08_Test.md").exists() and (ziel / "vorlage-daten/sammlung/kaufliste.csv").exists()
+    assert (ziel / "start.py").exists() and not (ziel / "data/kaufliste.csv").exists()

@@ -1,0 +1,3 @@
+{
+  "_hinweis": "Ergänzungen für mtg_db.py. Schlüssel: 'commander:<Oracle-Name>' oder 'deck:<Teil des Datei-/Decknamens>' (Alternativen mit | trennen). Die Soll-Stände decks/<deckname>.txt werden über den Commander bzw. den Dateinamen zugeordnet. Felder: name (eigener Deckname), precon (Wizards-Deckname, wird zum Decknamen), strategie, herkunft, status."
+}

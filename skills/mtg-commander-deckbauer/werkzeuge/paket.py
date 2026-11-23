@@ -60,7 +60,9 @@ import time
 KENNUNG = "MTG-PAKET"
 VERSION = 1
 WERKZEUGE = ["mtg_db.py", "deckbau.py", "bewertung.py", "simulation.py", "archetypen.py", "kartenbilder.py",
-             "protokoll.py", "paket.py", "zugang.py", "archetypen_daten.json", "projektanweisungen.md"]
+             "protokoll.py", "paket.py", "zugang.py", "start.py", "archetypen_daten.json"]
+DOKU = "doku"                                    # Methodik (01–13, Projektanweisungen) – eine Quelle, mit den Werkzeugen
+VORLAGE = "vorlage-daten"                        # Vorlage für ein neues Daten-Repo (13, Abschnitt 8)
 LISTEN = ["04_Deckregister.md", "09_Aenderungsprotokoll.md", "10_Geplante-Kaeufe-und-Ideen.md"]   # im Datenpaket
 NUR_ADMIN = ["weitergabe.py"]
 ZEILE = 100
@@ -107,6 +109,8 @@ def lokal_fuer(projektpfad):
     """Projektpfad → Pfad im Arbeitsordner."""
     teile = projektpfad.split("/")
     name = teile[-1]
+    if teile[0] == VORLAGE:
+        return projektpfad                        # Vorlage unverändert (vor den Regeln für sammlung/ usw.)
     if "sammlung" in teile[:-1]:
         return f"data/{name}"
     if "decks" in teile[:-1]:
@@ -115,6 +119,8 @@ def lokal_fuer(projektpfad):
         return f"ideen/{name}"
     if name in LISTEN:
         return f"projekt/{name}"                  # 04/09/10 – protokoll.py liest und pflegt sie dort
+    if teile[0] == DOKU:
+        return f"{DOKU}/{name}"                   # Methodik in den Unterordner doku/
     return name                                   # Werkzeuge und deck_namen.json in den Stamm
 
 
@@ -148,6 +154,11 @@ def dateien_werkzeuge(quelle, nutzer):
         else:
             if name not in NUR_ADMIN:
                 sys.exit(f"fehlt in der Quelle: {name}")
+    d = os.path.join(quelle, DOKU)
+    out += [f"{DOKU}/{f}" for f in sorted(os.listdir(d)) if f.endswith(".md")] if os.path.isdir(d) else []
+    v = os.path.join(quelle, VORLAGE)
+    for root, _, files in sorted(os.walk(v)) if os.path.isdir(v) else []:
+        out += [os.path.relpath(os.path.join(root, f), quelle).replace(os.sep, "/") for f in sorted(files)]
     return out
 
 
@@ -267,8 +278,8 @@ def paket_text(kopf, eintraege, b64):
     zeilen = [kopf]
     if eintraege:
         zeilen.append("Inhalt: " + ", ".join(e[0] for e in eintraege))
-    zeilen.append("Auspacken: Startbefehl in 05a_Sitzungsstart (nicht von Hand abschreiben). Projektdateien bleiben "
-                  "maßgeblich; dieses Paket ist ihre Transportkopie.")
+    zeilen.append("Auspacken: Startbefehl in 05a_Sitzungsstart (nicht von Hand abschreiben). Werkzeuge: fester Commit im "
+                  "Werkzeug-Repo; Gast-Archiv: Daten des Gastes.")
     return "\n".join(zeilen + ["=====BEGIN====="] + [b64[i:i + ZEILE] for i in range(0, len(b64), ZEILE)]
                      + ["=====END====="]) + "\n"
 

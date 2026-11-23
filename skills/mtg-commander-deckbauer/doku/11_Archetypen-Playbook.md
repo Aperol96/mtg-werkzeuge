@@ -1,6 +1,6 @@
 # Archetypen-Playbook – Commander (Schwerpunkt Bracket 3)
 
-**Stand:** 09.11.2026 (V1.9.6: Pflege ohne Bestandsliste 07 im Projekt, Werkzeuge von GitHub; vier Combo-Zeilen in 3.4 repariert, Einstufung live geprüft) · 30.10.2026 (Richtwerte neu erhoben mit den Paket- und Rollenregeln seit V1.7 – Entscheidung des Admins: am aktuellen EDHREC orientieren · V1.6: Rollen mit Qualitätsregeln neu gezählt) · **Daten:** EDHREC (Themenseiten und Durchschnittsdecks mit Bracket-3-Filter „Upgraded“, abgerufen 30.10.2026), Scryfall-Tagger (Funktionstags, Bulk vom 26.10.2026), playgroup.gg (Spieldaten, geprüft 27.10.2026), Commander Spellbook (Combos, geprüft 27.10.2026) · **Werkzeug:** `archetypen.py`, Rohdaten `archetypen_daten.json` · **Auf die Sammlung angewendet:** `12_Sammlungsprofil` · **Pflege:** Abschnitt 7
+**Stand:** 30.10.2026 (Richtwerte neu erhoben mit den Paket- und Rollenregeln seit V1.7 – Entscheidung des Admins: am aktuellen EDHREC orientieren · V1.6: Rollen mit Qualitätsregeln neu gezählt) · **Daten:** EDHREC (Themenseiten und Durchschnittsdecks mit Bracket-3-Filter „Upgraded“, abgerufen 30.10.2026), Scryfall-Tagger (Funktionstags, Bulk vom 26.10.2026), playgroup.gg (Spieldaten, geprüft 27.10.2026), Commander Spellbook (Combos, geprüft 27.10.2026) · **Werkzeug:** `archetypen.py`, Rohdaten `archetypen_daten.json` · **Auf die Sammlung angewendet:** `12_Sammlungsprofil` · **Pflege:** Abschnitt 7
 
 Zweck: die Ebene zwischen dem allgemeinen Template (`01_Quellen-Framework`, Abschnitt 4) und den commander-spezifischen Live-Daten beim Deckbau (`08_Deckbau-Verfahren`). Hier steht, was ein Archetyp konkret braucht, was die Community spielt und wo die Fallen liegen.
 
@@ -245,7 +245,7 @@ Kern-Pakete = *Daten* (Median, Spanne). Schlüsselkarten = EDHREC-Karten mit hoh
 1. Commander-Steckbrief (`deckbau.py commander`) → Archetyp wählen (EDHREC-Thema).
 2. Kern-Pakete aus Abschnitt 5 als Ziel in den Steckbrief (`08`, Phase 3) übernehmen; Grundrollen weiter nach `08` (unsere Mindestwerte gelten zusätzlich).
 3. Entwurf prüfen: `archetypen.py deck entwurf.txt --archetyp <a>` vergleicht die Pakete mit den Medianen; ⚠ = Kernpaket unter dem kleinsten Wert der Datenbasis.
-4. Weg 1: `archetypen.py karten <a> --paket <p> --farben <WUBRG>` listet freie Karten je Paket; den Überblick gibt `12_Sammlungsprofil`.
+4. Weg 1: `archetypen.py karten <a> --paket <p> --farben <WUBRG>` listet freie Karten je Paket; den Überblick gibt das Sammlungsprofil (`profil/12_Sammlungsprofil.md` im Daten-Repo).
 5. Interaktionsmix: Bedrohungsprofil der Spielgruppe (Ablauf D) mit Abschnitt 3.6 abgleichen.
 6. Upgrade eines bestehenden Decks (Ablauf B): Zeile in `12a_Deck-Raster` als Startpunkt, dann `deckbau.py upgrade` (Raus-Sperren schützen Kernpakete und Commander-Bezug) und `abnahme`.
 

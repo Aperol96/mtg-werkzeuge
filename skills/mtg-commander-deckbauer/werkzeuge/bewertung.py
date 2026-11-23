@@ -322,7 +322,10 @@ THEMEN = {
     "angriff": ("Angriff", _rx(r"\bmobilize\b", r"attacking"),
                 _rx(r"whenever [^.]*\battacks?\b", r"\battacking\b", r"\bmobilize\b"),
                 _angriff_geber, _angriff_nutzer, ("Angriff ermöglichen", "Angriffs-Trigger")),
-    "kampfschaden": ("Kampfschaden", None, _rx(r"deals? combat damage to (a player|an opponent|one or more players)"),
+    # erzeugt: Commander, die angreifende Kreaturen bzw. Tokens ins Spiel bringen (Mobilize, Myriad, „tapped and
+    # attacking“), schaffen Kampfschaden – Karten mit Kampfschaden-Trigger (Grenzo, Mindblade Render) passen dazu (V1.9.12)
+    "kampfschaden": ("Kampfschaden", _rx(r"\bmobilize\b", r"tapped and attacking", r"\bmyriad\b"),
+                     _rx(r"deals? combat damage to (a player|an opponent|one or more players)"),
                      _schaden_geber, _schaden_nutzer, ("Evasion", "Kampfschaden-Trigger")),
     "counters": ("+1/+1-Counter", _rx(r"put [^.]*\+1/\+1 counters?"), _rx(r"\+1/\+1 counters? on", r"with a \+1/\+1"),
                  _counter_geber, _counter_nutzer, ("Counter-Quelle", "Counter-Payoff")),

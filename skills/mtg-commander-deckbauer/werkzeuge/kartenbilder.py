@@ -14,12 +14,12 @@ Befehle
           Hinweis (bis 2 Zeilen); Ordnung je Abschnitt = Box-Ablage. Zeile: K1 1 Name (SET) Nr | 4,14 € | DE | Hinweis
   einkauf Einkaufsliste-PDF (Sammelbestellung): Abschnitte je Idee/Vorhaben mit Anzahl und Summe, je Karte Bild,
           Box-Etikett „später“, Druck, Preis und Hinweis. Liste: 3 Name (SET) Nr | 0,25 € | I-002 Testdeck | Hinweis
-          (Preis je Stück) oder --aus-10 projekt/10_Geplante-Kaeufe-und-Ideen.md (Tabelle „Kaufliste“).
+          (Preis je Stück) oder --kaufliste data/kaufliste.csv [--ideen projekt/10_Geplante-Kaeufe-und-Ideen.md].
   Abhaken (V1.8): Tausch-, Verkaufs- und Einkaufs-PDF haben je Karte ein Kästchen, das im PDF-Reader anklickbar ist
           (AcroForm); der Haken wird mit dem PDF gespeichert.
   deck    Deck-PDF: Deckblatt mit Kurzdaten, Commander mit Oracle-Text, Manakurve, Farben,
           danach alle Karten nach Kategorien.
-  vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie in 08a_Lieferung-Buchen-Gegentest, Abschnitt 3).
+  vorlage Markdown-Vorlage des Fazit-PDF ausgeben (Abschnitte wie in 08a_Lieferung-Buchen-Routinen, Abschnitt 3).
   bericht Fazit-PDF (Fazit, Änderungen, Kennzahlen, Kartenerklärungen, Vorgehen, Moxfield-Anhang) aus einer
           Markdown-Datei im selben Design – Aufbau der Datei: Funktion bericht_pdf (Kopf zwischen ---,
           [kacheln] … [/kacheln], ## / ###, Absätze, - / 1. Listen, > Kasten (>! rot, >+ grün, >? blau),
@@ -1107,27 +1107,32 @@ def lies_einkaufsliste(pfad):
     return kopf, karten
 
 
-def einkauf_aus_10(pfad):
-    """Kaufliste (Sammelbestellung) aus 10_Geplante-Kaeufe-und-Ideen.md als Einkaufsliste lesen:
-    Tabelle „## Kaufliste“ (ID | Karte | Anzahl | Art | Preis ab € (Stand) | Hinweis), Deckname aus „## Offene Ideen“."""
-    text = Path(pfad).read_text(encoding="utf-8")
-    def tabelle(ueberschrift):
-        m = re.search(r"^## " + re.escape(ueberschrift) + r".*?\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-        zeilen = [z for z in (m.group(1) if m else "").splitlines() if z.startswith("|")]
-        return [[x.strip() for x in z.strip("|").split("|")] for z in zeilen[2:]]
-    decks = {r[0]: r[2] for r in tabelle("Offene Ideen") if len(r) > 2}
-    karten = []
-    for r in tabelle("Kaufliste"):
-        if len(r) < 6 or not r[2].isdigit():
-            continue
-        iid, name, anz, art, preis, hinweis = r[:6]
-        zweck = f"{iid} {decks.get(iid, '')}".strip()
-        hinweis = " · ".join(x for x in [art if art.lower() != "kauf" else "", hinweis] if x)
-        karten.append(dict(anzahl=int(anz), name=name, set="", nummer="", preis=euro_wert(preis),
-                           preis_txt=f"{eur_de(euro_wert(preis))}/St." if euro_wert(preis) else "", zweck=zweck,
-                           hinweis=hinweis, quelle="Kauf", abschnitt="kauf"))
-    stand = re.search(r"\*\*Stand:\*\*\s*([\d.]+)", text)
-    return {"titel": "Einkaufsliste Sammelbestellung", "deck": f"aus der Kaufliste (Stand {stand.group(1) if stand else '–'})",
+def einkauf_aus_kaufliste(pfad, ideen=None, alle=False):
+    """Kaufliste (Sammelbestellung) aus sammlung/kaufliste.csv (Idee, Name, Anzahl, Art, Preis, Stand, Status, Hinweis)
+    als Einkaufsliste lesen; nur Zeilen mit Status „geplant“ (bestellte sind unterwegs), mit alle=True alle.
+    Deckname je Idee aus der Tabelle „## Offene Ideen“ in 10_Geplante-Kaeufe-und-Ideen.md (ideen), falls angegeben."""
+    import csv as _csv
+    decks = {}
+    if ideen and Path(ideen).exists():
+        for z in Path(ideen).read_text(encoding="utf-8").splitlines():
+            r = [x.strip() for x in z.strip("|").split("|")] if z.startswith("| I-") else []
+            if len(r) > 2:
+                decks[r[0]] = r[2]
+    karten, stand = [], ""
+    with open(pfad, encoding="utf-8-sig", newline="") as fh:
+        for r in _csv.DictReader(fh):
+            st = (r.get("Status") or "geplant").strip()
+            if not r.get("Name") or (not alle and not st.startswith("geplant")):
+                continue
+            preis = euro_wert(r.get("Preis") or "")
+            stand = max(stand, r.get("Stand") or "")
+            hinweis = " · ".join(x for x in [(r.get("Art") or "") if (r.get("Art") or "Kauf") != "Kauf" else "",
+                                             st if st != "geplant" else "", r.get("Hinweis") or ""] if x)
+            karten.append(dict(anzahl=int(r.get("Anzahl") or 1), name=r["Name"].strip(), set="", nummer="", preis=preis,
+                               preis_txt=f"{eur_de(preis)}/St." if preis else "",
+                               zweck=f"{r['Idee']} {decks.get(r['Idee'], '')}".strip(), hinweis=hinweis,
+                               quelle="Kauf", abschnitt="kauf"))
+    return {"titel": "Einkaufsliste Sammelbestellung", "deck": f"aus der Kaufliste (Preise Stand {stand or '–'})",
             "preise": "laut Kaufliste – vor der Bestellung neu prüfen"}, karten
 
 
@@ -1984,7 +1989,9 @@ def main():
     v.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG fürs Handy)")
     e = sub.add_parser("einkauf", help="Einkaufsliste-PDF (Sammelbestellung) zum Abhaken")
     e.add_argument("einkaufsliste", nargs="?", help="Liste: 3 Name (SET) Nr | 0,25 € | Zweck | Hinweis")
-    e.add_argument("--aus-10", dest="aus10", help="Kaufliste aus 10_Geplante-Kaeufe-und-Ideen.md übernehmen")
+    e.add_argument("--kaufliste", help="Kaufliste sammlung/kaufliste.csv übernehmen (Status „geplant“)")
+    e.add_argument("--ideen", help="10_Geplante-Kaeufe-und-Ideen.md für die Decknamen je Idee")
+    e.add_argument("--alle", action="store_true", help="auch bestellte Zeilen aufnehmen")
     e.add_argument("--titel")
     e.add_argument("--ohne-png", action="store_true", help="keine PNG-Seiten (Standard: PNG fürs Handy)")
     d = sub.add_parser("deck", help="Deck-PDF")
@@ -2043,12 +2050,12 @@ def main():
         fehlt = scryfall(karten)
         verkauf_pdf(kopf, karten, ziel, bilder)
     elif a.befehl == "einkauf":
-        if a.aus10:
-            kopf, karten = einkauf_aus_10(a.aus10)
+        if a.kaufliste:
+            kopf, karten = einkauf_aus_kaufliste(a.kaufliste, a.ideen, a.alle)
         elif a.einkaufsliste:
             kopf, karten = lies_einkaufsliste(a.einkaufsliste)
         else:
-            sys.exit("Einkaufsliste oder --aus-10 angeben")
+            sys.exit("Einkaufsliste oder --kaufliste angeben")
         if not karten:
             sys.exit("Einkaufsliste ist leer.")
         if a.titel:

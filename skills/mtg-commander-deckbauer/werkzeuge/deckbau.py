@@ -31,7 +31,7 @@ Befehle (Details: python3 deckbau.py <befehl> --help)
                                  Empfehlung, Ergebnis-Entwurf aus den angenommenen Tauschen (--ergebnis)
 
 --ersetzt <deck>: Karten dieses Decks gelten für den Entwurf als vorhanden (Upgrade eines bestehenden Decks).
---idee I-nnn: Vormerkungen dieser Idee (claude/sammlung/vormerkungen.csv) gelten für den Entwurf als frei.
+--idee I-nnn: Vormerkungen dieser Idee (sammlung/vormerkungen.csv) gelten für den Entwurf als frei.
 Geplante Verkäufe (Ideen „V-nnn“) sind weiche Vormerkungen: frei, aber mit Hinweis „Verkauf geplant“.
 
 Kennzahlen (einheitlich in allen Werkzeugen):
@@ -912,7 +912,7 @@ def pruefe_kurve_farben(cmdr, main, ci, warn):
         print("Doppel-Pips bis MV 3 (brauchen mehr Quellen): " + ", ".join(schwer))
 
 
-def pruefe_besitz(con, alle, main, ersetzt):
+def pruefe_besitz(con, alle, main, ersetzt, budget=None):
     kauf, frei_n = [], 0
     for q_, c in alle:
         if basic(c):
@@ -925,6 +925,10 @@ def pruefe_besitz(con, alle, main, ersetzt):
     summe = sum((e or 0) * n for _, n, e, _ in kauf)
     print(f"\nBesitz: {frei_n} Karten frei in der Sammlung | zu kaufen/tauschen: {sum(n for _, n, _, _ in kauf)}"
           f" | Summe ab {summe:.2f} € (Scryfall-EUR, günstigster Druck, {time.strftime('%d.%m.%Y')})")
+    if budget is not None:
+        rest = budget - summe
+        print(f"Budget {budget:.2f} € → " + (f"Rest {rest:.2f} €" if rest >= 0 else
+              f"⚠ {-rest:.2f} € über dem Budget – teuerste Käufe zuerst prüfen (alternativen, Maybeboard)"))
     if kauf:
         M.table(sorted(kauf, key=lambda k: -(k[2] or 0)), ["Karte", "Anzahl", "ab €", "Grund"])
         echt = [(k, n) for k, n, _, g in sorted(kauf) if not g.startswith("vorgemerkt")]
@@ -1000,7 +1004,7 @@ def cmd_pruefen(con, a):
         warn.append("2-Karten-Combo vorhanden – in Bracket 3 nur, wenn nicht früh im Spiel möglich (Einschätzung nötig)")
     if a.combos_fehlend:
         combos_fehlend(con, bz["body"], alle)
-    pruefe_besitz(con, alle, main, ersetzt)
+    pruefe_besitz(con, alle, main, ersetzt, getattr(a, "budget", None))
     print("\nWARNUNGEN / WAS NOCH FEHLT:" if warn else "\nKeine Warnungen.")
     for w in warn:
         print(f"  - {w}")
@@ -3426,6 +3430,7 @@ def parser():
     p.add_argument("--ersetzt")
     p.add_argument("--archetyp", help="Ziel-Archetyp für die Richtwerte (sonst Strategie im Register bzw. Deckung)")
     p.add_argument("--combos-fehlend", action="store_true")
+    p.add_argument("--budget", type=float, help="Gesamtbudget für Käufe in € – zeigt Rest bzw. Überschreitung")
     p.add_argument("--idee", **idee)
     p = sp.add_parser("abnahme", help="Bracket-3-Abnahme (Definition of Done)")
     p.add_argument("deck", help="Deckname, Soll-Stand oder Entwurf")
@@ -3507,7 +3512,7 @@ def parser():
     p.add_argument("--bracket", type=int, default=3)
     p.add_argument("--idee", **idee)
     p = sp.add_parser("tauschrunde", help="Frage-Antwort-Runde: jeden Tausch einzeln mit ja/nein/später/Empfehlung "
-                      "entscheiden (08, Stufe C)")
+                      "entscheiden (08a, 5.2)")
     p.add_argument("deck", help="Deckname oder Soll-Stand")
     p.add_argument("--neu", help="Entwurf – startet die Runde (Tauschpaare aus Soll-Stand ↔ Entwurf)")
     p.add_argument("--neu-start", action="store_true", help="laufende Runde verwerfen und mit --neu neu beginnen")

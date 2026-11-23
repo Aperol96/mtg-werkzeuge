@@ -258,3 +258,54 @@ def test_tauschrunde(arbeit):
     assert erg.rstrip().endswith("1 Zurgo Stormrender") and "// Commander" in erg
     out = ok(lauf(arbeit, "deckbau.py", "tauschrunde", "Testdeck", "--datei", "out/runde.json", "--stand"))
     assert "✓ ja" in out and "✗ nein (E)" in out
+
+
+def test_bezug_kampfschaden_bei_angreifenden_tokens(con):
+    """V1.9.12: Commander mit Mobilize/angreifenden Tokens schaffen Kampfschaden – Grenzo bekommt Bezug (vorher 0)."""
+    import deckbau as D
+    prof = D.profil_fuer(con, [D.finde(con, "Zurgo Stormrender")])
+    assert "kampfschaden" in prof["themen"]
+    b = D.bewerte(con, prof, {}, D.finde(con, "Grenzo, Havoc Raiser"))
+    assert "Kampfschaden-Trigger" in b["gruende"] and b["bezug"] > 0
+
+
+def test_leere_bulk_datei_wird_erkannt(tmp_path):
+    """V1.9.12: leere Scryfall-Datei (Fund 19.11.2026) – nicht übernehmen, ältere Fassung nutzen."""
+    import gzip
+    import mtg_db as M
+    leer, voll = tmp_path / "leer.jsonl.gz", tmp_path / "voll.jsonl.gz"
+    with gzip.open(leer, "wt", encoding="utf-8") as f:
+        f.write("")
+    with gzip.open(voll, "wt", encoding="utf-8") as f:
+        f.write('{"oracle_id": "x"}\n')
+    assert not M.bulk_hat_daten(str(leer)) and M.bulk_hat_daten(str(voll))
+
+
+def test_pruefen_mit_budget(arbeit):
+    """V1.9.12: Gesamtbudget für Käufe – Rest bzw. Überschreitung in pruefen."""
+    out = ok(lauf(arbeit, "deckbau.py", "pruefen", "decks/testdeck.txt", "--budget", "0"))
+    assert "Budget 0,00 €".replace(",", ".") in out or "Budget 0.00 €" in out
+
+
+def test_start_verknuepft_und_zeigt_stand(tmp_path):
+    """V1.9.12: start.py – Daten-Repo verknüpfen, Rolle vermerken, offene Punkte und Primer zeigen (ohne Datenbank)."""
+    import shutil
+    import subprocess
+    import sys
+    from conftest import WERKZEUGE
+    w = tmp_path / "mtg"
+    shutil.copytree(WERKZEUGE, w, ignore=shutil.ignore_patterns("mtg.sqlite", "__pycache__"))
+    d = tmp_path / "daten"
+    for u in ("sammlung", "decks", "ideen", "protokolle"):
+        (d / u).mkdir(parents=True)
+    (d / "decks/testdeck.txt").write_text("// Soll-Stand: Commander | Testdeck\n1 Sol Ring\n", encoding="utf-8")
+    (d / "protokolle/10_Geplante-Kaeufe-und-Ideen.md").write_text(
+        "## Offene Ideen\n\n| ID | Datum | Deck / Vorhaben | Inhalt | Status | Details |\n|---|---|---|---|---|---|\n"
+        "| I-001 | 01.11.2026 | Testdeck | x | wartet auf Freigabe | – |\n\n## In Moxfield nachziehen\n\n"
+        "| Seit | Was | Aufgabe |\n|---|---|---|\n| – | derzeit nichts offen | – |\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(d)], check=True)
+    r = subprocess.run([sys.executable, str(w / "start.py"), "admin", "--daten", str(d), "--ohne-db"],
+                       capture_output=True, text=True, cwd=w)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (w / "decks").is_symlink() and (w / "projekt").is_symlink()
+    assert "I-001" in r.stdout and "testdeck: kein Primer" in r.stdout and "doku" in r.stdout

@@ -58,7 +58,7 @@ def test_verkauf_hat_kaestchen_je_karte(umgebung):
     assert form and len(namen) == 3          # 2 Karten + „Bedenken geklärt“ für die Kat.-2-Karte
 
 
-def test_einkauf_aus_liste_und_aus_10(umgebung):
+def test_einkauf_aus_liste_und_kaufliste(umgebung):
     d, bilder = umgebung
     liste = d / "einkauf.txt"
     liste.write_text("# titel: Einkauf\n3 Arcane Signet | 0,50 € | I-002 Testdeck | günstigster Druck\n"
@@ -70,14 +70,16 @@ def test_einkauf_aus_liste_und_aus_10(umgebung):
     assert form and len(namen) == 2
 
     zehn = d / "10.md"
-    zehn.write_text("**Stand:** 29.10.2026\n\n## Offene Ideen\n\n| ID | Datum | Deck / Vorhaben | Inhalt | Status | Details |\n"
-                    "|---|---|---|---|---|---|\n| I-001 | 26.10.2026 | Testdeck (Pioneer) | x | wartet | – |\n\n"
-                    "## Kaufliste (Sammelbestellung)\n\n| ID | Karte | Anzahl | Art | Preis ab € (Stand) | Hinweis |\n"
-                    "|---|---|---|---|---|---|\n| I-001 | Mountain | 11 | Standardland | 0,02 / Stück (25.10.2026) | erst zählen |\n\n"
-                    "Summe …\n\n## Aus der Sammlung vorgemerkt\n", encoding="utf-8")
-    kopf, karten = kb.einkauf_aus_10(zehn)
+    zehn.write_text("## Offene Ideen\n\n| ID | Datum | Deck / Vorhaben | Inhalt | Status | Details |\n"
+                    "|---|---|---|---|---|---|\n| I-001 | 26.10.2026 | Testdeck (Pioneer) | x | wartet | – |\n", encoding="utf-8")
+    kl = d / "kaufliste.csv"
+    kl.write_text("Idee,Name,Anzahl,Art,Preis,Stand,Status,Hinweis\n"
+                  "I-001,Mountain,11,Standardland,\"0,02\",2026-10-25,geplant,erst zählen\n"
+                  "I-001,Sol Ring,1,Kauf,\"1,20\",2026-10-25,bestellt 2026-10-26,\n", encoding="utf-8")
+    kopf, karten = kb.einkauf_aus_kaufliste(kl, zehn)
     assert len(karten) == 1 and karten[0]["zweck"] == "I-001 Testdeck (Pioneer)" and karten[0]["preis"] == 0.02
     assert "Standardland" in karten[0]["hinweis"]
+    assert len(kb.einkauf_aus_kaufliste(kl, zehn, alle=True)[1]) == 2          # bestellte nur mit alle
 
 
 def test_verkauf_bedenken_kasten_und_ueberblick(umgebung):

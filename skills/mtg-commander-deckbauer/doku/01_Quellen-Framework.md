@@ -1,6 +1,6 @@
 # Quellen-Framework: Commander-Deckbau, Meta & Synergien
 
-**Stand:** 09.11.2026 (V1.9.7: Quellen-Rangfolge für Deckbau und Upgrade – EDHREC und Scryfall Hauptquellen, Moxfield/Archidekt Zusatzquelle, Abschnitt 0 · 29.10.2026: Rolle von Moxfield/ManaBox; V1.6: Format-Stand in `01a`, Rechenregel der Klassen) · **Pflege:** nach jeder Banned-&-Restricted-Ankündigung (nächste: 30.11.2026) und jedem Brackets-Update `01a_Format-Stand` aktualisieren.
+**Stand:** 09.11.2026 (Quellen-Rangfolge, Abschnitt 0) · Format-Stand in `01a`
 
 Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche Kennzahl was bedeutet und wie ich Empfehlungen bewerte.
 
@@ -71,7 +71,7 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 
 ### Moxfield – moxfield.com (externe Datenbank des Nutzers · Zusatzquelle Community-Listen)
 - Decks, Bestand, Tags, Playtester, Bracket-Hinweis, Preise – für die Nutzung außerhalb des Projekts.
-- **Rolle der eigenen Daten:** Hauptdatenbank ist das Projekt; Daten fließen nur **Projekt → Moxfield**. Moxfield-Exporte werden nur zur Fehlerkorrektur oder auf ausdrücklichen Wunsch zum Überschreiben genutzt.
+- **Rolle der eigenen Daten:** Hauptdatenbank ist das private Daten-Repo; Daten fließen nur **Repo → Moxfield**. Moxfield-Exporte werden nur zur Fehlerkorrektur oder auf ausdrücklichen Wunsch zum Überschreiben genutzt.
 - **Zusatzquelle (09.11.2026):** öffentliche Decklisten und Primer anderer Spieler zum selben Commander – Varianten und ungewöhnliche Karten finden, nie allein entscheidend. Zugriff nur über Websuche/WebFetch (API per Skript gesperrt, Abschnitt 8).
 - Import: Deck als Text (`1 Sol Ring (C21) 263`), Bestand als CSV (fügt nur hinzu) → Details in `03_Import-Formate`. Deckbeschreibung max. 140 Zeichen, Themen aus fester Liste (`Moxfield-Beschreibungen`).
 
@@ -80,7 +80,7 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 - **Zusatzquelle (09.11.2026):** öffentliche Decklisten zum Commander (Suche nach Commander, sortiert nach Aktualität/Ansichten) – wie Moxfield nur ergänzend. API per Skript erreichbar (Abschnitt 8).
 
 ### ManaBox (App)
-- Nur Scanner des Nutzers – Zulieferer der gescannten Daten, keine Bestandsquelle. CSV-Export enthält die Scryfall-ID → eindeutige Druckversion; Scans werden im Projekt gebucht.
+- Nur Scanner des Nutzers – Zulieferer der gescannten Daten, keine Bestandsquelle. CSV-Export enthält die Scryfall-ID → eindeutige Druckversion; Scans werden im Daten-Repo gebucht.
 
 ### playgroup.gg (Siegquoten aus echten Casual-Partien)
 - Partien aus der Playgroup-App und Online-Spielen. Siegquoten je Commander, auf 4-Spieler-Basis normalisiert (25 % = Erwartungswert).
@@ -100,7 +100,7 @@ Zweck: Damit ich (Claude) sofort weiß, wo ich welche Information finde, welche 
 ### Cardmarket – cardmarket.com (Preise & Einkauf in Europa)
 - De-facto-Preisreferenz in Europa: Trendpreis, Ab-Preis, 7-/30-Tage-Durchschnitt.
 - Wants-Liste + Shopping Wizard bündeln Verkäufer → Porto sparen.
-- Käufe und Verkäufe des Nutzers werden als Belege im Projekt gebucht (`buchungen.csv`).
+- Käufe und Verkäufe des Nutzers werden als Belege im Daten-Repo gebucht (`buchungen.csv`).
 - **Zugriff für Claude:** gesperrt (WebFetch und Skript) → Preise über Scryfall EUR, mit Datum; Feinabgleich macht der Nutzer im Shopping Wizard.
 
 ### karten-ankauf.de (Connector, falls im Konto verbunden)

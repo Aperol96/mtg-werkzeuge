@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """archetypen.py – Commander-Archetypen: Pakete erkennen, Sammlung und Decks auswerten, Richtwerte erheben.
 
-Begleitwerkzeug zu den Projektdateien 11_Archetypen-Playbook (Wissen) und 12_Sammlungsprofil (Ergebnis).
+Begleitwerkzeug zu 11_Archetypen-Playbook (Wissen) und dem Sammlungsprofil profil/12_Sammlungsprofil.md (Ergebnis).
 Ein Archetyp besteht aus Paketen (z. B. Aristokraten = Opfer-Outlets + Futter + Tod-Payoffs). Die Pakete
 werden über Scryfall-Funktionstags (Community-Daten, Tagger) und Oracle-Text-Muster erkannt – das ist eine
 Näherung; Claude prüft Einzelfälle am Oracle-Text.
@@ -13,7 +13,7 @@ Datenquellen
     weil hier zwischen direkten und geerbten Tags unterschieden wird.
 
 Befehle
-  profil [--frei 07.csv] [--decks claude/decks/*.txt] [--einschaetzung E.md] [--out 12_Sammlungsprofil.md] [--hinweis T]
+  profil [--frei 07.csv] [--decks decks/*.txt] [--einschaetzung E.md] [--out profil/12_Sammlungsprofil.md] [--raster-out profil/12a_Deck-Raster.md] [--hinweis T]
         Sammlungsprofil: Welche Archetypen tragen die freien Karten, in welchen Farben, welche Pakete fehlen?
         Mit --decks zusätzlich: Status der Schlüsselkarten je Deck und die Commander-Decks im Archetyp-Raster.
   karten <archetyp> [--paket P] [--farben RWB] [--frei 07.csv] [--alle] [--ohne-deck <deckdatei>]
@@ -574,7 +574,7 @@ def deck_abschnitt(deckdateien, karten, namen, richt, config_pfad):
     """Commander-Decks (Soll-Stände) im Archetyp-Raster: Ziel-Archetyp aus der Strategie, Kernpakete gegen Median."""
     config = json.load(open(config_pfad, encoding="utf-8")) if config_pfad and os.path.exists(config_pfad) else {}
     zeilen = ["## Bestehende Commander-Decks im Archetyp-Raster\n",
-              "Paket-Zählung der Soll-Stände (`claude/decks/`) gegen die Richtwerte. Ziel-Archetyp = Strategie aus "
+              "Paket-Zählung der Soll-Stände (`decks/`) gegen die Richtwerte. Ziel-Archetyp = Strategie aus "
               "`deck_namen.json`; ⚠ = Kernpaket unter dem kleinsten Wert der Datenbasis. Grundlage für Upgrades nach "
               "Ablauf B (Masterprompt) – ersetzt nicht `deckbau.py pruefen`.\n",
               "| Deck | Commander | Strategie | Ziel-Archetyp: Kernpakete (ist / Median) | am besten abgedeckt |",
@@ -619,7 +619,7 @@ def cmd_profil(a):
     n_unikate, n_ex = len(frei), sum(frei.values())
     zeilen = []
     zeilen.append("# Sammlungsprofil – Archetypen in den freien Karten\n")
-    zeilen.append(f"**Stand:** {time.strftime('%d.%m.%Y')} · erzeugt mit `claude/tools/archetypen.py profil` · freie Karten: "
+    zeilen.append(f"**Stand:** {time.strftime('%d.%m.%Y')} · erzeugt mit `archetypen.py profil` · freie Karten: "
                   f"{fquelle} ({n_unikate} Karten / {n_ex} Exemplare) · Kartendaten und Funktionstags: {quelle}, "
                   f"Scryfall-Tagger" + (f" · {a.hinweis}" if a.hinweis else ""))
     zeilen.append("Richtwerte = Median der EDHREC-Durchschnittsdecks je Archetyp (`archetypen_daten.json`, siehe "
@@ -721,7 +721,7 @@ def cmd_profil(a):
                     f"**Stand:** {time.strftime('%d.%m.%Y')} · erzeugt mit `archetypen.py profil --raster-out` · "
                     f"Richtwerte `archetypen_daten.json` (Stand {(richt or {}).get('stand', '–')}) · Grundlage für Upgrades "
                     "(Ablauf B) – ersetzt nicht `deckbau.py pruefen`/`abnahme`.\n"]
-            kopf.append("Paket-Zählung der Soll-Stände (`claude/decks/`); Ziel-Archetyp = Strategie aus `deck_namen.json`; "
+            kopf.append("Paket-Zählung der Soll-Stände (`decks/`); Ziel-Archetyp = Strategie aus `deck_namen.json`; "
                         "⚠ = Kernpaket unter dem kleinsten Wert der Datenbasis.\n")
             open(a.raster_out, "w", encoding="utf-8").write("\n".join(kopf + raster[2:]) + "\n")
             print(f"Deck-Raster -> {a.raster_out}")
@@ -1004,7 +1004,7 @@ def main():
     p.add_argument("--out")
     p.add_argument("--hinweis")
     p.add_argument("--ohne-commander", action="store_true", help="Abschnitt freie Commander (EDHREC-Abruf) weglassen")
-    p.add_argument("--decks", nargs="*", help="Soll-Stände (claude/decks/*.txt): Status der Schlüsselkarten (statt mtg.sqlite) "
+    p.add_argument("--decks", nargs="*", help="Soll-Stände (decks/*.txt): Status der Schlüsselkarten (statt mtg.sqlite) "
                                                "und Abschnitt „Commander-Decks im Archetyp-Raster“")
     p.add_argument("--einschaetzung", help="Markdown-Datei mit Claudes Einschätzung, wird nach dem Kopf eingefügt")
     p.add_argument("--config", default="deck_namen.json", help="deck_namen.json (Strategie je Commander) für den Deck-Abschnitt")

@@ -9,10 +9,10 @@ Befehle
          [--config deck_namen.json]
          DB neu bauen; Scryfall-Bulk wird geladen, wenn älter als 20 h. Sammlung: Moxfield- oder
          ManaBox-CSV (enthält beim Nutzer auch alle Deckkarten). Decks: Moxfield-/ManaBox-Text oder
-         CSV (Soll-Stände claude/decks/*.txt); --vormerkungen <csv> (Standard data/vormerkungen.csv) zieht
+         CSV (Soll-Stände decks/*.txt); --vormerkungen <csv> (Standard data/vormerkungen.csv) zieht
          reservierte Karten von „frei“ ab; --scan-decks <csv…> liest ManaBox-Scans als Decklisten (nicht Teil
          des Bestands); --binder-decks legt Decks aus Bindern der Sammlungsdatei an.
-         Bestand = Basis + Journal (claude/sammlung/buchungen.csv); das Projekt ist die Hauptdatenbank.
+         Bestand = Basis + Journal (sammlung/buchungen.csv); das Daten-Repo ist die Hauptdatenbank.
   laender [<deck>] [--plan "Plains=12, Swamp=10"]
                                 Standardländer: Bedarf vs. Besitz (abzüglich anderer Decks), Nachkauf
   sammlung                      Bestandsübersicht (Menge, Wert, Farben, Typen, teuerste Karten)
@@ -32,7 +32,7 @@ Befehle
                                 Entwurf mit eigenen Drucken: Karten aus dem Deck D behalten dessen Exemplare, neue Karten
                                 bekommen freie Exemplare; ohne Exemplar = Kauf (Grundlage für Deck-PDF und Tausch)
   snapshot <ordner> [--deck D] [--hinweis T] [--drucke]
-                                Soll-Stand aller Decks als Moxfield-Text (Projektordner claude/decks/); Drucke stehen
+                                Soll-Stand aller Decks als Moxfield-Text (Daten-Repo decks/); Drucke stehen
                                 drin, wenn sie bekannt sind (aus der Deckliste/dem Scan) – mit --drucke auch die
                                 über die Exemplar-Zuordnung ermittelten
   scan <manabox.csv> [--buchen] [--verdacht-buchen] [--moxfield zugang.csv] [--beleg T]
@@ -184,9 +184,27 @@ def ensure_bulk(bulk_dir, max_age_h=20):
                 if not chunk:
                     break
                 out.write(chunk)
+        if not bulk_hat_daten(fn + ".part"):    # Fund 19.11.2026: leere Tag-Datei von Scryfall
+            os.remove(fn + ".part")
+            if os.path.exists(fn):
+                alt = time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(fn)))
+                print(f"!! Scryfall-Datei {t} ist leer – ältere Fassung vom {alt} genutzt", file=sys.stderr)
+                meta[t] = f"{alt} (Rückfall)"
+                continue
+            sys.exit(f"Scryfall-Datei {t} ist leer und es gibt keine ältere – später erneut bauen")
         os.replace(fn + ".part", fn)
         meta[t] = x["updated_at"][:16].replace("T", " ")
     return meta
+
+
+def bulk_hat_daten(fn):
+    """True, wenn die Datei mindestens einen Datensatz enthält (JSONL oder JSON-Array, gzip oder roh)."""
+    try:
+        for _ in iter_jsonl(fn):
+            return True
+    except (OSError, ValueError, EOFError):
+        return False
+    return False
 
 
 def iter_jsonl(fn):
@@ -800,7 +818,7 @@ def ist_weich(idee):
 
 
 def load_vormerkungen(con, path):
-    """claude/sammlung/vormerkungen.csv (Idee, Name, Anzahl, Datum, Hinweis) laden; Konflikte melden.
+    """sammlung/vormerkungen.csv (Idee, Name, Anzahl, Datum, Hinweis) laden; Konflikte melden.
     Ideen „V-nnn“ (geplanter Verkauf) sind weich: frei bleibt gleich, Exemplare bekommen nur den Vermerk."""
     if not path or not os.path.exists(path):
         return 0
@@ -1499,7 +1517,7 @@ def datei_slug(text):
 
 
 def cmd_snapshot(con, args):
-    """Soll-Stand aller Decks als Moxfield-Text in einen Ordner (für claude/decks/ im Projekt)."""
+    """Soll-Stand aller Decks als Moxfield-Text in einen Ordner (für decks/ im Daten-Repo)."""
     os.makedirs(args.ordner, exist_ok=True)
     stand = time.strftime("%Y-%m-%d")
     for did, kurz, neu, datei, karten in con.execute(

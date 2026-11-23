@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.9.12** (23.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.10** (23.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -176,7 +176,7 @@ flowchart TD
     E1 --> F1
 ```
 
-1. **A · Gespräch:** Claude liest zuerst, was es schon weiß (Deckliste, offene Ideen, freie Karten), und prüft bei bestehenden Decks die **Passung**: Trägt der Commander das Ziel, oder passt ein anderer Commander aus Deck, Sammlung oder als günstiger Kauf deutlich besser? Dann der **Fragenplan** – keine feste Zahl an Fragen, sondern Pflichtfragen, bedingte und optionale Fragen, jede mit Empfehlung und „Weiß nicht – entscheide du“. Am Ende bestätigst du den **Steckbrief** (neues Deck) bzw. die **Upgrade-Richtung**, und Claude fragt einmal nach dem [Gegenlauf](#der-gegenlauf-zwei-fremde-agenten-bauen-mit).
+1. **A · Gespräch:** Claude liest zuerst, was es schon weiß (Deckliste, offene Ideen, freie Karten), und prüft bei bestehenden Decks die **Passung**: Trägt der Commander das Ziel, oder passt ein anderer Commander aus Deck, Sammlung oder als günstiger Kauf deutlich besser? Dann der **Fragenplan** – keine feste Zahl an Fragen, sondern Pflichtfragen, bedingte und optionale Fragen, jede mit Empfehlung und „Weiß nicht – entscheide du“. Am Ende bestätigst du den **Steckbrief** (neues Deck) bzw. die **Upgrade-Richtung**, und Claude fragt einmal nach dem [Gegenlauf](#der-gegenlauf-drei-fremde-agenten-bauen-mit).
 2. **B · Recherche und Vorschlag:** Die Recherche bekommt alle Ressourcen, die sie braucht. Die Werkzeuge füllen Ramp, Card Draw, Removal, Board Wipes, Protection und Lands bis zum Minimum des Archetyps auf – auch wenn du sie nicht erwähnst –, bilden Tauschpaare und nehmen nichts Tragendes heraus (Raus-Sperren). Fällt der Entwurf durch die [Abnahme](#die-abnahme-wann-ein-deck-fertig-ist), bessert Claude nach, bevor du ihn siehst.
 3. **C · Anpassung:** Du änderst, so oft du willst; jede Runde zeigt nur die Änderungen. Auf Wunsch als **Tauschrunde** (Frage-Antwort-Spiel): Claude zeigt jeden Tausch einzeln als Karte mit Oracle-Text, du antwortest mit ja, nein, unsicher/später oder „Empfehlung“ – am Ende entsteht der Entwurf aus deinen Ja-Antworten (`deckbau.py tauschrunde`). Endet der Chat ohne Freigabe, wird der Stand als **Idee** gesichert und die Karten werden vorgemerkt.
 4. **D · Lieferung:** Nach deiner Freigabe fragt Claude kurz, ob du PDFs und die Import-Liste willst.
@@ -346,6 +346,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 29.10.2026 | Verkaufsliste, externes Review umgesetzt (Bewertung, Abnahme, Simulation), Gegentests, Gegenlauf, Plugin und README | 2,5 h · 315 Mio. Token · ≈ 117 € |
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
+| 23.11.2026 | V1.10: Methodik kommt mit den Werkzeugen (`doku/`), Daten nur im privaten Daten-Repo (Vorlage `vorlage-daten/`), Projekt mit vier Dateien; Sitzungsstart in einem Befehl (`start.py`); Routinen auf Nachfrage (Gegenlauf, Tauschrunde, externe Prüfung, PDFs, Primer als Nachschlagewerk, externe Decks, Matchup); Kaufliste und Vormerkungen als CSV mit festen Status; Kampfschaden-Bezug für Commander mit angreifenden Tokens; Schutz gegen leere Scryfall-Dateien; `pruefen --budget` | – |
 | 23.11.2026 | V1.9.12: Tauschrunde – jeden Tausch einzeln als Karte entscheiden (ja · nein · unsicher/später · Empfehlung), fortsetzbar, Ergebnis-Entwurf aus den Ja-Antworten (`deckbau.py tauschrunde`) | – |
 | 10.11.2026 | V1.9.11: Gegenlauf mit drei Konkurrenten (neu: mtg-edh-upgrade); Auftrag mit Wortlaut (`--wortlaut`) und Zusammenfassung (`--ziel`) der Wünsche, `--behalten` | – |
 | 10.11.2026 | V1.9.10: `upgrade --ziel` – ausdrückliche Wünsche als Oracle-Muster gezielt gesucht (auch ohne EDHREC-Eintrag), Abschnitt „Ziel-Abgleich“; Kernpakete reihum gefüllt | – |
@@ -400,13 +401,13 @@ Claude erkennt die Aufgabe, lädt den Skill und führt dich durch den [Ablauf](#
 
 ### Als Projekt einrichten (für Fortgeschrittene)
 
-Ein **Claude-Projekt** merkt sich deinen Bestand dauerhaft und kennt Rollen (Admin, User, Gast). Am einfachsten geht die Einrichtung mit dem installierten Plugin: Schreib in einem Chat **„Richte mir den MTG-Deckbauer als Projekt ein“**. Claude fragt nach einem Passwort und gibt dir eine ZIP-Datei zum Hochladen und den Text für die Projektanweisungen. Danach:
+Ein **Claude-Projekt** merkt sich deinen Bestand dauerhaft und kennt Rollen (Admin, User, Gast). Am einfachsten geht die Einrichtung mit dem installierten Plugin: Schreib in einem Chat **„Richte mir den MTG-Deckbauer als Projekt ein“**. Claude fragt nach einem Passwort, richtet mit dir ein **privates GitHub-Repo für deine Daten** ein (aus der Vorlage `vorlage-daten/`) und gibt dir drei kleine Dateien zum Hochladen und den Text für die Projektanweisungen. Danach:
 
 1. [Neues Projekt anlegen](https://support.claude.com/en/articles/9519177-how-can-i-create-and-manage-projects) (Desktop-App oder Browser – Projektanweisungen lassen sich in der Handy-App nicht bearbeiten).
-2. Den Text in die **Projektanweisungen** einfügen und die Dateien aus der ZIP hochladen.
+2. Den Text in die **Projektanweisungen** einfügen und die drei Dateien hochladen (`05a_Sitzungsstart.md`, `werkzeuge-quelle.txt`, `zugang.json`).
 3. Einen neuen Chat im Projekt öffnen und mit **„Admin \<dein Passwort\>“** anmelden. Claude richtet dann deinen Bestand ein und legt ein Nutzerprofil an – dort steht unter anderem, welches Programm deine externe Datenbank ist (Vorgabe: Moxfield); ändern kannst du das jederzeit im Chat.
 
-Von Hand geht es auch: Die Dateien liegen in [`skills/mtg-commander-deckbauer/projekt/`](skills/mtg-commander-deckbauer/projekt/), die Anweisungen in `Projektanweisungen.md`, dazu gehört `werkzeugkiste.txt`. Die Passwort-Datei `zugang.json` legt Claude mit dem Werkzeug `zugang.py` an.
+Von Hand geht es auch: Die Methodik liegt in [`skills/mtg-commander-deckbauer/doku/`](skills/mtg-commander-deckbauer/doku/) und kommt bei jedem Sitzungsstart automatisch mit den Werkzeugen; die Anweisungen stehen in `doku/Projektanweisungen.md`, die Vorlage fürs Daten-Repo in [`vorlage-daten/`](vorlage-daten/). Neue Versionen: nur `werkzeuge-quelle.txt` im Projekt ersetzen.
 
 ## Plugin oder Projekt? Vor- und Nachteile
 
@@ -475,7 +476,7 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | **Bracket-Zeile** | das Ergebnis des Bracket-Checks in einer Zeile |
 | **Ausgangsbracket · Ziel-Bracket · Bracket-Wächter** | Bracket, in dem das Deck heute steht · Bracket, das es erreichen soll · Warnung, wenn eine Änderung das Deck ungewollt in ein anderes Bracket schiebt (`deckbau.py bracket`) |
 | **Abnahme · Stärke-Index** | acht Prüfpunkte, ab wann ein Deck fertig ist · Vergleichszahl zwischen zwei Ständen desselben Decks ([Details](#die-abnahme-wann-ein-deck-fertig-ist)) |
-| **Gegenlauf · Gegentest** | drei fremde Agenten bauen mit · Vergleich der vier Listen ([Details](#der-gegenlauf-zwei-fremde-agenten-bauen-mit)) |
+| **Gegenlauf · Gegentest** | drei fremde Agenten bauen mit · Vergleich der vier Listen ([Details](#der-gegenlauf-drei-fremde-agenten-bauen-mit)) |
 | **Fazit-PDF · Tauschübersicht · Deck-PDF** | Änderungen mit Begründung · Pickliste „was aus welcher Box“ · ganzes Deck mit Kurzdaten |
 | **Verkaufsliste · Kat. 1 / 2 / 3 · V-nnn** | Sammlungskarten ohne Bedenken, mit Bedenken, nicht verkaufen · gesicherter, geplanter Verkauf ([Details](#die-verkaufsliste)) |
 
@@ -505,9 +506,11 @@ Nur Begriffe dieses Projekts und rund um Claude und GitHub – Magic-Begriffe se
 | `.claude-plugin/` | macht das Repo zum Plugin und zum Marketplace (`plugin.json`, `marketplace.json`) |
 | `.github/workflows/` | startet die Tests bei jeder Änderung und einmal im Monat einen Test gegen die echten Datenquellen |
 | `skills/mtg-commander-deckbauer/SKILL.md` | Einstieg: wann Claude den Skill nutzt und wie es vorgeht |
-| `skills/mtg-commander-deckbauer/projekt/` | die Methodik: Deckbau-Verfahren, Werkzeug-Handbuch, Quellen, Regeln, Archetypen, Rollen – und die Projektanweisungen |
+| `skills/mtg-commander-deckbauer/doku/` | die Methodik: Deckbau-Verfahren, Werkzeug-Handbuch, Quellen, Regeln, Archetypen, Rollen – und die Projektanweisungen |
 | `skills/mtg-commander-deckbauer/werkzeuge/` | die Python-Werkzeuge |
-| `skills/mtg-commander-deckbauer/werkzeugkiste.txt` | alle Werkzeuge als ein geprüftes Paket für Claude-Projekte |
+| `skills/mtg-commander-deckbauer/werkzeugkiste.txt` | Werkzeuge, Methodik und Daten-Vorlage als ein geprüftes Paket für Claude-Projekte |
+| `werkzeuge-quelle.txt` | fester Stand der Werkzeugkiste (Link + Prüfsumme) – die einzige Datei, die ein Projekt bei einer neuen Version tauscht |
+| `vorlage-daten/` | Vorlage für das private Daten-Repo (Protokolle, leere Listen, Nutzerprofil) |
 | `tests/` | automatische Tests mit einem Testdeck und kleinen Auszügen aus Scryfall und EDHREC |
 
 Mein eigenes Projekt lädt die Werkzeuge von einem festen, geprüften Stand dieses Repos.
@@ -515,7 +518,7 @@ Mein eigenes Projekt lädt die Werkzeuge von einem festen, geprüften Stand dies
 <details>
 <summary><b>Für Bastler: die Werkzeuge ohne Claude nutzen</b></summary>
 
-Python 3 genügt; für PDFs zusätzlich `pip install pillow reportlab`. Jedes Werkzeug erklärt sich mit `--help`, das Handbuch steht in [`projekt/05_Datenbank-und-Tools.md`](skills/mtg-commander-deckbauer/projekt/05_Datenbank-und-Tools.md).
+Python 3 genügt; für PDFs zusätzlich `pip install pillow reportlab`. Jedes Werkzeug erklärt sich mit `--help`, das Handbuch steht in [`doku/05_Datenbank-und-Tools.md`](skills/mtg-commander-deckbauer/doku/05_Datenbank-und-Tools.md).
 
 ```bash
 cd skills/mtg-commander-deckbauer/werkzeuge
@@ -548,4 +551,4 @@ Menünamen ändern sich mit der Zeit – im Zweifel gilt die Anleitung von Anthr
 
 ---
 
-<sub>**English summary:** A private, German-language Claude add-on for Magic: The Gathering Commander. It builds and upgrades decks from cards you already own, keeps track of your collection (import from Moxfield, ManaBox or other CSV exports; your external database is your choice), checks every deck against Bracket 3, weighs cost against benefit in EUR, can run two independent competitor agents for a second opinion, builds a sell list and renders PDFs with card images. Install it in claude.ai under Customize → Plugins → Add marketplace with `Aperol96/mtg-werkzeuge`, or in Claude Code with `/plugin install mtg-commander-deckbauer --marketplace Aperol96/mtg-werkzeuge`. Free to use and adapt under the MIT license.</sub>
+<sub>**English summary:** A private, German-language Claude add-on for Magic: The Gathering Commander. It builds and upgrades decks from cards you already own, keeps track of your collection (import from Moxfield, ManaBox or other CSV exports; your external database is your choice), checks every deck against Bracket 3, weighs cost against benefit in EUR, can run three independent competitor agents for a second opinion, builds a sell list and renders PDFs with card images. Install it in claude.ai under Customize → Plugins → Add marketplace with `Aperol96/mtg-werkzeuge`, or in Claude Code with `/plugin install mtg-commander-deckbauer --marketplace Aperol96/mtg-werkzeuge`. Free to use and adapt under the MIT license.</sub>
