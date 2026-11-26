@@ -86,13 +86,13 @@ Routinen sind feste Abläufe mit festem Platz im Verfahren. Claude startet sie *
 |---|---|---|---|
 | Ende Stufe A (Steckbrief bzw. Upgrade-Richtung bestätigt, vor der Recherche) | **Gegenlauf** | drei Konkurrenz-Agenten bauen unabhängig mit; Abwägung von vier Listen | 5.1 |
 | mit dem Vorschlag (Stufe B) und bei Anpassungen ab drei Tauschen | **Tauschrunde** | jeden Tausch einzeln als Karte entscheiden: ja · nein · unsicher/später · Empfehlung | 5.2 |
-| mit dem Vorschlag (Stufe B) | **Externe Prüfung** | Gegenprüfung mit Evoke, Spellbinder, Nerd Leagues und playgroup.gg | 5.3 |
+| mit dem Vorschlag (Stufe B) | **Externe Prüfung** | Gegenprüfung mit Evoke, Nerd Leagues und playgroup.gg | 5.3 |
 | nach der Freigabe (Stufe D) | **PDF-Dokumentation** und **Import-Datei** | Fazit, Tauschübersicht, Deck-PDF; Einfügeblock als `.txt` | 3 |
 | nach der Freigabe (Stufe D) und nach dem Buchen (Stufe F) | **Primer anlegen bzw. nachziehen** | Nachschlagewerk zum Deck | 5.4 |
-| nach dem Buchen (Stufe F) | **Externe Decks nachziehen** | Moxfield (per Chrome), Spellbinder, Evoke auf den Soll-Stand | 5.5 |
+| nach dem Buchen (Stufe F) | **Externe Decks nachziehen** | Moxfield (per Chrome) und Evoke auf den Soll-Stand | 5.5 |
 | Ablauf D (Meta) oder auf Zuruf | **Matchup-Analyse** | eigenes Deck gegen ein bestimmtes Gegnerdeck | 5.6 |
 
-Fragetext-Muster (Stufe B): „Vorschlag steht. Was soll ich noch machen? ☐ Tauschrunde (Tausch für Tausch entscheiden) ☐ Externe Prüfung (Evoke, Spellbinder, Nerd Leagues, playgroup.gg; ≈ 5–10 Min.) ☐ keine“. Die Ergebnisse jeder Routine sind Daten zur Abwägung – maßgeblich bleiben Kartentext, Projektwerkzeuge und die Entscheidung des Nutzers.
+Fragetext-Muster (Stufe B): „Vorschlag steht. Was soll ich noch machen? ☐ Tauschrunde (Tausch für Tausch entscheiden) ☐ Externe Prüfung (Evoke, Nerd Leagues, playgroup.gg; ≈ 5–10 Min.) ☐ keine“. Die Ergebnisse jeder Routine sind Daten zur Abwägung – maßgeblich bleiben Kartentext, Projektwerkzeuge und die Entscheidung des Nutzers.
 
 ### 5.1 Gegenlauf mit drei Konkurrenz-Agenten
 
@@ -140,15 +140,14 @@ Zweck: Statt den ganzen Vorschlag auf einmal freizugeben, entscheidet der Nutzer
 5. **Ende:** `--ergebnis [--out <datei>]` schreibt den Entwurf aus Soll-Stand plus angenommenen Tauschen (Standard `ideen/tauschrunde-<deck>.txt`) und zeigt Kennzahlen Soll-Stand · Ergebnis · ganzer Vorschlag, Warnungen und die Vormerkungen abgelehnter Karten, die zu lösen sind. Danach die drei Prüfläufe aus der Ausgabe (`pruefen --ersetzt "<Deck>"`, `bracket --neu`, `abnahme --basis "<Deck>"`) – das Ergebnis ist der neue Vorschlag, die Freigabe läuft wie gewohnt (Abschnitt 2). Vormerkungen abgelehnter Karten mit `protokoll.py vormerkung-entfernen` lösen. Übersicht jederzeit mit `--stand`, eine bestimmte Frage mit `--karte N`. **Übernehmen als Idee:** Ergebnis nach `ideen/<deck>-upgrade.txt` umbenennen, Paardatei und Rundenstand löschen, Idee mit `idee-neu` (Details = Ergebnisdatei) und Vormerkungen der Rein-Karten anlegen.
 6. **Später-Tausche** bleiben in der Runde; Vormerkungen bleiben, der Status der Idee nennt sie („Tauschrunde: 2 später“). Nichts wird gebucht (Grundsatz 10). Gast und Testlauf: Runde nur im Arbeitsbereich (`--datei out/tauschrunde.json`), nie ins Daten-Repo.
 
-### 5.3 Externe Prüfung (Evoke, Spellbinder, Nerd Leagues, playgroup.gg)
+### 5.3 Externe Prüfung (Evoke, Nerd Leagues, playgroup.gg)
 
 Zweck: eine zweite Meinung aus fremden Werkzeugen zu Legalität, Combos, Bracket und Manabasis – erprobt am 20.11.2026 (fand u. a. die Sperr-Combo-Einstufung und die zu knappen weißen Quellen). Grundlage ist der Entwurf (bzw. bei „nur prüfen“ der Soll-Stand).
 
 1. **Evoke** (Connector): Deck privat anlegen bzw. aktualisieren (`create_deck`/`add_cards`, `set_commander`), `validate_deck` (Legalität, 100 Karten), `deck_combos` (fertige Combos) und `find_combos` (fehlt eine Karte) – Beinahe-Combos als Siegweg-Hinweis oder Bracket-Warnung einordnen.
-2. **Spellbinder** (Connector): Deck **privat** anlegen (`deck_create_from_text`; das Konto setzt sonst öffentlich – Sichtbarkeit prüfen), `deck_analyze` (Warnungen, Kurve, Kategorien).
-3. **Nerd Leagues** (Websuche/Seite des Commander-Bracket-Rechners) und **playgroup.gg** (Bracket-Einschätzung, Siegquoten): Bracket, Power-Signal, Castbarkeit je Farbe bis Zug 3, getappte Länder, Rollenzählung.
-4. **Abgleich** mit `deckbau.py bracket --neu`, `abnahme` und `pruefen`: Tabelle „Quelle | Ergebnis | Abweichung zum Projekt | Folgerung“. Abweichungen erklären (z. B. zählt Nerd Leagues Sperr-Combos als Bracket 4, zählt Entfernung enger). Folgerungen werden zu Tausch-Vorschlägen (ggf. Tauschrunde), nie stillschweigend übernommen.
-5. Deck-IDs in `extern-decks.md` im Daten-Repo eintragen; Protokoll „Idee“ bzw. „Hinweis“ mit dem Ergebnis in einer Zeile.
+2. **Nerd Leagues** (Websuche/Seite des Commander-Bracket-Rechners) und **playgroup.gg** (Bracket-Einschätzung, Siegquoten): Bracket, Power-Signal, Castbarkeit je Farbe bis Zug 3, getappte Länder, Rollenzählung.
+3. **Abgleich** mit `deckbau.py bracket --neu`, `abnahme` und `pruefen`: Tabelle „Quelle | Ergebnis | Abweichung zum Projekt | Folgerung“. Abweichungen erklären (z. B. zählt Nerd Leagues Sperr-Combos als Bracket 4, zählt Entfernung enger). Folgerungen werden zu Tausch-Vorschlägen (ggf. Tauschrunde), nie stillschweigend übernommen.
+4. Deck-IDs in `extern-decks.md` im Daten-Repo eintragen; Protokoll „Idee“ bzw. „Hinweis“ mit dem Ergebnis in einer Zeile.
 
 ### 5.4 Primer – Nachschlagewerk zum Deck
 
@@ -156,17 +155,16 @@ Ein Primer erspart die Neuanalyse: Bei Fragen zu einem Deck liest Claude **zuers
 
 - **Aufbau (fest):** Kopf „Stand TT.MM.JJJJ · Commander · Soll-Stand · voller Name“ und Bracket-Zeile · 1 Spielidee in einem Satz · 2 Commander (Oracle-Text, Rulings) · 3 Spielverlauf früh/mitte/spät mit Karten · 4 Siegwege und Finisher · 5 Regeln, die das Deck ausmachen (mit Regelnummern) · 6 Rollen (Werkzeug, Datum) · 7 Mulligan · 8 Baustellen/offen · optional 9 Maybeboard und Tauschkandidaten, 10 Geprüft (Gegenlauf, externe Prüfung). **60-Karten-Decks:** statt Commander und Rollen die Abschnitte Kernkarten, Interaktion und Mana.
 - **Quellen:** Kartentexte nur aus `deckbau.py oracle`, Zahlen aus den Werkzeugen. Ideen (nicht gebaute Decks) bekommen einen Primer mit „Idee“ im Kopf.
-- **Kurzfassung** (≤ 1.000 Zeichen) für Spellbinder-Beschreibung bzw. Evoke-Primer bei Routine 5.5.
+- **Kurzfassung** (≤ 1.000 Zeichen) für den Evoke-Primer bei Routine 5.5.
 
-### 5.5 Externe Decks nachziehen (Moxfield, Spellbinder, Evoke)
+### 5.5 Externe Decks nachziehen (Moxfield, Evoke)
 
 Richtung immer Daten-Repo → extern. Nach dem Buchen anbieten, solange „In Moxfield nachziehen“-Zeilen offen sind.
 
 - **Moxfield per Claude in Chrome** (Browser-Erweiterung, angemeldet): Decks per Bulk Edit auf den Soll-Stand mit eigenen Drucken, Name nach Namensschema, Beschreibung ≤ 140 Zeichen, Themen, Primer; danach Karte für Karte abgleichen. **Sammlung ersetzen** nur nach ausdrücklicher Freigabe und erst nach einem Export des alten Stands (Datei an den Nutzer); Import aus `mtg_db.py moxfield-export`. Danach `nachziehen-erledigt`.
-- **Spellbinder:** Ist-Stand je Deck nach Namensschema, privat, Kurzprimer als Beschreibung, Maybeboard; alte Stände nur auf Wunsch in den Papierkorb.
 - **Evoke:** nur Commander-Decks; Liste und Primer aktualisieren.
 - IDs und Stand in `extern-decks.md`; Protokoll „Hinweis“ mit dem, was nachgezogen wurde.
 
 ### 5.6 Matchup-Analyse
 
-Gegen ein bestimmtes Gegnerdeck (Precon oder Liste): Gegnerliste holen (Precon: Spellbinder `precon_get` bzw. Websuche), Bedrohungsprofil (`11`, 3.6), eigene Antworten auf die gefährlichsten Karten, `simulation.py` und `abnahme` für mögliche Matchup-Tausche. Ergebnis in `ideen/<deck>-matchup-<gegner>.md` (Einschätzung als solche gekennzeichnet); Matchup-Tausche kommen aufs Maybeboard bzw. in den Primer, nicht in den Soll-Stand – außer der Nutzer gibt sie frei.
+Gegen ein bestimmtes Gegnerdeck (Precon oder Liste): Gegnerliste holen (Precon: Websuche, z. B. Scryfall oder EDHREC), Bedrohungsprofil (`11`, 3.6), eigene Antworten auf die gefährlichsten Karten, `simulation.py` und `abnahme` für mögliche Matchup-Tausche. Ergebnis in `ideen/<deck>-matchup-<gegner>.md` (Einschätzung als solche gekennzeichnet); Matchup-Tausche kommen aufs Maybeboard bzw. in den Primer, nicht in den Soll-Stand – außer der Nutzer gibt sie frei.

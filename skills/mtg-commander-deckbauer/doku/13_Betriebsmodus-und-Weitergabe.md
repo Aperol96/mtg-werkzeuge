@@ -105,7 +105,7 @@ Direkt nach der Anmeldung als User (beim Gast nach der Übersicht in G4) zeigt C
 | Rollen, Mindestwerte | Ramp, Kartenvorteil, Interaktion, Wipes, Schutz, Länder – mit Mindestanzahl je Spielweise | gleich |
 | Tauschpaar, Tauschrunde | „raus → rein“ mit Begründung · jeden Tausch einzeln entscheiden: ja · nein · später · Empfehlung | gleich |
 | Primer | Nachschlagewerk zu einem Deck: Spielidee, Kernkarten, Spielverlauf, Siegwege, Regeln, Mulligan | gleich |
-| Gegenlauf, externe Prüfung | drei fremde Agenten bauen zum Vergleich mit · Gegenprüfung mit Spellbinder, Evoke, Nerd Leagues, playgroup.gg | gleich |
+| Gegenlauf, externe Prüfung | drei fremde Agenten bauen zum Vergleich mit · Gegenprüfung mit Evoke, Nerd Leagues, playgroup.gg | gleich |
 | Fazit-PDF, Tauschübersicht, Deck-PDF, Einkaufsliste | Zusammenfassung · Pickliste mit Boxen · ganzes Deck mit Bildern · Sammelbestellung – jeweils mit Abhak-Kästchen | gleich |
 | Einfügeblock, Import-Datei | Liste zum Einfügen in Moxfield (eine Karte je Zeile) | für dein Programm |
 | in Moxfield nachziehen | gebuchte Änderung auch in Moxfield eintragen (Richtung Repo → Moxfield) | – |
