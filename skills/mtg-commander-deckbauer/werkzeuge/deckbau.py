@@ -129,7 +129,7 @@ def besitz(con, oid, ohne_deck=None):
     b = con.execute("SELECT COALESCE(SUM(qty),0) FROM collection WHERE oracle_id=? AND lower(proxy)<>'true'",
                     (oid,)).fetchone()[0]
     d = con.execute("SELECT COALESCE(SUM(qty),0) FROM deck_cards WHERE oracle_id=? AND deck_id IS NOT ?"
-                    " AND board IN ('main','commander','sideboard','companion')", (oid, ohne_deck)).fetchone()[0]
+                    " AND board IN ('main','commander','sideboard','companion','maybeboard')", (oid, ohne_deck)).fetchone()[0]
     try:
         v = con.execute("SELECT COALESCE(SUM(qty),0) FROM vormerkungen WHERE oracle_id=? AND idee IS NOT ?"
                         " AND COALESCE(weich,0)=0", (oid, IDEE)).fetchone()[0]

@@ -314,3 +314,31 @@ def test_start_verknuepft_und_zeigt_stand(tmp_path):
     assert r.returncode == 0, r.stdout + r.stderr
     assert (w / "decks").is_symlink() and (w / "projekt").is_symlink()
     assert "I-001" in r.stdout and "testdeck: kein Primer" in r.stdout and "doku" in r.stdout
+
+
+def test_maybeboard_bindet_karten_ans_deck(tmp_path):
+    """Raus-Karten im Maybeboard liegen beim Deck: nicht frei, aber nicht in Kartenzahl; Soll-Stand behält sie."""
+    import json
+    import shutil
+    import sqlite3
+    from conftest import DATEN, frisch, lauf
+    shutil.copytree(os.path.join(DATEN, "bulk"), tmp_path / "bulk")
+    (tmp_path / "decks").mkdir()
+    text = open(os.path.join(DATEN, "testdeck.txt"), encoding="utf-8").read().rstrip()
+    (tmp_path / "decks" / "testdeck.txt").write_text(text + "\n\n// Maybeboard\n1 Sunfall\n", encoding="utf-8")
+    shutil.copy(os.path.join(DATEN, "sammlung.csv"), tmp_path / "sammlung.csv")
+    json.dump({"deck:testdeck": {"name": "Testdeck", "strategie": "Aggro Tokens", "herkunft": "Test"}},
+              open(tmp_path / "deck_namen.json", "w", encoding="utf-8"))
+    frisch(tmp_path)
+    r = lauf(tmp_path, "mtg_db.py", "build", "--sammlung", "sammlung.csv", "--decks", "decks/testdeck.txt",
+             "--config", "deck_namen.json", "--vormerkungen", "keine.csv")
+    assert r.returncode == 0, r.stdout + r.stderr
+    c = sqlite3.connect(tmp_path / "mtg.sqlite")
+    besitz, in_decks, frei = c.execute("SELECT besitz, in_decks, frei FROM v_karten WHERE name='Sunfall'").fetchone()
+    assert besitz >= 1 and in_decks == besitz and frei == 0
+    assert c.execute("SELECT karten FROM decks").fetchone()[0] == 100  # Maybeboard zählt nicht mit
+    c.close()
+    r = lauf(tmp_path, "mtg_db.py", "snapshot", "out")
+    assert r.returncode == 0, r.stdout + r.stderr
+    soll = (tmp_path / "out" / "testdeck.txt").read_text(encoding="utf-8")
+    assert "// Maybeboard" in soll and "Sunfall" in soll.split("// Maybeboard")[1]

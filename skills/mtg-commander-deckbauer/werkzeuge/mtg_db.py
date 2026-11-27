@@ -257,12 +257,12 @@ CREATE VIEW v_besitz AS
   SELECT oracle_id, SUM(qty) AS besitz FROM collection
   WHERE oracle_id IS NOT NULL AND lower(proxy) <> 'true' GROUP BY oracle_id;
 -- Die Sammlung enthält auch alle Deckkarten. Bedarf = alles, was physisch in Decks steckt
--- (Haupt-, Commander-, Sideboard; ohne Maybeboard), inkl. Standardländer -> frei = Besitz - Bedarf - Vormerkungen.
+-- (Haupt-, Commander-, Sideboard und Maybeboard – Maybeboard-Karten liegen beim Deck), inkl. Standardländer -> frei = Besitz - Bedarf - Vormerkungen.
 CREATE VIEW v_bedarf AS
   SELECT d.oracle_id, SUM(d.qty) AS bedarf, COUNT(DISTINCT d.deck_id) AS decks,
          GROUP_CONCAT(DISTINCT k.kurz) AS deck_ids
   FROM deck_cards d JOIN decks k USING(deck_id)
-  WHERE d.board IN ('main','commander','sideboard','companion') AND d.oracle_id IS NOT NULL
+  WHERE d.board IN ('main','commander','sideboard','companion','maybeboard') AND d.oracle_id IS NOT NULL
   GROUP BY d.oracle_id;
 CREATE VIEW v_basics AS
   SELECT oracle_id, name FROM cards WHERE type_line LIKE 'Basic%Land%';
@@ -864,7 +864,7 @@ def baue_exemplare(con):
     for e in ex:
         je_oid[e[0]].append(e)
     bedarf = con.execute("SELECT d.deck_id, d.oracle_id, d.qty, d.set_code, d.cn, k.precon_set FROM deck_cards d"
-                         " JOIN decks k USING(deck_id) WHERE d.board IN ('main','commander','sideboard','companion')"
+                         " JOIN decks k USING(deck_id) WHERE d.board IN ('main','commander','sideboard','companion','maybeboard')"
                          " AND d.oracle_id IS NOT NULL ORDER BY d.deck_id").fetchall()
     ts = {}
     for did in sorted({b[0] for b in bedarf}):
@@ -1199,10 +1199,10 @@ def deck_text(con, did, sets=False, marker=False, nur_sicher=False):
     marker=True (Snapshots): Abschnitte mit '// Commander' / '// Sideboard' kennzeichnen.
     sets=True: Druck je Exemplar aus der Exemplar-Zuordnung (nur_sicher: nur Drucke aus Deckliste/Scan)."""
     out = []
-    for board in ("main", "commander", "sideboard"):
+    for board in ("main", "commander", "sideboard", "maybeboard"):
         rows = con.execute("SELECT name, SUM(qty), oracle_id FROM deck_cards WHERE deck_id=? AND board=?"
                            " GROUP BY oracle_id, name ORDER BY name", (did, board)).fetchall()
-        if not rows or (board == "sideboard" and not marker):
+        if not rows or (board in ("sideboard", "maybeboard") and not marker):
             continue
         lines = [f"// {board.capitalize()}"] if marker and board != "main" else []
         for n, qn, oid in rows:
@@ -1697,7 +1697,7 @@ def cmd_frei(con, args):
                         " FROM v_karten WHERE oracle_id=?", (oid,)).fetchone()
         decks = [r[0] for r in con.execute("SELECT DISTINCT d.kurz FROM deck_cards c JOIN decks d USING(deck_id)"
                                            " WHERE c.oracle_id=? AND c.board IN ('main','commander','sideboard',"
-                                           "'companion')", (oid,))]
+                                           "'companion','maybeboard')", (oid,))]
         hinweis = []
         if k[3]:
             hinweis.append(f"vorgemerkt {k[3]} ({k[4]})")

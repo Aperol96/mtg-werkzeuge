@@ -2,7 +2,7 @@
 
 **Ein Magic-Assistent für Claude:** Er baut und upgradet Commander-Decks aus deinen eigenen Karten, führt deinen Bestand und beantwortet Regelfragen – auf Deutsch, mit Preisen in Euro (Cardmarket) und mit fertigen PDFs.
 
-Stand **V1.10.2** (26.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
+Stand **V1.10.3** (27.11.2026) · Sprache Deutsch · Lizenz MIT · Privatprojekt · Aufwand bisher: 5 Arbeitstage (25.–29.10.2026), davon gemessen 2,5 h · 315 Mio. Token · ≈ 117 € API-Gegenwert ([Details](#aufwand-und-kosten))
 
 > **Privatprojekt – aber zum Nachbauen gedacht.** Ich habe dieses Projekt für meine eigene Sammlung und meine Spielgruppe gebaut. Es ist kein fertiges Produkt und es gibt keinen Support. Trotzdem darf es jeder nutzen, kopieren und verändern, um sich damit seinen eigenen Deckbau- und Sammlungs-Agenten zu bauen. Deine Daten bleiben dabei in deinem Claude-Konto – in diesem Repo liegen nur Anleitungen und Werkzeuge.
 
@@ -347,6 +347,7 @@ Das Projekt ist an **sieben Arbeitstagen vom 25. bis 31.10.2026** entstanden –
 | 30.10.2026 | Einkaufsliste-PDF, Abhak-Kästchen, neue EDHREC-Richtwerte, Verkaufsliste mit Bedenken; Weitergabe nur noch über dieses Repo | – |
 | 31.10.2026 | V1.9: Ziel-Bracket im Fragenplan, Ausgangsbracket, Bracket-Wächter (`deckbau.py bracket`) | – |
 | 26.11.2026 | V1.10.2: Spellbinder aus den Routinen genommen – externe Prüfung mit Evoke, Nerd Leagues und playgroup.gg, externe Decks nur noch Moxfield und Evoke; Matchup-Precons per Websuche | – |
+| 27.11.2026 | V1.10.3: Maybeboard bindet Karten ans Deck – Raus-Karten kommen beim Buchen ins Maybeboard, zählen nicht als freie Sammlung und bleiben im Soll-Stand (`// Maybeboard`) | – |
 | 23.11.2026 | V1.10.1: Tauschrunde mit Kartenbild als Standard (Frage im Text, Kommas in Notizen), `--stand` mit Ersatzpaaren; Wahl-Wipes wie Austere Command zählen im Token-Deck als Massen-Interaktion; ETB-Payoffs für jede Kreatur (Molten Gatekeeper, Wispdrinker Vampire) haben Token-Bezug | – |
 | 23.11.2026 | V1.10: Methodik kommt mit den Werkzeugen (`doku/`), Daten nur im privaten Daten-Repo (Vorlage `vorlage-daten/`), Projekt mit vier Dateien; Sitzungsstart in einem Befehl (`start.py`); Routinen auf Nachfrage (Gegenlauf, Tauschrunde, externe Prüfung, PDFs, Primer als Nachschlagewerk, externe Decks, Matchup); Kaufliste und Vormerkungen als CSV mit festen Status; Kampfschaden-Bezug für Commander mit angreifenden Tokens; Schutz gegen leere Scryfall-Dateien; `pruefen --budget` | – |
 | 23.11.2026 | V1.9.12: Tauschrunde – jeden Tausch einzeln als Karte entscheiden (ja · nein · unsicher/später · Empfehlung), fortsetzbar, Ergebnis-Entwurf aus den Ja-Antworten (`deckbau.py tauschrunde`) | – |
